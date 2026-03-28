@@ -1,14 +1,22 @@
-output/
+# Python
 *.pyc
 __pycache__/
 *.egg-info/
 dist/
 build/
 .eggs/
+.venv/
+
+# LaTeX artifacts
 *.aux
 *.log
 *.out
 *.pdf
-.venv/
-CurrentResume
-ResumeEditingPrompt.md
+
+# JobFlow data (local only)
+data/output/
+data/applications.csv
+data/output/seen_jobs.json
+
+# Resumes and prompts (private)
+resumes/

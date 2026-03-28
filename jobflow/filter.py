@@ -109,14 +109,40 @@ def evaluate_job(job: JobPosting) -> FilterResult:
         score += 30
         reasons.append("Entry-level / new grad signals found")
 
+    # Non-US location disqualifier (check location field specifically)
+    non_us_patterns = [
+        r"\bindia\b", r"\bgermany\b", r"\bfrance\b", r"\bbrazil\b",
+        r"\bcanada\b", r"\bjapan\b", r"\bkorea\b", r"\bsingapore\b",
+        r"\baustralia\b", r"\buk\b", r"\bunited\s+kingdom\b", r"\blondon\b",
+        r"\bberlin\b", r"\bdublin\b", r"\bparis\b", r"\bamsterdam\b",
+        r"\bdenmark\b", r"\bserbia\b", r"\bbelgrade\b", r"\bsão\s+paulo\b",
+        r"\btoronto\b", r"\bvancouver\b", r"\bbangalore\b", r"\bhyperabad\b",
+        r"\bgurgaon\b", r"\bmumbai\b", r"\bluxembourg\b", r"\bsweden\b",
+        r"\bstockholm\b", r"\baarhus\b", r"\bnetherlands\b", r"\bmelbourne\b",
+        r"\bsydney\b", r"\bseoul\b", r"\btel\s+aviv\b", r"\bisrael\b",
+    ]
+    loc_lower = job.location.lower()
+    if _has_match(loc_lower, non_us_patterns):
+        return FilterResult(
+            score=10,
+            should_apply=False,
+            reason=f"Non-US location: {job.location}",
+            resume_variant=_select_variant(text),
+        )
+
     # USA location check
     us_patterns = [
         r"\bunited\s+states\b", r"\busa\b", r"\bu\.s\.\b",
         r"\bremote\b", r"\bnew\s+york\b", r"\bsan\s+francisco\b",
         r"\bseattle\b", r"\baustin\b", r"\bboston\b", r"\bchicago\b",
         r"\blos\s+angeles\b", r"\bdenver\b", r"\batlanta\b",
+        r"\bsunnyvale\b", r"\bmountain\s+view\b", r"\bpalo\s+alto\b",
+        r"\bsan\s+jose\b", r"\bportland\b", r"\bphiladelphia\b",
+        r"\bwashington\b", r"\bdc\b", r"\braleigh\b", r"\bcharlotte\b",
+        r"\bmiami\b", r"\bdallas\b", r"\bhouston\b", r"\bphoenix\b",
+        r"\b[A-Z]{2}\b",
     ]
-    location_text = f"{job.location} {job.description}".lower()
+    location_text = f"{job.location}".lower()
     if _has_match(location_text, us_patterns):
         score += 10
         reasons.append("US-based or remote position")

@@ -1,0 +1,9 @@
+resumes:
+  se: resumes/base/KrishMakadiaSE.tex
+  ml: resumes/base/KrishMakadiaML.tex
+  appdev: resumes/base/KrishMakadiaAppDev.tex
+
+output_dir: data/output
+csv_path: data/applications.csv
+job_boards: config/job_boards.json
+resume_prompt: resumes/prompt.md

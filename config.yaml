@@ -1,9 +1,0 @@
-resumes:
-  se: CurrentResume/KrishMakadiaSE.tex
-  ml: CurrentResume/KrishMakadiaML.tex
-  appdev: CurrentResume/KrishMakadiaAppDev.tex
-
-output_dir: output
-csv_path: jobLists.csv
-job_boards: JobBoards_Links.json
-resume_prompt: ResumeEditingPrompt.md

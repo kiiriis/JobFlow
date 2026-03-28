@@ -20,6 +20,13 @@ from .tailor import (
     merge_resume,
     save_tailored_resume,
 )
+from .scanner import (
+    deduplicate_results,
+    load_seen_jobs,
+    print_scan_results,
+    save_seen_jobs,
+    scan_all_api_boards,
+)
 from .tracker import append_job, init_csv, print_jobs
 
 app = typer.Typer(name="jobflow", help="Tailor your resume for job postings.")
@@ -98,6 +105,20 @@ def apply(
     # Save job description
     save_job_description(job, output_dir)
 
+    # Save metadata (score, variant, etc.) for the save command
+    import json
+    output_dir.mkdir(parents=True, exist_ok=True)
+    metadata = {
+        "company": company,
+        "role": title,
+        "url": url,
+        "location": location,
+        "score": score,
+        "variant": variant,
+        "date": today,
+    }
+    (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
+
     # Load base resume and master prompt
     console.print(f"\n[bold cyan]Step 3: Tailor resume[/bold cyan]")
     console.print(f"  Using variant: {variant}")
@@ -122,11 +143,26 @@ def apply(
 @app.command()
 def save(
     dir: Path = typer.Option(..., "--dir", "-d", help="Output directory with tailor_prompt.txt"),
-    variant: str = typer.Option("se", "--variant", "-v", help="Resume variant used"),
+    variant: str = typer.Option("", "--variant", "-v", help="Resume variant override (reads from metadata.json if empty)"),
     sections: str = typer.Option("", "--sections", "-s", help="Path to file with tailored LaTeX sections"),
 ):
     """Save tailored resume sections into the final .tex and compile to PDF."""
+    import json
     config = load_config()
+
+    # Read metadata from apply step
+    meta_path = Path(dir) / "metadata.json"
+    meta = {}
+    if meta_path.exists():
+        meta = json.loads(meta_path.read_text())
+
+    # Use metadata values, with CLI overrides
+    if not variant:
+        variant = meta.get("variant", "se")
+    company_name = meta.get("company", "")
+    role_name = meta.get("role", "")
+    job_url = meta.get("url", "")
+    score = meta.get("score", -1)
 
     if sections:
         tailored = Path(sections).read_text()
@@ -156,30 +192,10 @@ def save(
         console.print("[yellow]pdflatex not found. Install MacTeX to compile PDFs.[/yellow]")
         pdf_path = None
 
-    # Track in CSV
-    # Parse company/role/date from directory name
-    parts = Path(dir).name.rsplit("_", 1)
-    date_str = parts[-1] if len(parts) > 1 else ""
-    name_parts = parts[0].rsplit("_", 1) if len(parts) > 1 else [Path(dir).name, ""]
-
-    # Try to read job_description.txt for metadata
-    jd_path = Path(dir) / "job_description.txt"
-    company_name = ""
-    role_name = ""
-    job_url = ""
-    if jd_path.exists():
-        for line in jd_path.read_text().split("\n")[:4]:
-            if line.startswith("Company: "):
-                company_name = line[9:].strip()
-            elif line.startswith("Role: "):
-                role_name = line[6:].strip()
-            elif line.startswith("URL: "):
-                job_url = line[5:].strip()
-
     append_job(
         config["csv_path"],
         company_name, role_name, job_url,
-        score=-1, status="Pending",
+        score=score, status="Pending",
         resume_path=str(tex_path),
     )
 
@@ -194,6 +210,125 @@ def save(
     ))
 
 
+@app.command()
+def scan(
+    platform: Optional[str] = typer.Option(None, "--platform", "-p", help="Scan specific platform: lever, greenhouse, ashby, linkedin, github"),
+    hours: int = typer.Option(0, "--hours", "-h", help="Only show jobs posted within this many hours (0 = all)"),
+    new_only: bool = typer.Option(False, "--new", "-n", help="Only show jobs not seen in previous scans"),
+    save_results: bool = typer.Option(True, "--save/--no-save", help="Save relevant jobs to scan_results.json"),
+):
+    """Scan all job boards for new grad positions (APIs + LinkedIn + GitHub repos)."""
+    config = load_config()
+    platforms = [platform] if platform else None
+
+    console.print("[bold]Scanning job boards for new grad / entry-level positions...[/bold]")
+    results = scan_all_api_boards(config, platforms, max_age_hours=hours)
+
+    # Deduplication
+    if new_only:
+        seen = load_seen_jobs(config)
+        before = len(results)
+        results, seen = deduplicate_results(results, seen)
+        save_seen_jobs(config, seen)
+        skipped_dupes = before - len(results)
+        if skipped_dupes:
+            console.print(f"\n[dim]Skipped {skipped_dupes} previously seen jobs[/dim]")
+
+    print_scan_results(results)
+
+    # Save relevant jobs to a JSON file for easy processing
+    apply_jobs = [(j, r) for j, r in results if r.should_apply]
+    if apply_jobs and save_results:
+        import json
+        output = []
+        for i, (job, filt) in enumerate(sorted(apply_jobs, key=lambda x: x[1].score, reverse=True), 1):
+            output.append({
+                "index": i,
+                "company": job.company,
+                "title": job.title,
+                "location": job.location,
+                "url": job.url,
+                "score": filt.score,
+                "variant": filt.resume_variant,
+                "reason": filt.reason,
+                "description_preview": job.description[:200],
+            })
+
+        results_path = config["output_dir"] / "scan_results.json"
+        config["output_dir"].mkdir(parents=True, exist_ok=True)
+        results_path.write_text(json.dumps(output, indent=2))
+        console.print(f"\n[green]Results saved to:[/green] {results_path}")
+        console.print(
+            "\n[yellow]Next steps:[/yellow]\n"
+            "  1. Review the results above\n"
+            "  2. Pick a job by number and run:\n"
+            "     jobflow process <number>\n"
+            "  Or process all relevant jobs:\n"
+            "     jobflow process --all"
+        )
+
+
+@app.command()
+def process(
+    index: int = typer.Argument(0, help="Job index from scan results (0 = show list)"),
+    all_jobs: bool = typer.Option(False, "--all", "-a", help="Process all relevant jobs"),
+):
+    """Process a job from scan results: filter, tailor, and track."""
+    import json
+    config = load_config()
+    results_path = config["output_dir"] / "scan_results.json"
+
+    if not results_path.exists():
+        console.print("[red]No scan results found. Run 'jobflow scan' first.[/red]")
+        raise typer.Exit(1)
+
+    with open(results_path) as f:
+        jobs = json.load(f)
+
+    if not jobs:
+        console.print("[yellow]No relevant jobs in scan results.[/yellow]")
+        return
+
+    if index == 0 and not all_jobs:
+        # Print the list
+        from rich.table import Table
+        table = Table(title="Scan Results")
+        table.add_column("#", style="dim", width=4)
+        table.add_column("Company", style="cyan")
+        table.add_column("Role")
+        table.add_column("Score", justify="right")
+        table.add_column("Variant")
+        for j in jobs:
+            table.add_row(str(j["index"]), j["company"], j["title"], str(j["score"]), j["variant"])
+        console.print(table)
+        console.print("\n[yellow]Run: jobflow process <number>[/yellow]")
+        return
+
+    to_process = jobs if all_jobs else [j for j in jobs if j["index"] == index]
+    if not to_process:
+        console.print(f"[red]Job #{index} not found in scan results.[/red]")
+        raise typer.Exit(1)
+
+    for entry in to_process:
+        console.print(f"\n[bold cyan]Processing: {entry['company']} — {entry['title']}[/bold cyan]")
+        console.print(f"  URL: {entry['url']}")
+        console.print(f"  Score: {entry['score']} | Variant: {entry['variant']}")
+
+        # We need the full job description — the scan only stored a preview
+        # Claude needs to scrape the full JD via Playwright MCP
+        console.print(
+            f"\n[yellow]To process this job, Claude should:[/yellow]\n"
+            f"  1. Use Playwright MCP to open: {entry['url']}\n"
+            f"  2. Extract the full job description\n"
+            f"  3. Run:\n"
+            f"     jobflow apply \"{entry['url']}\" "
+            f"--title \"{entry['title']}\" "
+            f"--company \"{entry['company']}\" "
+            f"--location \"{entry['location']}\" "
+            f"--variant {entry['variant']} --paste"
+        )
+
+
 @app.command(name="list")
 def list_jobs():
     """Show all tracked job applications."""
@@ -203,26 +338,32 @@ def list_jobs():
 
 @app.command()
 def init():
-    """Initialize JobFlow: create config and CSV if needed."""
-    config_path = Path("config.yaml")
+    """Initialize JobFlow: create config, directories, and CSV if needed."""
+    config_dir = Path("config")
+    config_path = config_dir / "config.yaml"
+    config_dir.mkdir(exist_ok=True)
+
     if not config_path.exists():
         config_path.write_text(
             "resumes:\n"
-            "  se: CurrentResume/KrishMakadiaSE.tex\n"
-            "  ml: CurrentResume/KrishMakadiaML.tex\n"
-            "  appdev: CurrentResume/KrishMakadiaAppDev.tex\n"
+            "  se: resumes/base/KrishMakadiaSE.tex\n"
+            "  ml: resumes/base/KrishMakadiaML.tex\n"
+            "  appdev: resumes/base/KrishMakadiaAppDev.tex\n"
             "\n"
-            "output_dir: output\n"
-            "csv_path: jobLists.csv\n"
-            "job_boards: JobBoards_Links.json\n"
-            "resume_prompt: ResumeEditingPrompt.md\n"
+            "output_dir: data/output\n"
+            "csv_path: data/applications.csv\n"
+            "job_boards: config/job_boards.json\n"
+            "resume_prompt: resumes/prompt.md\n"
         )
         console.print(f"[green]Created:[/green] {config_path}")
     else:
         console.print(f"[yellow]Config already exists:[/yellow] {config_path}")
 
+    # Create directories
+    for d in ["resumes/base", "data/output", "config"]:
+        Path(d).mkdir(parents=True, exist_ok=True)
+
     config = load_config()
-    config["output_dir"].mkdir(parents=True, exist_ok=True)
     init_csv(config["csv_path"])
     console.print(f"[green]CSV ready:[/green] {config['csv_path']}")
     console.print(f"[green]Output dir:[/green] {config['output_dir']}")

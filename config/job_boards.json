@@ -1,0 +1,730 @@
+{
+  "_metadata": {
+    "description": "Job board sources for scraping new grad / entry-level SWE positions",
+    "last_updated": "2026-03-28",
+    "notes": "All API endpoints verified working as of 2026-03-28. 'api' entries return JSON directly; 'scrape' entries require Playwright."
+  },
+
+  "ats_platforms": {
+    "lever": {
+      "description": "Lever ATS - public postings API returns JSON, no auth required",
+      "api_base": "https://api.lever.co/v0/postings/{company}",
+      "web_base": "https://jobs.lever.co/{company}",
+      "access_method": "api",
+      "api_details": {
+        "method": "GET",
+        "format": "JSON (use ?mode=json)",
+        "pagination": "?skip=0&limit=100",
+        "response_fields": ["id", "text", "categories", "description", "hostedUrl", "applyUrl", "createdAt"]
+      },
+      "example_companies": {
+        "spotify": {
+          "api": "https://api.lever.co/v0/postings/spotify?mode=json",
+          "web": "https://jobs.lever.co/spotify"
+        },
+        "palantir": {
+          "api": "https://api.lever.co/v0/postings/palantir?mode=json",
+          "web": "https://jobs.lever.co/palantir"
+        },
+        "plaid": {
+          "api": "https://api.lever.co/v0/postings/plaid?mode=json",
+          "web": "https://jobs.lever.co/plaid"
+        },
+        "mistral": {
+          "api": "https://api.lever.co/v0/postings/mistral?mode=json",
+          "web": "https://jobs.lever.co/mistral"
+        },
+        "zoox": {
+          "api": "https://api.lever.co/v0/postings/zoox?mode=json",
+          "web": "https://jobs.lever.co/zoox"
+        },
+        "wealthfront": {
+          "api": "https://api.lever.co/v0/postings/wealthfront?mode=json",
+          "web": "https://jobs.lever.co/wealthfront"
+        },
+        "color": {
+          "api": "https://api.lever.co/v0/postings/color?mode=json",
+          "web": "https://jobs.lever.co/color"
+        },
+        "levelai": {
+          "api": "https://api.lever.co/v0/postings/levelai?mode=json",
+          "web": "https://jobs.lever.co/levelai"
+        },
+        "anyscale": {
+          "api": "https://api.lever.co/v0/postings/anyscale?mode=json",
+          "web": "https://jobs.lever.co/anyscale"
+        },
+        "AIFund": {
+          "api": "https://api.lever.co/v0/postings/AIFund?mode=json",
+          "web": "https://jobs.lever.co/AIFund"
+        },
+        "netflix": {
+          "api": "https://api.lever.co/v0/postings/netflix?mode=json",
+          "web": "https://jobs.lever.co/netflix",
+          "note": "Valid endpoint, jobs posted intermittently"
+        }
+      }
+    },
+
+    "greenhouse": {
+      "description": "Greenhouse ATS - public JSON API, no auth required",
+      "api_base": "https://boards-api.greenhouse.io/v1/boards/{company}/jobs",
+      "web_base": "https://job-boards.greenhouse.io/{company}",
+      "access_method": "api",
+      "api_details": {
+        "method": "GET",
+        "format": "JSON",
+        "params": {"content": "true"},
+        "response_fields": ["id", "title", "updated_at", "location", "absolute_url", "content", "departments"]
+      },
+      "example_companies": {
+        "stripe": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/stripe/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/stripe"
+        },
+        "anthropic": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/anthropic/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/anthropic"
+        },
+        "databricks": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/databricks/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/databricks"
+        },
+        "airbnb": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/airbnb/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/airbnb"
+        },
+        "discord": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/discord/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/discord"
+        },
+        "coinbase": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/coinbase/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/coinbase"
+        },
+        "robinhood": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/robinhood/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/robinhood"
+        },
+        "figma": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/figma/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/figma"
+        },
+        "waymo": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/waymo/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/waymo"
+        },
+        "cloudflare": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/cloudflare/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/cloudflare"
+        },
+        "vercel": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/vercel/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/vercel"
+        },
+        "datadog": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/datadog/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/datadog"
+        },
+        "duolingo": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/duolingo/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/duolingo"
+        },
+        "dropbox": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/dropbox/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/dropbox"
+        },
+        "lyft": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/lyft/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/lyft"
+        },
+        "instacart": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/instacart/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/instacart"
+        },
+        "pinterest": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/pinterest/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/pinterest"
+        },
+        "twilio": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/twilio/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/twilio"
+        },
+        "mongodb": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/mongodb/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/mongodb"
+        },
+        "okta": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/okta/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/okta"
+        },
+        "gitlab": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/gitlab/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/gitlab"
+        },
+        "elastic": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/elastic/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/elastic"
+        },
+        "grammarly": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/grammarly/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/grammarly"
+        },
+        "asana": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/asana/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/asana"
+        },
+        "gusto": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/gusto/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/gusto"
+        },
+        "cockroachlabs": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/cockroachlabs/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/cockroachlabs"
+        },
+        "brex": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/brex/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/brex"
+        },
+        "airtable": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/airtable/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/airtable"
+        },
+        "samsara": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/samsara/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/samsara"
+        },
+        "verkada": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/verkada/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/verkada"
+        },
+        "nuro": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/nuro/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/nuro"
+        },
+        "tailscale": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/tailscale/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/tailscale"
+        },
+        "netlify": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/netlify/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/netlify"
+        },
+        "temporal": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/temporal/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/temporal"
+        },
+        "planetscale": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/planetscale/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/planetscale"
+        },
+        "warp": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/warp/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/warp"
+        },
+        "faire": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/faire/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/faire"
+        },
+        "loop": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/loop/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/loop"
+        },
+        "block": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/block/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/block"
+        },
+        "scaleai": {
+          "api": "https://boards-api.greenhouse.io/v1/boards/scaleai/jobs?content=true",
+          "web": "https://job-boards.greenhouse.io/scaleai"
+        }
+      }
+    },
+
+    "ashby": {
+      "description": "Ashby ATS - public JSON API, no auth required",
+      "api_base": "https://api.ashbyhq.com/posting-api/job-board/{company}",
+      "web_base": "https://jobs.ashbyhq.com/{company}",
+      "access_method": "api",
+      "api_details": {
+        "method": "GET",
+        "format": "JSON",
+        "params": {"includeCompensation": "true"},
+        "response_fields": ["title", "location", "department", "team", "descriptionHtml", "descriptionPlain", "publishedAt", "jobUrl", "applyUrl", "compensation"]
+      },
+      "example_companies": {
+        "openai": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/openai",
+          "web": "https://jobs.ashbyhq.com/openai",
+          "note": "Very large response — omit includeCompensation for speed"
+        },
+        "cursor": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/cursor?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/cursor"
+        },
+        "perplexity": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/perplexity?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/perplexity"
+        },
+        "ramp": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/ramp?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/ramp"
+        },
+        "notion": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/notion?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/notion"
+        },
+        "snowflake": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/snowflake?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/snowflake"
+        },
+        "deel": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/deel?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/deel"
+        },
+        "linear": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/linear?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/linear"
+        },
+        "replit": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/replit?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/replit"
+        },
+        "elevenlabs": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/elevenlabs?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/elevenlabs"
+        },
+        "cohere": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/cohere?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/cohere"
+        },
+        "modal": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/modal?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/modal"
+        },
+        "livekit": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/livekit?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/livekit"
+        },
+        "supabase": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/supabase?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/supabase"
+        },
+        "resend": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/resend?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/resend"
+        },
+        "clerk": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/clerk?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/clerk"
+        },
+        "neon": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/neon?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/neon"
+        },
+        "railway": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/railway?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/railway"
+        },
+        "render": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/render?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/render"
+        },
+        "plaid": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/plaid?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/plaid"
+        },
+        "benchling": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/benchling?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/benchling"
+        },
+        "warp": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/warp?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/warp"
+        },
+        "zed": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/zed?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/zed"
+        },
+        "confluent": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/confluent?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/confluent"
+        },
+        "exa": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/exa?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/exa"
+        },
+        "opensea": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/opensea?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/opensea"
+        },
+        "vanta": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/vanta?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/vanta"
+        },
+        "posthog": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/posthog?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/posthog"
+        },
+        "deepgram": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/deepgram?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/deepgram"
+        },
+        "stytch": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/stytch?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/stytch"
+        },
+        "watershed": {
+          "api": "https://api.ashbyhq.com/posting-api/job-board/watershed?includeCompensation=true",
+          "web": "https://jobs.ashbyhq.com/watershed"
+        }
+      }
+    }
+  },
+
+  "career_pages": {
+    "_note": "These companies use custom career sites or Workday/Taleo. Require Playwright MCP to scrape. Organized by industry.",
+
+    "big_tech": {
+      "google": {
+        "url": "https://www.google.com/about/careers/applications/jobs/results?q=new%20grad%20software%20engineer&location=United%20States",
+        "careers": "https://careers.google.com/"
+      },
+      "microsoft": {
+        "url": "https://jobs.careers.microsoft.com/global/en/search?q=new%20grad%20software&l=en_us&pg=1&pgSz=20&o=Relevance&flt=true",
+        "careers": "https://careers.microsoft.com/"
+      },
+      "amazon": {
+        "url": "https://www.amazon.jobs/en/search?base_query=new+grad+software&loc_query=United+States",
+        "careers": "https://www.amazon.jobs/"
+      },
+      "meta": {
+        "url": "https://www.metacareers.com/jobs?q=new%20grad%20software%20engineer",
+        "careers": "https://www.metacareers.com/"
+      },
+      "apple": {
+        "url": "https://jobs.apple.com/en-us/search?search=new%20grad%20software&sort=newest",
+        "careers": "https://jobs.apple.com/"
+      },
+      "netflix": {
+        "url": "https://jobs.netflix.com/search?q=new%20grad%20software",
+        "careers": "https://jobs.netflix.com/"
+      },
+      "nvidia": {
+        "url": "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite?q=new+grad+software",
+        "careers": "https://www.nvidia.com/en-us/about-nvidia/careers/"
+      },
+      "uber": {
+        "url": "https://www.uber.com/us/en/careers/list/?query=new%20grad%20software",
+        "careers": "https://www.uber.com/us/en/careers/"
+      },
+      "shopify": {
+        "url": "https://www.shopify.com/careers/search?keywords=software+engineer",
+        "careers": "https://www.shopify.com/careers"
+      }
+    },
+
+    "enterprise_software": {
+      "adobe": {
+        "url": "https://careers.adobe.com/us/en/search-results?keywords=new%20grad%20software",
+        "careers": "https://careers.adobe.com/"
+      },
+      "salesforce": {
+        "url": "https://careers.salesforce.com/en/jobs/?search=new+grad+software&country=United+States&pagesize=20",
+        "careers": "https://careers.salesforce.com/"
+      },
+      "oracle": {
+        "url": "https://eeho.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/jobsearch/requisitions?keyword=new+grad+software",
+        "careers": "https://careers.oracle.com/"
+      },
+      "ibm": {
+        "url": "https://www.ibm.com/careers/search?field_keyword_18[0]=Software%20Engineering&field_keyword_05[0]=Entry%20Level&field_keyword_01[0]=United%20States",
+        "careers": "https://www.ibm.com/careers"
+      },
+      "servicenow": {
+        "url": "https://careers.servicenow.com/en/jobs/?search=new+grad+software&country=United+States",
+        "careers": "https://careers.servicenow.com/"
+      },
+      "atlassian": {
+        "url": "https://www.atlassian.com/company/careers/all-jobs?search=new+grad+software",
+        "careers": "https://www.atlassian.com/company/careers"
+      },
+      "zoom": {
+        "url": "https://careers.zoom.us/jobs/search?q=new+grad+software",
+        "careers": "https://careers.zoom.us/"
+      },
+      "workday": {
+        "url": "https://workday.wd5.myworkdayjobs.com/Workday?q=new+grad+software",
+        "careers": "https://workday.wd5.myworkdayjobs.com/Workday"
+      },
+      "sap": {
+        "url": "https://jobs.sap.com/search/?q=new+grad+software&locationsearch=United+States",
+        "careers": "https://jobs.sap.com/"
+      }
+    },
+
+    "semiconductors_hardware": {
+      "intel": {
+        "url": "https://jobs.intel.com/en/search-jobs/new+grad+software/599/1",
+        "careers": "https://jobs.intel.com/"
+      },
+      "cisco": {
+        "url": "https://jobs.cisco.com/jobs/SearchJobs/new+grad+software?21178=%5B169482%5D&21178_format=6020&listFilterMode=1",
+        "careers": "https://jobs.cisco.com/"
+      },
+      "qualcomm": {
+        "url": "https://careers.qualcomm.com/careers?query=new+grad+software&location=United+States",
+        "careers": "https://careers.qualcomm.com/"
+      },
+      "amd": {
+        "url": "https://careers.amd.com/careers-home/jobs?keywords=new+grad+software&location=United+States",
+        "careers": "https://careers.amd.com/"
+      },
+      "broadcom": {
+        "url": "https://jobs.broadcom.com/jobs?keywords=new+grad+software",
+        "careers": "https://jobs.broadcom.com/"
+      },
+      "arm": {
+        "url": "https://careers.arm.com/search-jobs/new%20grad%20software/33099/1",
+        "careers": "https://careers.arm.com/"
+      },
+      "vmware": {
+        "url": "https://careers.vmware.com/main/jobs?keywords=new+grad+software",
+        "careers": "https://careers.vmware.com/"
+      },
+      "dell": {
+        "url": "https://jobs.dell.com/search-jobs/new%20grad%20software/375/1",
+        "careers": "https://jobs.dell.com/"
+      },
+      "hp": {
+        "url": "https://jobs.hp.com/en-us/Search-Results?CloudSearchValue=new+grad+software",
+        "careers": "https://jobs.hp.com/"
+      }
+    },
+
+    "quant_trading": {
+      "jane_street": {
+        "url": "https://www.janestreet.com/join-jane-street/positions/",
+        "careers": "https://www.janestreet.com/join-jane-street/"
+      },
+      "hudson_river_trading": {
+        "url": "https://www.hudsonrivertrading.com/careers/?_4118765=Software+Engineer",
+        "careers": "https://www.hudsonrivertrading.com/careers/"
+      },
+      "citadel": {
+        "url": "https://www.citadel.com/careers/details/software-engineer-2026-university-graduate-us/",
+        "careers": "https://www.citadel.com/careers/"
+      },
+      "citadel_securities": {
+        "url": "https://www.citadelsecurities.com/careers/details/software-engineer-2026-university-graduate-us/",
+        "careers": "https://www.citadelsecurities.com/careers/"
+      },
+      "two_sigma": {
+        "url": "https://careers.twosigma.com/careers/SearchJobs/?735=%5B3481%5D&735_format=1532&listFilterMode=1",
+        "careers": "https://careers.twosigma.com/"
+      },
+      "imc_trading": {
+        "url": "https://careers.imc.com/us/en/search-results?keywords=graduate",
+        "careers": "https://careers.imc.com/"
+      },
+      "drw": {
+        "url": "https://drw.com/work-at-drw/listings/",
+        "careers": "https://drw.com/work-at-drw/"
+      },
+      "jump_trading": {
+        "url": "https://www.jumptrading.com/careers/?locations=Chicago+Austin+New-York+Stamford&titleSearch=software",
+        "careers": "https://www.jumptrading.com/careers/"
+      },
+      "optiver": {
+        "url": "https://optiver.com/working-at-optiver/career-opportunities/?filter_department=technology",
+        "careers": "https://optiver.com/careers/"
+      },
+      "akuna_capital": {
+        "url": "https://akunacapital.com/careers#job-postings",
+        "careers": "https://akunacapital.com/careers/"
+      },
+      "tower_research": {
+        "url": "https://www.tower-research.com/open-positions",
+        "careers": "https://www.tower-research.com/careers/"
+      },
+      "five_rings": {
+        "url": "https://fiverings.com/positions",
+        "careers": "https://fiverings.com/careers/"
+      },
+      "virtu_financial": {
+        "url": "https://www.virtu.com/careers/",
+        "careers": "https://www.virtu.com/careers/"
+      },
+      "flow_traders": {
+        "url": "https://www.flowtraders.com/careers/vacancies",
+        "careers": "https://www.flowtraders.com/careers/"
+      },
+      "sig": {
+        "url": "https://careers.sig.com/job-results/?category=Technology&level=Campus",
+        "careers": "https://www.sig.com/careers/"
+      }
+    },
+
+    "fintech_banking": {
+      "goldman_sachs": {
+        "url": "https://higher.gs.com/roles?page=1&q=new+analyst+engineer",
+        "careers": "https://www.goldmansachs.com/careers/"
+      },
+      "jpmorgan": {
+        "url": "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/requisitions?keyword=software+engineer+new+grad&location=United+States",
+        "careers": "https://careers.jpmorgan.com/"
+      },
+      "morgan_stanley": {
+        "url": "https://www.morganstanley.com/careers/career-opportunities-search#702702",
+        "careers": "https://www.morganstanley.com/careers"
+      },
+      "bank_of_america": {
+        "url": "https://careers.bankofamerica.com/en-us/search-results?keywords=software+engineer+campus",
+        "careers": "https://careers.bankofamerica.com/"
+      },
+      "capital_one": {
+        "url": "https://www.capitalonecareers.com/search-jobs/new%20grad%20software/234/1",
+        "careers": "https://www.capitalonecareers.com/"
+      },
+      "american_express": {
+        "url": "https://aexp.eightfold.ai/careers?query=new%20grad%20software%20engineer",
+        "careers": "https://careers.americanexpress.com/"
+      },
+      "visa": {
+        "url": "https://corporate.visa.com/en/jobs/?q=new+grad+software&location=United+States",
+        "careers": "https://jobs.visa.com/"
+      },
+      "mastercard": {
+        "url": "https://careers.mastercard.com/us/en/search-results?keywords=software+engineer+launch",
+        "careers": "https://careers.mastercard.com/"
+      },
+      "paypal": {
+        "url": "https://paypal.eightfold.ai/careers?query=new%20grad%20software",
+        "careers": "https://jobs.paypal.com/"
+      }
+    },
+
+    "healthcare": {
+      "unitedhealth_group": {
+        "url": "https://careers.unitedhealthgroup.com/job-search-results/?keyword=software+engineer+entry+level",
+        "careers": "https://careers.unitedhealthgroup.com/"
+      },
+      "cvs_health": {
+        "url": "https://jobs.cvshealth.com/us/en/search-results?keywords=software+engineer+entry+level",
+        "careers": "https://jobs.cvshealth.com/"
+      },
+      "johnson_johnson": {
+        "url": "https://careers.jnj.com/en/jobs/?search=software+engineer+entry+level&location=United+States",
+        "careers": "https://careers.jnj.com/"
+      },
+      "ge_healthcare": {
+        "url": "https://jobs.gecareers.com/healthcare/global/en/search-results?keywords=software+engineer+entry+level",
+        "careers": "https://jobs.gecareers.com/healthcare"
+      },
+      "philips": {
+        "url": "https://www.careers.philips.com/global/en/search-results?keywords=software+engineer+entry+level",
+        "careers": "https://www.careers.philips.com/"
+      },
+      "pfizer": {
+        "url": "https://www.pfizer.com/about/careers/job-search?keywords=software+engineer",
+        "careers": "https://www.pfizer.com/careers"
+      },
+      "moderna": {
+        "url": "https://careers.modernatx.com/job-search-results/?keyword=software+engineer",
+        "careers": "https://careers.modernatx.com/"
+      },
+      "abbott": {
+        "url": "https://www.jobs.abbott/us/en/search-results?keywords=software+engineer",
+        "careers": "https://www.abbott.com/careers.html"
+      },
+      "medtronic": {
+        "url": "https://jobs.medtronic.com/search-jobs/software+engineer+entry+level/471/1",
+        "careers": "https://jobs.medtronic.com/"
+      }
+    },
+
+    "devtools_infra": {
+      "github": {
+        "url": "https://github.careers/careers?query=software+engineer",
+        "careers": "https://github.careers/"
+      },
+      "hashicorp": {
+        "url": "https://www.hashicorp.com/careers/open-positions?query=software+engineer",
+        "careers": "https://www.hashicorp.com/careers"
+      },
+      "redis": {
+        "url": "https://redis.io/careers/#open-positions",
+        "careers": "https://redis.com/company/careers/"
+      },
+      "hugging_face": {
+        "url": "https://apply.workable.com/huggingface/",
+        "careers": "https://huggingface.co/join-us"
+      }
+    }
+  },
+
+  "job_aggregators": {
+    "linkedin": {
+      "description": "LinkedIn Jobs - guest API available, rate-limited",
+      "access_method": "scrape",
+      "guest_api_base": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search",
+      "preconfigured_searches": {
+        "new_grad_swe_usa": "https://www.linkedin.com/jobs/search/?keywords=new%20grad%20software%20engineer&geoId=103644278&f_E=2&f_JT=F&sortBy=DD",
+        "entry_level_swe_usa": "https://www.linkedin.com/jobs/search/?keywords=software%20engineer%20entry%20level&geoId=103644278&f_E=2&f_JT=F&sortBy=DD",
+        "new_grad_swe_usa_recent": "https://www.linkedin.com/jobs/search/?keywords=new%20grad%20software%20engineer%202026&geoId=103644278&f_E=2&f_JT=F&f_TPR=r604800&sortBy=DD",
+        "sde1_usa": "https://www.linkedin.com/jobs/search/?keywords=SDE%20I&geoId=103644278&f_E=2&f_JT=F&sortBy=DD"
+      }
+    },
+    "indeed": {
+      "description": "Indeed - requires Playwright, anti-bot protection",
+      "access_method": "scrape",
+      "preconfigured_searches": {
+        "new_grad_swe": "https://www.indeed.com/jobs?q=software+engineer+new+grad&l=United+States&jt=fulltime&fromage=14",
+        "entry_level_swe": "https://www.indeed.com/jobs?q=entry+level+software+engineer&l=United+States&jt=fulltime&fromage=14"
+      }
+    }
+  },
+
+  "new_grad_aggregators": {
+    "github_repos": {
+      "description": "Community-maintained GitHub repos tracking new grad positions - raw markdown",
+      "access_method": "api",
+      "repos": {
+        "simplify_new_grad": {
+          "url": "https://github.com/SimplifyJobs/New-Grad-Positions",
+          "raw_readme": "https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/README.md"
+        },
+        "jobright_swe_new_grad": {
+          "url": "https://github.com/jobright-ai/2026-Software-Engineer-New-Grad",
+          "raw_readme": "https://raw.githubusercontent.com/jobright-ai/2026-Software-Engineer-New-Grad/master/README.md"
+        }
+      }
+    },
+    "simplify_jobs": {
+      "description": "Simplify - curated new grad lists",
+      "access_method": "scrape",
+      "urls": {
+        "new_grad_all": "https://simplify.jobs/l/Top-New-Grad"
+      }
+    }
+  },
+
+  "scraping_tips": {
+    "priority_order": [
+      "1. Greenhouse API (40 companies, JSON, no auth)",
+      "2. Ashby API (31 companies, JSON, no auth)",
+      "3. Lever API (11 companies, JSON, no auth)",
+      "4. GitHub raw READMEs (markdown, easy to parse)",
+      "5. LinkedIn guest API (HTML fragments, rate-limited)",
+      "6. Career pages (Playwright required - 60+ companies)",
+      "7. Indeed (Playwright, aggressive anti-bot)"
+    ],
+    "keyword_filters_for_new_grad": [
+      "new grad", "new graduate", "entry level", "entry-level",
+      "junior", "associate", "sde 1", "sde i", "swe 1", "swe i",
+      "software engineer i", "software engineer 1",
+      "early career", "recent graduate", "university grad",
+      "0-1 years", "0-2 years", "campus hire", "2025", "2026"
+    ]
+  }
+}

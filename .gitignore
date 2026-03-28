@@ -1,0 +1,14 @@
+output/
+*.pyc
+__pycache__/
+*.egg-info/
+dist/
+build/
+.eggs/
+*.aux
+*.log
+*.out
+*.pdf
+.venv/
+CurrentResume
+ResumeEditingPrompt.md

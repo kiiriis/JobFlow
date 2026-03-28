@@ -1,0 +1,141 @@
+import re
+
+from .models import FilterResult, JobPosting
+
+# Disqualifying phrases (case-insensitive)
+DISQUALIFYING_PHRASES = [
+    r"no\s+visa\s+sponsorship",
+    r"not\s+sponsor",
+    r"does\s+not\s+sponsor",
+    r"will\s+not\s+sponsor",
+    r"cannot\s+sponsor",
+    r"unable\s+to\s+sponsor",
+    r"without\s+sponsorship",
+    r"u\.?s\.?\s+citizen",
+    r"us\s+citizen",
+    r"united\s+states\s+citizen",
+    r"security\s+clearance",
+    r"clearance\s+required",
+    r"permanent\s+resident\s+only",
+    r"green\s+card\s+required",
+    r"authorized\s+to\s+work.*without.*sponsorship",
+]
+
+# Phrases suggesting too much experience required
+SENIOR_PHRASES = [
+    r"\b[3-9]\+?\s*(?:years?|yrs?)\b",
+    r"\b1[0-9]\+?\s*(?:years?|yrs?)\b",
+    r"\bsenior\b",
+    r"\bstaff\b",
+    r"\bprincipal\b",
+    r"\blead\b",
+    r"\bmanager\b",
+    r"\bdirector\b",
+]
+
+# Positive signals for new grad / entry level
+ENTRY_LEVEL_SIGNALS = [
+    r"\bnew\s*grad",
+    r"\bentry[\s-]*level\b",
+    r"\bjunior\b",
+    r"\b0[\s-]*[12]\s*(?:years?|yrs?)\b",
+    r"\bearly\s+career\b",
+    r"\brecent\s+graduate\b",
+    r"\buniversity\s+grad",
+    r"\bsde[\s-]*[i1]\b",
+    r"\bswe[\s-]*[i1]\b",
+    r"\bassociate\b",
+]
+
+# ML/AI keywords for variant selection
+ML_KEYWORDS = [
+    r"\bmachine\s+learning\b", r"\bdeep\s+learning\b", r"\bml\s+engineer\b",
+    r"\bdata\s+scien", r"\bcomputer\s+vision\b", r"\bnlp\b", r"\bllm\b",
+    r"\bpytorch\b", r"\btensorflow\b", r"\bmodel\s+training\b",
+]
+
+# Full-stack / AppDev keywords
+APPDEV_KEYWORDS = [
+    r"\bfull[\s-]*stack\b", r"\bfrontend\b", r"\bfront[\s-]*end\b",
+    r"\breact\b", r"\bangular\b", r"\bvue\b", r"\bnext\.?js\b",
+    r"\bweb\s+developer\b", r"\bui/ux\b",
+]
+
+
+def _count_matches(text: str, patterns: list[str]) -> int:
+    count = 0
+    for pattern in patterns:
+        if re.search(pattern, text, re.IGNORECASE):
+            count += 1
+    return count
+
+
+def _has_match(text: str, patterns: list[str]) -> bool:
+    return _count_matches(text, patterns) > 0
+
+
+def _select_variant(description: str) -> str:
+    ml_score = _count_matches(description, ML_KEYWORDS)
+    appdev_score = _count_matches(description, APPDEV_KEYWORDS)
+
+    if ml_score > appdev_score and ml_score >= 2:
+        return "ml"
+    if appdev_score > ml_score and appdev_score >= 2:
+        return "appdev"
+    return "se"
+
+
+def evaluate_job(job: JobPosting) -> FilterResult:
+    """Evaluate a job posting for relevance."""
+    text = f"{job.title} {job.description}".lower()
+    score = 50  # baseline
+    reasons = []
+
+    # Check disqualifying visa/citizenship phrases
+    if _has_match(text, DISQUALIFYING_PHRASES):
+        return FilterResult(
+            score=0,
+            should_apply=False,
+            reason="Job explicitly does not offer visa sponsorship or requires citizenship/clearance.",
+            resume_variant=_select_variant(text),
+        )
+
+    # Check experience level
+    if _has_match(text, SENIOR_PHRASES):
+        score -= 30
+        reasons.append("Mentions senior-level experience requirements")
+
+    if _has_match(text, ENTRY_LEVEL_SIGNALS):
+        score += 30
+        reasons.append("Entry-level / new grad signals found")
+
+    # USA location check
+    us_patterns = [
+        r"\bunited\s+states\b", r"\busa\b", r"\bu\.s\.\b",
+        r"\bremote\b", r"\bnew\s+york\b", r"\bsan\s+francisco\b",
+        r"\bseattle\b", r"\baustin\b", r"\bboston\b", r"\bchicago\b",
+        r"\blos\s+angeles\b", r"\bdenver\b", r"\batlanta\b",
+    ]
+    location_text = f"{job.location} {job.description}".lower()
+    if _has_match(location_text, us_patterns):
+        score += 10
+        reasons.append("US-based or remote position")
+    else:
+        score -= 20
+        reasons.append("Location may not be in the US")
+
+    # Clamp score
+    score = max(0, min(100, score))
+    should_apply = score >= 40
+    variant = _select_variant(text)
+
+    reason = "; ".join(reasons) if reasons else "Meets basic criteria"
+    if not should_apply:
+        reason = f"Score too low ({score}/100): {reason}"
+
+    return FilterResult(
+        score=score,
+        should_apply=should_apply,
+        reason=reason,
+        resume_variant=variant,
+    )

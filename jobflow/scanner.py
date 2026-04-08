@@ -315,17 +315,14 @@ def scan_all_api_boards(
                     result = evaluate_job(job)
                     all_results.append((job, result))
 
-    # Scan LinkedIn guest API
+    # Scan LinkedIn via python-jobspy
     if not platforms or "linkedin" in platforms:
-        aggregators = boards.get("job_aggregators", {})
-        linkedin = aggregators.get("linkedin", {})
-        if linkedin:
-            console.print(f"\n[bold cyan]Scanning LinkedIn (guest API)...[/bold cyan]")
-            jobs = scan_linkedin_guest(linkedin, keywords, max_age_hours)
-            console.print(f"  [green]{len(jobs)} matches[/green]")
-            for job in jobs:
-                result = evaluate_job(job)
-                all_results.append((job, result))
+        console.print(f"\n[bold cyan]Scanning LinkedIn ({len(LINKEDIN_SEARCH_TERMS)} search terms)...[/bold cyan]")
+        jobs = scan_linkedin_jobspy(max_age_hours)
+        console.print(f"  [green]{len(jobs)} total matches[/green]")
+        for job in jobs:
+            result = evaluate_job(job)
+            all_results.append((job, result))
 
     # Scan GitHub new-grad repos
     if not platforms or "github" in platforms:
@@ -343,38 +340,81 @@ def scan_all_api_boards(
 
 
 # ---------------------------------------------------------------------------
-# LinkedIn guest API scanner
+# LinkedIn scanner (python-jobspy)
 # ---------------------------------------------------------------------------
 
-def scan_linkedin_guest(linkedin_config: dict, include_kw: list[str], max_age_hours: int = 0) -> list[JobPosting]:
-    """Scan LinkedIn using the guest API (HTML fragments, no auth)."""
-    base = linkedin_config.get("guest_api_base", "")
-    if not base:
+LINKEDIN_SEARCH_TERMS = [
+    "new grad software engineer 2025 2026",
+    "entry level software engineer",
+    "junior software engineer",
+    "new grad machine learning engineer",
+    "entry level AI engineer",
+    "SDE I new grad",
+]
+
+
+def scan_linkedin_jobspy(max_age_hours: int = 0) -> list[JobPosting]:
+    """Scan LinkedIn using python-jobspy. Returns deduplicated JobPosting list."""
+    try:
+        from jobspy import scrape_jobs
+    except ImportError:
+        console.print("  [red]python-jobspy not installed. Run: pip install python-jobspy[/red]")
         return []
 
-    queries = [
-        "new%20grad%20software%20engineer%202026",
-        "entry%20level%20software%20engineer",
-        "SDE%20I%20new%20grad",
-        "junior%20software%20engineer",
-    ]
-
     all_jobs = []
-    seen_titles = set()
+    seen_urls = set()
+    hours = max_age_hours if max_age_hours > 0 else 72
 
-    for query in queries:
-        # Fetch first 2 pages (25 results each)
-        for offset in [0, 25]:
-            url = f"{base}?keywords={query}&location=United%20States&f_E=2&f_JT=F&sortBy=DD&start={offset}"
-            html = _fetch_text(url)
-            if not html:
-                continue
+    for i, term in enumerate(LINKEDIN_SEARCH_TERMS):
+        console.print(f"  [dim]Search: \"{term}\"...[/dim]", end=" ")
+        try:
+            df = scrape_jobs(
+                site_name=["linkedin"],
+                search_term=term,
+                location="United States",
+                hours_old=hours,
+                results_wanted=200,
+                linkedin_fetch_description=True,
+            )
+        except Exception as e:
+            console.print(f"[red]error: {e}[/red]")
+            continue
 
-            jobs = _parse_linkedin_html(html, include_kw, seen_titles)
-            all_jobs.extend(jobs)
+        if df is None or df.empty:
+            console.print("[yellow]0 results[/yellow]")
+        else:
+            count = 0
+            for _, row in df.iterrows():
+                url = str(row.get("job_url", "") or "")
+                title = str(row.get("title", "") or "")
+                company = str(row.get("company", "") or "")
+                location = str(row.get("location", "") or "")
+                description = str(row.get("description", "") or "")
 
-            # Small delay between requests to avoid rate limiting
-            time.sleep(random.uniform(0.5, 1.5))
+                if not title or not company:
+                    continue
+                if not _is_swe_role(title):
+                    continue
+
+                # Dedup by URL across search terms
+                dedup_key = url if url else f"{company}_{title}".lower()
+                if dedup_key in seen_urls:
+                    continue
+                seen_urls.add(dedup_key)
+
+                all_jobs.append(JobPosting(
+                    url=url,
+                    title=title,
+                    company=company,
+                    location=location,
+                    description=description[:5000] if description else title,
+                ))
+                count += 1
+            console.print(f"[green]{count} new[/green]")
+
+        # Delay between search terms to avoid rate limiting
+        if i < len(LINKEDIN_SEARCH_TERMS) - 1:
+            time.sleep(random.uniform(2, 4))
 
     return all_jobs
 
@@ -403,64 +443,6 @@ def _fetch_text(url: str, retries: int = 3) -> str | None:
                 continue
             console.print(f"  [red]Failed: {e}[/red]")
             return None
-
-
-def _parse_linkedin_html(html: str, include_kw: list[str], seen: set) -> list[JobPosting]:
-    """Parse LinkedIn guest API HTML fragments into JobPosting objects."""
-    jobs = []
-
-    # LinkedIn guest API returns <li> cards with job data
-    # Extract job cards using regex patterns on the HTML
-    cards = re.findall(
-        r'<div class="base-card.*?</div>\s*</div>\s*</div>',
-        html, re.DOTALL
-    )
-    if not cards:
-        # Try alternate pattern
-        cards = re.findall(r'<li>.*?</li>', html, re.DOTALL)
-
-    for card in cards:
-        # Extract title
-        title_m = re.search(r'class="base-search-card__title"[^>]*>(.*?)</(?:h3|span|a)', card, re.DOTALL)
-        if not title_m:
-            title_m = re.search(r'<h3[^>]*>(.*?)</h3>', card, re.DOTALL)
-        if not title_m:
-            continue
-        title = _strip_html(title_m.group(1)).strip()
-
-        # Dedup
-        if title.lower() in seen:
-            continue
-        seen.add(title.lower())
-
-        # Must be SWE role
-        if not _is_swe_role(title):
-            continue
-
-        # Extract company
-        company_m = re.search(r'class="base-search-card__subtitle"[^>]*>(.*?)</(?:h4|span|a)', card, re.DOTALL)
-        if not company_m:
-            company_m = re.search(r'<h4[^>]*>(.*?)</h4>', card, re.DOTALL)
-        company = _strip_html(company_m.group(1)).strip() if company_m else ""
-
-        # Extract location
-        loc_m = re.search(r'class="job-search-card__location"[^>]*>(.*?)</', card, re.DOTALL)
-        location = _strip_html(loc_m.group(1)).strip() if loc_m else ""
-
-        # Extract URL
-        url_m = re.search(r'href="(https://www\.linkedin\.com/jobs/view/[^"?]+)', card)
-        url = url_m.group(1) if url_m else ""
-
-        if title and company:
-            jobs.append(JobPosting(
-                url=url,
-                title=title,
-                company=company,
-                location=location,
-                description=title,  # Guest API doesn't give full JD
-            ))
-
-    return jobs
 
 
 # ---------------------------------------------------------------------------

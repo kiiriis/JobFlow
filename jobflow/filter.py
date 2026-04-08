@@ -89,6 +89,38 @@ def select_variant(description: str) -> str:
     return "se"
 
 
+# Krish's tech stack — keyword weights for JD matching
+PERSONAL_STACK = {
+    # Core languages
+    "python": 7, "c++": 5, "java": 4, "sql": 3,
+    # ML/AI
+    "machine learning": 8, "deep learning": 7, "pytorch": 7, "tensorflow": 6,
+    "llm": 7, "rag": 6, "langchain": 6, "hugging face": 5,
+    "computer vision": 5, "nlp": 5, "transformers": 5,
+    # Backend/Systems
+    "distributed systems": 7, "rest": 5, "api": 5, "fastapi": 6,
+    "microservices": 5, "docker": 5, "kubernetes": 6,
+    # Cloud
+    "aws": 6, "gcp": 4, "azure": 3,
+    # Data
+    "postgresql": 4, "mongodb": 4, "redis": 4, "kafka": 4,
+}
+
+KEYWORD_SCORE_MAX = 40  # max points from keyword matching
+
+
+def keyword_score(text: str) -> int:
+    """Score a job description based on keyword overlap with personal stack."""
+    lower = text.lower()
+    raw = 0
+    for keyword, weight in PERSONAL_STACK.items():
+        if keyword in lower:
+            raw += weight
+    # Normalize to 0-KEYWORD_SCORE_MAX range
+    max_possible = sum(PERSONAL_STACK.values())
+    return min(KEYWORD_SCORE_MAX, round(raw / max_possible * KEYWORD_SCORE_MAX * 2))
+
+
 def evaluate_job(job: JobPosting) -> FilterResult:
     """Evaluate a job posting for relevance."""
     text = f"{job.title} {job.description}".lower()
@@ -112,6 +144,14 @@ def evaluate_job(job: JobPosting) -> FilterResult:
     if has_match(text, ENTRY_LEVEL_SIGNALS):
         score += 30
         reasons.append("Entry-level / new grad signals found")
+
+    # Keyword scoring — boost jobs that match personal tech stack
+    has_real_description = len(job.description) > 100 and job.description != job.title
+    if has_real_description:
+        kw_score = keyword_score(text)
+        if kw_score > 0:
+            score += kw_score
+            reasons.append(f"Stack match +{kw_score}")
 
     # Non-US location disqualifier (check location field specifically)
     non_us_patterns = [

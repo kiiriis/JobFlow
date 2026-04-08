@@ -2,8 +2,8 @@ name: Scan LinkedIn Jobs
 
 on:
   schedule:
-    # Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
-    - cron: '0 */6 * * *'
+    # Every hour at :00
+    - cron: '0 * * * *'
   workflow_dispatch: # Allow manual trigger from Actions tab
 
 permissions:
@@ -12,6 +12,7 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,7 +29,10 @@ jobs:
       - name: Run LinkedIn scan
         env:
           JOBFLOW_CONFIG: config/config.ci.yaml
-        run: jobflow scan --platform linkedin --new --save 2>&1 || true
+        run: |
+          echo "Starting scan at $(date -u)"
+          jobflow scan --platform linkedin --new --save --hours 4 2>&1 || true
+          echo "Scan finished at $(date -u)"
 
       - name: Commit results
         run: |
@@ -38,7 +42,8 @@ jobs:
           if git diff --cached --quiet; then
             echo "No new jobs found"
           else
-            git commit -m "chore: automated LinkedIn scan $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            COUNT=$(python -c "import json; d=json.load(open('data/ci/scan_results.json')); print(len(d))" 2>/dev/null || echo "?")
+            git commit -m "scan: LinkedIn $(date -u +%Y-%m-%dT%H:%M) — ${COUNT} jobs total"
             git pull --rebase origin main
             git push
           fi

@@ -1,0 +1,7 @@
+{% if jobs %}
+    {% for job in jobs %}
+    {% include "_partials/application_row.html" %}
+    {% endfor %}
+{% else %}
+    <tr><td colspan="9" style="text-align:center; opacity:0.6;">No applications found</td></tr>
+{% endif %}

@@ -27,7 +27,7 @@ from .scanner import (
     save_seen_jobs,
     scan_all_api_boards,
 )
-from .tracker import append_job, init_csv, print_jobs
+from .tracker import append_job, init_csv, print_jobs, update_status, STATUSES
 
 app = typer.Typer(name="jobflow", help="Tailor your resume for job postings.")
 console = Console()
@@ -85,6 +85,8 @@ def apply(
             append_job(
                 config["csv_path"], company, title, url,
                 result.score, "Skipped",
+                variant=result.resume_variant, source="manual",
+                notes=result.reason,
             )
             console.print("\n[red]Job filtered out. Added to tracker as 'Skipped'.[/red]")
             return
@@ -177,13 +179,18 @@ def save(
 
     # Merge
     full_tex = merge_resume(preamble, tailored)
-    tex_path = save_tailored_resume(full_tex, Path(dir))
+    tex_path = save_tailored_resume(full_tex, Path(dir), company_name, role_name)
     console.print(f"[green]Saved:[/green] {tex_path}")
 
-    # Compile PDF
+    # Compile PDF with Company_Role.pdf naming
+    from .tailor import _sanitize_filename
+    pdf_name = ""
+    if company_name and role_name:
+        pdf_name = f"{_sanitize_filename(company_name)}_{_sanitize_filename(role_name)}.pdf"
+
     if check_pdflatex():
         console.print("\n[bold cyan]Compiling PDF...[/bold cyan]")
-        pdf_path = compile_pdf(tex_path)
+        pdf_path = compile_pdf(tex_path, final_name=pdf_name)
         if pdf_path:
             console.print(f"[green]PDF:[/green] {pdf_path}")
         else:
@@ -192,11 +199,12 @@ def save(
         console.print("[yellow]pdflatex not found. Install MacTeX to compile PDFs.[/yellow]")
         pdf_path = None
 
-    append_job(
+    added = append_job(
         config["csv_path"],
         company_name, role_name, job_url,
         score=score, status="Pending",
         resume_path=str(tex_path),
+        variant=variant, source="manual",
     )
 
     console.print(Panel(
@@ -204,7 +212,7 @@ def save(
         f"Role: {role_name}\n"
         f"Resume: {tex_path}\n"
         f"PDF: {pdf_path or 'N/A'}\n"
-        f"Tracked in: {config['csv_path']}",
+        f"Tracked: {'Yes' if added else 'Already exists (duplicate)'}",
         title="Application Saved",
         border_style="green",
     ))
@@ -330,10 +338,23 @@ def process(
 
 
 @app.command(name="list")
-def list_jobs():
+def list_jobs(
+    status: Optional[str] = typer.Option("", "--status", "-s", help=f"Filter by status: {', '.join(STATUSES)}"),
+):
     """Show all tracked job applications."""
     config = load_config()
-    print_jobs(config["csv_path"])
+    print_jobs(config["csv_path"], status_filter=status)
+
+
+@app.command()
+def status(
+    index: int = typer.Argument(..., help="Job row number (from 'jobflow list')"),
+    new_status: str = typer.Argument(..., help=f"New status: {', '.join(STATUSES)}"),
+    notes: str = typer.Option("", "--notes", "-n", help="Add a note (e.g., 'Phone screen scheduled')"),
+):
+    """Update the status of a tracked application."""
+    config = load_config()
+    update_status(config["csv_path"], index, new_status, notes)
 
 
 @app.command()
@@ -372,6 +393,17 @@ def init():
         console.print("[yellow]Warning: pdflatex not found. Install MacTeX for PDF compilation.[/yellow]")
 
     console.print("\n[bold green]JobFlow initialized![/bold green]")
+
+
+@app.command()
+def web(
+    port: int = typer.Option(8080, "--port", "-p", help="Port to run the web dashboard on"),
+):
+    """Launch the JobFlow web dashboard."""
+    from .web import create_app
+    console.print(f"\n[bold green]Starting JobFlow Dashboard at http://localhost:{port}[/bold green]\n")
+    webapp = create_app()
+    webapp.run(host="0.0.0.0", port=port, debug=False)
 
 
 if __name__ == "__main__":

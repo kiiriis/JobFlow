@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — JobFlow{% endblock %}
+{% block content %}
+
+<hgroup>
+    <h2>Dashboard</h2>
+    <p>Track and manage your job applications</p>
+</hgroup>
+
+<div class="grid" style="grid-template-columns: auto auto 1fr auto; align-items: end; gap: 1rem; margin-bottom: 1rem;">
+    <div>
+        <label for="status-filter">Status</label>
+        <select id="status-filter" name="status"
+            hx-get="/api/applications" hx-target="#applications-body" hx-swap="innerHTML"
+            hx-include="#search-input, #sort-select, #sort-dir">
+            <option value="">All</option>
+            {% for s in statuses %}
+            <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="sort-select">Sort by</label>
+        <select id="sort-select" name="sort"
+            hx-get="/api/applications" hx-target="#applications-body" hx-swap="innerHTML"
+            hx-include="#status-filter, #search-input, #sort-dir">
+            <option value="date_found">Date Found</option>
+            <option value="score">Score</option>
+            <option value="company">Company</option>
+        </select>
+    </div>
+    <div>
+        <label for="search-input">Search</label>
+        <input type="search" id="search-input" name="q" placeholder="Search company, role..."
+            hx-get="/api/applications" hx-target="#applications-body" hx-swap="innerHTML"
+            hx-trigger="input changed delay:300ms"
+            hx-include="#status-filter, #sort-select, #sort-dir">
+    </div>
+    <div>
+        <label>&nbsp;</label>
+        <input type="hidden" id="sort-dir" name="dir" value="desc">
+    </div>
+</div>
+
+<div style="overflow-x: auto;">
+    <table role="grid">
+        <thead>
+            <tr>
+                <th width="40">#</th>
+                <th>Company</th>
+                <th>Role</th>
+                <th width="60">Score</th>
+                <th width="130">Status</th>
+                <th width="100">Found</th>
+                <th width="100">Applied</th>
+                <th>Notes</th>
+                <th width="80">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="applications-body"
+            hx-get="/api/applications" hx-trigger="load" hx-swap="innerHTML">
+            <tr><td colspan="9" style="text-align:center">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

@@ -1,0 +1,52 @@
+{% if status == "running" %}
+
+<article aria-busy="true"
+         hx-get="/api/tailor/status/{{ session_id }}"
+         hx-trigger="every 2s"
+         hx-swap="outerHTML">
+    <p>Tailoring resume{% if iteration > 1 %} (iteration {{ iteration }}){% endif %}... Claude is generating optimized sections. This takes 15-45 seconds.</p>
+</article>
+
+{% elif status == "error" %}
+
+<article>
+    <header><strong style="color: var(--pico-del-color);">Tailoring Error</strong></header>
+    <pre style="white-space: pre-wrap;">{{ error }}</pre>
+    <p><small>Check that the <code>claude</code> CLI is available and authenticated.</small></p>
+</article>
+
+{% elif status == "done" %}
+
+<article>
+    <header class="tailor-meta">
+        <div>
+            <strong>{{ company }}</strong> — {{ role }}
+            <br><small>Variant: <code>{{ variant }}</code> | Location: {{ location }} | Iteration: {{ iteration }}</small>
+        </div>
+        <div>
+            <a href="/api/tailor/download/{{ session_id }}" role="button" class="btn-small">Download PDF</a>
+        </div>
+    </header>
+
+    {% if pdf_path %}
+    <iframe src="/api/tailor/pdf/{{ session_id }}" style="width:100%; height:700px; border:none; border-radius:8px; background:#1a1a2e;"></iframe>
+    {% else %}
+    <p style="color: var(--pico-del-color);">PDF compilation failed. The LaTeX may have errors.</p>
+    <details>
+        <summary>View LaTeX source</summary>
+        <pre style="max-height:400px; overflow:auto;"><code>{{ tex_content }}</code></pre>
+    </details>
+    {% endif %}
+
+    <footer>
+        <form hx-post="/api/tailor/refine/{{ session_id }}" hx-target="#tailor-results" hx-swap="innerHTML">
+            <textarea name="feedback" rows="3"
+                      placeholder="Not happy? Describe what to change (e.g., 'emphasize distributed systems experience')..."
+                      required></textarea>
+            <button type="submit" style="width:auto; margin-top:0.5rem;">Regenerate</button>
+            <small style="opacity:0.6;">Each regeneration passes your feedback + previous output to Claude ({{ model }}, {{ effort }} effort).</small>
+        </form>
+    </footer>
+</article>
+
+{% endif %}

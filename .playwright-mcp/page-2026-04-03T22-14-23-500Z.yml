@@ -1,0 +1,1110 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - navigation [ref=e5]:
+          - link "Home" [ref=e6] [cursor=pointer]:
+            - /url: "#"
+          - link "Latest 2026 Internships List" [ref=e7] [cursor=pointer]:
+            - /url: https://www.intern-list.com/
+          - link "Top AI/ML Jobs" [ref=e8] [cursor=pointer]:
+            - /url: https://www.careerin.ai/
+          - button "Others" [ref=e10] [cursor=pointer]:
+            - generic [ref=e11]: 
+            - generic [ref=e12]: Others
+        - generic [ref=e13]:
+          - link "Feedback & Support" [ref=e15] [cursor=pointer]:
+            - /url: "#"
+          - link "home" [ref=e16] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e17]: Newgrad-jobs.com
+  - complementary [ref=e18]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - heading "2026 Entry-Level Jobs for New Graduates | U.S. & Canada" [level=1] [ref=e23]
+            - link [ref=e24] [cursor=pointer]:
+              - /url: https://jobright.ai/
+          - generic [ref=e25]: True entry-level jobs only. Every listing is verified for 0–2 years of experience and updated hourly from LinkedIn, Indeed, Handshake, and 200K+ major job boards.
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e30]: Updated 17 minutes ago
+            - generic [ref=e31]:
+              - generic [ref=e32]:
+                - generic [ref=e33]: "31656"
+                - generic [ref=e34]: New Openings Today
+              - generic [ref=e35]:
+                - generic [ref=e36]: "93201"
+                - generic [ref=e37]: Total Openings
+          - form "email" [ref=e41]:
+            - generic [ref=e42]:
+              - heading "Subscribe to Fresh New Grad Job Alerts" [level=3] [ref=e44]
+              - generic [ref=e45]:
+                - textbox "Job Title Of Interest" [ref=e47]
+                - textbox "Your Email Address" [ref=e49]
+                - button "Subscribe" [ref=e50] [cursor=pointer]
+        - generic [ref=e52]:
+          - tablist [ref=e53]:
+            - tab "United States" [selected] [ref=e54] [cursor=pointer]:
+              - generic [ref=e55]: United States
+            - tab "Canada" [ref=e56] [cursor=pointer]:
+              - generic [ref=e57]: Canada
+          - tabpanel "United States" [ref=e59]:
+            - generic [ref=e60]:
+              - list [ref=e66]:
+                - listitem [ref=e67]:
+                  - heading "💻 Software Engineering" [level=2] [ref=e68] [cursor=pointer]
+                - listitem [ref=e69]:
+                  - heading "📈 Data Analyst" [level=2] [ref=e70] [cursor=pointer]
+                - listitem [ref=e71]:
+                  - heading "📢 Marketing" [level=2] [ref=e72] [cursor=pointer]
+                - listitem [ref=e73]:
+                  - heading "🤖 Machine Learning and AI" [level=2] [ref=e74] [cursor=pointer]
+                - listitem [ref=e75]:
+                  - heading "📉 Data Engineer" [level=2] [ref=e76] [cursor=pointer]
+                - listitem [ref=e77]:
+                  - heading "📊 Business Analyst" [level=2] [ref=e78] [cursor=pointer]
+                - listitem [ref=e79]:
+                  - heading "📦 Product Management" [level=2] [ref=e80] [cursor=pointer]
+                - listitem [ref=e81]:
+                  - heading "🎨 Creatives and Design" [level=2] [ref=e82] [cursor=pointer]
+                - listitem [ref=e83]:
+                  - heading "💰 Accounting and Finance" [level=2] [ref=e84] [cursor=pointer]
+                - listitem [ref=e85]:
+                  - heading "💼 Consulting" [level=2] [ref=e86] [cursor=pointer]
+                - listitem [ref=e87]:
+                  - heading "🛠️ Engineering and Development" [level=2] [ref=e88] [cursor=pointer]
+                - listitem [ref=e89]:
+                  - heading "👥 Human Resources" [level=2] [ref=e90] [cursor=pointer]
+                - listitem [ref=e91]:
+                  - heading "🎭 Arts and Entertainment" [level=2] [ref=e92] [cursor=pointer]
+                - listitem [ref=e93]:
+                  - heading "🌟 Management and Executive" [level=2] [ref=e94] [cursor=pointer]
+                - listitem [ref=e95]:
+                  - heading "☎️ Customer Service and Support" [level=2] [ref=e96] [cursor=pointer]
+                - listitem [ref=e97]:
+                  - heading "⚖️ Legal and Compliance" [level=2] [ref=e98] [cursor=pointer]
+                - listitem [ref=e99]:
+                  - heading "🛒 Sales" [level=2] [ref=e100] [cursor=pointer]
+                - listitem [ref=e101]:
+                  - heading "🏛️ Public Sector and Government" [level=2] [ref=e102] [cursor=pointer]
+                - listitem [ref=e103]:
+                  - heading "🎓 Education and Training" [level=2] [ref=e104] [cursor=pointer]
+                - listitem [ref=e105]:
+                  - heading "🛡️ Cybersecurity" [level=2] [ref=e106] [cursor=pointer]
+                - listitem [ref=e107]:
+                  - heading "📝 Project Management" [level=2] [ref=e108] [cursor=pointer]
+                - listitem [ref=e109]:
+                  - heading "🩺 Healthcare" [level=2] [ref=e110] [cursor=pointer]
+                - listitem [ref=e111]:
+                  - heading "🚚 Supply Chain" [level=2] [ref=e112] [cursor=pointer]
+              - iframe [ref=e115]:
+                - generic [active] [ref=f1e1]:
+                  - main [ref=f1e3]:
+                    - generic [ref=f1e6]:
+                      - generic [ref=f1e7]:
+                        - generic [ref=f1e8]:
+                          - img "filter" [ref=f1e9]
+                          - generic [ref=f1e10]: Filter
+                        - button "Title dropdown" [ref=f1e12] [cursor=pointer]:
+                          - generic [ref=f1e13]:
+                            - generic "Title" [ref=f1e14]
+                            - img "dropdown" [ref=f1e15]
+                        - button "Company dropdown" [ref=f1e17] [cursor=pointer]:
+                          - generic [ref=f1e18]:
+                            - generic "Company" [ref=f1e19]
+                            - img "dropdown" [ref=f1e20]
+                        - button "Work Model dropdown" [ref=f1e22] [cursor=pointer]:
+                          - generic [ref=f1e23]:
+                            - generic "Work Model" [ref=f1e24]
+                            - img "dropdown" [ref=f1e25]
+                        - button "H1b Sponsored dropdown" [ref=f1e27] [cursor=pointer]:
+                          - generic [ref=f1e28]:
+                            - generic "H1b Sponsored" [ref=f1e29]
+                            - img "dropdown" [ref=f1e30]
+                        - button "Is New Grad dropdown" [ref=f1e32] [cursor=pointer]:
+                          - generic [ref=f1e33]:
+                            - generic "Is New Grad" [ref=f1e34]
+                            - img "dropdown" [ref=f1e35]
+                        - button "Location dropdown" [ref=f1e37] [cursor=pointer]:
+                          - generic [ref=f1e38]:
+                            - generic "Location" [ref=f1e39]
+                            - img "dropdown" [ref=f1e40]
+                        - button "Salary dropdown" [ref=f1e42] [cursor=pointer]:
+                          - generic [ref=f1e43]:
+                            - generic "Salary" [ref=f1e44]
+                            - img "dropdown" [ref=f1e45]
+                        - button "Edit Columns dropdown" [ref=f1e47] [cursor=pointer]:
+                          - generic [ref=f1e48]:
+                            - generic [ref=f1e49]: Edit Columns
+                            - img "dropdown" [ref=f1e50]
+                      - generic [ref=f1e51]:
+                        - table [ref=f1e54]:
+                          - rowgroup [ref=f1e55]:
+                            - row "Position Title Date Apply Work Model Location Company Salary Company Size Company Industry Qualifications H1b Sponsored Is New Grad" [ref=f1e56]:
+                              - columnheader [ref=f1e57]
+                              - columnheader "Position Title" [ref=f1e61]:
+                                - generic [ref=f1e64]: Position Title
+                              - columnheader "Date" [ref=f1e66]:
+                                - generic [ref=f1e68]: Date
+                              - columnheader "Apply" [ref=f1e70]:
+                                - generic [ref=f1e72]: Apply
+                              - columnheader "Work Model" [ref=f1e74]:
+                                - generic [ref=f1e77]: Work Model
+                              - columnheader "Location" [ref=f1e79]:
+                                - generic [ref=f1e82]: Location
+                              - columnheader "Company" [ref=f1e84]:
+                                - generic [ref=f1e87]: Company
+                              - columnheader "Salary" [ref=f1e89]:
+                                - generic [ref=f1e92]: Salary
+                              - columnheader "Company Size" [ref=f1e94]:
+                                - generic [ref=f1e97]: Company Size
+                              - columnheader "Company Industry" [ref=f1e99]:
+                                - generic [ref=f1e102]: Company Industry
+                              - columnheader "Qualifications" [ref=f1e104]:
+                                - generic [ref=f1e106]: Qualifications
+                              - columnheader "H1b Sponsored" [ref=f1e108]:
+                                - generic [ref=f1e110]: H1b Sponsored
+                              - columnheader "Is New Grad" [ref=f1e112]:
+                                - generic [ref=f1e114]: Is New Grad
+                        - table [ref=f1e118]:
+                          - rowgroup [ref=f1e119]:
+                            - row "1 Operations Engineer 57 minutes ago 👉 Apply Remote United States RemoteHunter $71000-$91000/yr 1-10 Information Technology 1. 1–3 years of experience in IT operations, helpdesk, or systems support 2. Strong troubleshooting skills across Windows Server, networking, and application environments 3. Basic familiarity with Azure (preferred) and/or AWS environments ... expand-alt Not Sure Not Sure" [ref=f1e120]:
+                              - cell "1" [ref=f1e121]:
+                                - generic [ref=f1e122]: "1"
+                              - cell "Operations Engineer" [ref=f1e123]
+                              - cell "57 minutes ago" [ref=f1e124]
+                              - cell "👉 Apply" [ref=f1e125]:
+                                - link "👉 Apply" [ref=f1e126] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d02e2f0b098b7a670773eb?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e127]: 👉
+                                  - generic [ref=f1e128]: Apply
+                              - cell "Remote" [ref=f1e129]:
+                                - generic [ref=f1e130]: Remote
+                              - cell "United States" [ref=f1e131]
+                              - cell "RemoteHunter" [ref=f1e132]
+                              - cell "$71000-$91000/yr" [ref=f1e133]
+                              - cell "1-10" [ref=f1e134]:
+                                - generic [ref=f1e135]: 1-10
+                              - cell "Information Technology" [ref=f1e136]:
+                                - generic [ref=f1e138]: Information Technology
+                              - cell "1. 1–3 years of experience in IT operations, helpdesk, or systems support 2. Strong troubleshooting skills across Windows Server, networking, and application environments 3. Basic familiarity with Azure (preferred) and/or AWS environments ... expand-alt" [ref=f1e139]:
+                                - generic [ref=f1e140]:
+                                  - generic [ref=f1e141]: 1. 1–3 years of experience in IT operations, helpdesk, or systems support 2. Strong troubleshooting skills across Windows Server, networking, and application environments 3. Basic familiarity with Azure (preferred) and/or AWS environments ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "Not Sure" [ref=f1e142]:
+                                - generic [ref=f1e143]: Not Sure
+                              - cell "Not Sure" [ref=f1e144]:
+                                - generic [ref=f1e145]: Not Sure
+                            - row "2 IAM Analyst 1 hour ago 👉 Apply Remote United States RemoteHunter $80000-$135000/yr 1-10 Cyber Security Information Technology 1. Bachelor’s degree in Information Technology, Computer Science, Cybersecurity, or equivalent experience 2. Experience with IAM tools, user provisioning, and access management in enterprise environments 3. Strong attention to detail and organizational skills ... expand-alt Not Sure Not Sure" [ref=f1e146]:
+                              - cell "2" [ref=f1e147]:
+                                - generic [ref=f1e148]: "2"
+                              - cell "IAM Analyst" [ref=f1e149]
+                              - cell "1 hour ago" [ref=f1e150]
+                              - cell "👉 Apply" [ref=f1e151]:
+                                - link "👉 Apply" [ref=f1e152] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d02cc4cdb525785fba8319?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e153]: 👉
+                                  - generic [ref=f1e154]: Apply
+                              - cell "Remote" [ref=f1e155]:
+                                - generic [ref=f1e156]: Remote
+                              - cell "United States" [ref=f1e157]
+                              - cell "RemoteHunter" [ref=f1e158]
+                              - cell "$80000-$135000/yr" [ref=f1e159]
+                              - cell "1-10" [ref=f1e160]:
+                                - generic [ref=f1e161]: 1-10
+                              - cell "Cyber Security Information Technology" [ref=f1e162]:
+                                - generic [ref=f1e163]:
+                                  - generic [ref=f1e164]: Cyber Security
+                                  - generic [ref=f1e165]: Information Technology
+                              - cell "1. Bachelor’s degree in Information Technology, Computer Science, Cybersecurity, or equivalent experience 2. Experience with IAM tools, user provisioning, and access management in enterprise environments 3. Strong attention to detail and organizational skills ... expand-alt" [ref=f1e166]:
+                                - generic [ref=f1e167]:
+                                  - generic [ref=f1e168]: 1. Bachelor’s degree in Information Technology, Computer Science, Cybersecurity, or equivalent experience 2. Experience with IAM tools, user provisioning, and access management in enterprise environments 3. Strong attention to detail and organizational skills ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "Not Sure" [ref=f1e169]:
+                                - generic [ref=f1e170]: Not Sure
+                              - cell "Not Sure" [ref=f1e171]:
+                                - generic [ref=f1e172]: Not Sure
+                            - 'row "3 Test Specialist 1- Communication & Data Specialist 1 hour ago 👉 Apply On Site Multi Locations: US-WA-Vancouver; Vancouver, WA, US Beyondsoft $20-$24/hr 10000+ Consulting Information Technology Outsourcing 1. Expert experience and proficiency with Microsoft Excel, including coding, pivot tables, report generation, charts, advanced data manipulation/equations, and etc. 2. Strong attention to detail with a focus on data accuracy. 3. Strong analytical and problem-solving skills. ... expand-alt No Not Sure" [ref=f1e173]':
+                              - cell "3" [ref=f1e174]:
+                                - generic [ref=f1e175]: "3"
+                              - cell "Test Specialist 1- Communication & Data Specialist" [ref=f1e176]
+                              - cell "1 hour ago" [ref=f1e177]
+                              - cell "👉 Apply" [ref=f1e178]:
+                                - link "👉 Apply" [ref=f1e179] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d02acacfdc6132f94391e5?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e180]: 👉
+                                  - generic [ref=f1e181]: Apply
+                              - cell "On Site" [ref=f1e182]:
+                                - generic [ref=f1e183]: On Site
+                              - 'cell "Multi Locations: US-WA-Vancouver; Vancouver, WA, US" [ref=f1e184]'
+                              - cell "Beyondsoft" [ref=f1e185]
+                              - cell "$20-$24/hr" [ref=f1e186]
+                              - cell "10000+" [ref=f1e187]:
+                                - generic [ref=f1e188]: 10000+
+                              - cell "Consulting Information Technology Outsourcing" [ref=f1e189]:
+                                - generic [ref=f1e190]:
+                                  - generic [ref=f1e191]: Consulting
+                                  - generic [ref=f1e192]: Information Technology
+                                  - generic [ref=f1e193]: Outsourcing
+                              - cell "1. Expert experience and proficiency with Microsoft Excel, including coding, pivot tables, report generation, charts, advanced data manipulation/equations, and etc. 2. Strong attention to detail with a focus on data accuracy. 3. Strong analytical and problem-solving skills. ... expand-alt" [ref=f1e194]:
+                                - generic [ref=f1e195]:
+                                  - generic [ref=f1e196]: 1. Expert experience and proficiency with Microsoft Excel, including coding, pivot tables, report generation, charts, advanced data manipulation/equations, and etc. 2. Strong attention to detail with a focus on data accuracy. 3. Strong analytical and problem-solving skills. ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e197]:
+                                - generic [ref=f1e198]: "No"
+                              - cell "Not Sure" [ref=f1e199]:
+                                - generic [ref=f1e200]: Not Sure
+                            - 'row "4 Analyst, Data Engineering 1 hour ago 👉 Apply On Site Multi Locations: New York, NY, US; US-NY-New York Publicis Groupe ANZ $55765-$85878/yr 51-100 AdTech Digital Media 1. Solid ETL Experience using various tools: Altyrex, AWS Glue, etc. 2. Advanced SQL coding (1+ years), tuning and query optimization, especially within cloud-based data warehouses. 3. At least one year experience with Python. ... expand-alt Not Sure Not Sure" [ref=f1e201]':
+                              - cell "4" [ref=f1e202]:
+                                - generic [ref=f1e203]: "4"
+                              - cell "Analyst, Data Engineering" [ref=f1e204]
+                              - cell "1 hour ago" [ref=f1e205]
+                              - cell "👉 Apply" [ref=f1e206]:
+                                - link "👉 Apply" [ref=f1e207] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d02aadcdb525785fba82bf?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e208]: 👉
+                                  - generic [ref=f1e209]: Apply
+                              - cell "On Site" [ref=f1e210]:
+                                - generic [ref=f1e211]: On Site
+                              - 'cell "Multi Locations: New York, NY, US; US-NY-New York" [ref=f1e212]'
+                              - cell "Publicis Groupe ANZ" [ref=f1e213]
+                              - cell "$55765-$85878/yr" [ref=f1e214]
+                              - cell "51-100" [ref=f1e215]:
+                                - generic [ref=f1e216]: 51-100
+                              - cell "AdTech Digital Media" [ref=f1e217]:
+                                - generic [ref=f1e218]:
+                                  - generic [ref=f1e219]: AdTech
+                                  - generic [ref=f1e220]: Digital Media
+                              - 'cell "1. Solid ETL Experience using various tools: Altyrex, AWS Glue, etc. 2. Advanced SQL coding (1+ years), tuning and query optimization, especially within cloud-based data warehouses. 3. At least one year experience with Python. ... expand-alt" [ref=f1e221]':
+                                - generic [ref=f1e222]:
+                                  - generic [ref=f1e223]: "1. Solid ETL Experience using various tools: Altyrex, AWS Glue, etc. 2. Advanced SQL coding (1+ years), tuning and query optimization, especially within cloud-based data warehouses. 3. At least one year experience with Python. ..."
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "Not Sure" [ref=f1e224]:
+                                - generic [ref=f1e225]: Not Sure
+                              - cell "Not Sure" [ref=f1e226]:
+                                - generic [ref=f1e227]: Not Sure
+                            - row "5 Cornerstone OnDemand Administrator 1 hour ago 👉 Apply On Site Washington,DC,US Gunnison $90000-$96000/yr 101-250 1. Bachelor’s degree in Computer Science, Graphic Design, Web Design, or a related field is highly desirable; in place of a bachelor’s degree, equivalent work experience will be strongly considered. 2. Ability to assess verbal and written requirements from customers and transform them into interactive designs and project artifacts. 3. Ability to design website themes on the Drupal 10/11 platform. ... expand-alt No Not Sure" [ref=f1e228]:
+                              - cell "5" [ref=f1e229]:
+                                - generic [ref=f1e230]: "5"
+                              - cell "Cornerstone OnDemand Administrator" [ref=f1e231]
+                              - cell "1 hour ago" [ref=f1e232]
+                              - cell "👉 Apply" [ref=f1e233]:
+                                - link "👉 Apply" [ref=f1e234] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d02a7854f00230c6d0fe08?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e235]: 👉
+                                  - generic [ref=f1e236]: Apply
+                              - cell "On Site" [ref=f1e237]:
+                                - generic [ref=f1e238]: On Site
+                              - cell "Washington,DC,US" [ref=f1e239]
+                              - cell "Gunnison" [ref=f1e240]
+                              - cell "$90000-$96000/yr" [ref=f1e241]
+                              - cell "101-250" [ref=f1e242]:
+                                - generic [ref=f1e243]: 101-250
+                              - cell [ref=f1e244]
+                              - cell "1. Bachelor’s degree in Computer Science, Graphic Design, Web Design, or a related field is highly desirable; in place of a bachelor’s degree, equivalent work experience will be strongly considered. 2. Ability to assess verbal and written requirements from customers and transform them into interactive designs and project artifacts. 3. Ability to design website themes on the Drupal 10/11 platform. ... expand-alt" [ref=f1e245]:
+                                - generic [ref=f1e246]:
+                                  - generic [ref=f1e247]: 1. Bachelor’s degree in Computer Science, Graphic Design, Web Design, or a related field is highly desirable; in place of a bachelor’s degree, equivalent work experience will be strongly considered. 2. Ability to assess verbal and written requirements from customers and transform them into interactive designs and project artifacts. 3. Ability to design website themes on the Drupal 10/11 platform. ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e248]:
+                                - generic [ref=f1e249]: "No"
+                              - cell "Not Sure" [ref=f1e250]:
+                                - generic [ref=f1e251]: Not Sure
+                            - row "6 Data Assurance Coordinator - KinaTrax 1 hour ago 👉 Apply On Site Atlanta, GA Hawk-Eye Innovations $63000-$70000/yr 101-250 Sports 1. Actively monitor servers, storage, and network health during daily operations, quickly troubleshoot issues, and take ownership of driving timely resolutions to minimize impact. 2. Own the performance of the Data Share tool by actively monitoring, driving on-time delivery, and taking quick action to resolve delivery issues. 3. Ownership of failure logs and driving tool changes for improvements. ... expand-alt Not Sure Not Sure" [ref=f1e252]:
+                              - cell "6" [ref=f1e253]:
+                                - generic [ref=f1e254]: "6"
+                              - cell "Data Assurance Coordinator - KinaTrax" [ref=f1e255]
+                              - cell "1 hour ago" [ref=f1e256]
+                              - cell "👉 Apply" [ref=f1e257]:
+                                - link "👉 Apply" [ref=f1e258] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d02a2b366bb95ba551c015?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e259]: 👉
+                                  - generic [ref=f1e260]: Apply
+                              - cell "On Site" [ref=f1e261]:
+                                - generic [ref=f1e262]: On Site
+                              - cell "Atlanta, GA" [ref=f1e263]
+                              - cell "Hawk-Eye Innovations" [ref=f1e264]
+                              - cell "$63000-$70000/yr" [ref=f1e265]
+                              - cell "101-250" [ref=f1e266]:
+                                - generic [ref=f1e267]: 101-250
+                              - cell "Sports" [ref=f1e268]:
+                                - generic [ref=f1e270]: Sports
+                              - cell "1. Actively monitor servers, storage, and network health during daily operations, quickly troubleshoot issues, and take ownership of driving timely resolutions to minimize impact. 2. Own the performance of the Data Share tool by actively monitoring, driving on-time delivery, and taking quick action to resolve delivery issues. 3. Ownership of failure logs and driving tool changes for improvements. ... expand-alt" [ref=f1e271]:
+                                - generic [ref=f1e272]:
+                                  - generic [ref=f1e273]: 1. Actively monitor servers, storage, and network health during daily operations, quickly troubleshoot issues, and take ownership of driving timely resolutions to minimize impact. 2. Own the performance of the Data Share tool by actively monitoring, driving on-time delivery, and taking quick action to resolve delivery issues. 3. Ownership of failure logs and driving tool changes for improvements. ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "Not Sure" [ref=f1e274]:
+                                - generic [ref=f1e275]: Not Sure
+                              - cell "Not Sure" [ref=f1e276]:
+                                - generic [ref=f1e277]: Not Sure
+                            - row "7 Software Engineer II - Infra 1 hour ago 👉 Apply Remote United States RemoteHunter $126500-$151800/yr 1-10 FinTech 1. 1 to 3 years of professional software engineering experience 2. Experience working in a collaborative, team-based software development environment 3. Proficiency in at least one modern programming language such as Python or Go ... expand-alt No Not Sure" [ref=f1e278]:
+                              - cell "7" [ref=f1e279]:
+                                - generic [ref=f1e280]: "7"
+                              - cell "Software Engineer II - Infra" [ref=f1e281]
+                              - cell "1 hour ago" [ref=f1e282]
+                              - cell "👉 Apply" [ref=f1e283]:
+                                - link "👉 Apply" [ref=f1e284] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d029c7891d7b11cfcd908f?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e285]: 👉
+                                  - generic [ref=f1e286]: Apply
+                              - cell "Remote" [ref=f1e287]:
+                                - generic [ref=f1e288]: Remote
+                              - cell "United States" [ref=f1e289]
+                              - cell "RemoteHunter" [ref=f1e290]
+                              - cell "$126500-$151800/yr" [ref=f1e291]
+                              - cell "1-10" [ref=f1e292]:
+                                - generic [ref=f1e293]: 1-10
+                              - cell "FinTech" [ref=f1e294]:
+                                - generic [ref=f1e296]: FinTech
+                              - cell "1. 1 to 3 years of professional software engineering experience 2. Experience working in a collaborative, team-based software development environment 3. Proficiency in at least one modern programming language such as Python or Go ... expand-alt" [ref=f1e297]:
+                                - generic [ref=f1e298]:
+                                  - generic [ref=f1e299]: 1. 1 to 3 years of professional software engineering experience 2. Experience working in a collaborative, team-based software development environment 3. Proficiency in at least one modern programming language such as Python or Go ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e300]:
+                                - generic [ref=f1e301]: "No"
+                              - cell "Not Sure" [ref=f1e302]:
+                                - generic [ref=f1e303]: Not Sure
+                            - row "8 2026 Raytheon Full Time - Software Effectors Engineer II - Tucson, AZ (Onsite) 1 hour ago 👉 Apply On Site US-AZ-TUCSON-805 ~ 1151 E Hermans Rd ~ BLDG 805 RTX $68900-$131100/yr 10000+ Aerospace 1. Master’s degree in Science, Technology, Engineering, or Mathematics (STEM). 2. Experience with C, C++, or other object-oriented language. 3. Experience with hardware-software integration and embedded system testing. ... expand-alt No Not Sure" [ref=f1e304]:
+                              - cell "8" [ref=f1e305]:
+                                - generic [ref=f1e306]: "8"
+                              - cell "2026 Raytheon Full Time - Software Effectors Engineer II - Tucson, AZ (Onsite)" [ref=f1e307]
+                              - cell "1 hour ago" [ref=f1e308]
+                              - cell "👉 Apply" [ref=f1e309]:
+                                - link "👉 Apply" [ref=f1e310] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d029b7cdb525785fba7cb7?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e311]: 👉
+                                  - generic [ref=f1e312]: Apply
+                              - cell "On Site" [ref=f1e313]:
+                                - generic [ref=f1e314]: On Site
+                              - cell "US-AZ-TUCSON-805 ~ 1151 E Hermans Rd ~ BLDG 805" [ref=f1e315]
+                              - cell "RTX" [ref=f1e316]
+                              - cell "$68900-$131100/yr" [ref=f1e317]
+                              - cell "10000+" [ref=f1e318]:
+                                - generic [ref=f1e319]: 10000+
+                              - cell "Aerospace" [ref=f1e320]:
+                                - generic [ref=f1e322]: Aerospace
+                              - cell "1. Master’s degree in Science, Technology, Engineering, or Mathematics (STEM). 2. Experience with C, C++, or other object-oriented language. 3. Experience with hardware-software integration and embedded system testing. ... expand-alt" [ref=f1e323]:
+                                - generic [ref=f1e324]:
+                                  - generic [ref=f1e325]: 1. Master’s degree in Science, Technology, Engineering, or Mathematics (STEM). 2. Experience with C, C++, or other object-oriented language. 3. Experience with hardware-software integration and embedded system testing. ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e326]:
+                                - generic [ref=f1e327]: "No"
+                              - cell "Not Sure" [ref=f1e328]:
+                                - generic [ref=f1e329]: Not Sure
+                            - row "9 Software Engineer, Autonomy Behavior Validation 1 hour ago 👉 Apply Hybrid Sunnyvale, California, United States of America General Motors $123200-$189100/yr 10000+ Automotive Robotics 1. Master's degree in Computer Science, Software Engineering, Data Science, or related fields. 2. 1–3 years of professional software engineering experience (including internships, co-ops, or research engineering roles) building automation, internal tools, or data/analysis pipelines. 3. Using large language models (LLMs) to summarize results, generate reports, or accelerate analysis. ... expand-alt Not Sure Not Sure" [ref=f1e330]:
+                              - cell "9" [ref=f1e331]:
+                                - generic [ref=f1e332]: "9"
+                              - cell "Software Engineer, Autonomy Behavior Validation" [ref=f1e333]
+                              - cell "1 hour ago" [ref=f1e334]
+                              - cell "👉 Apply" [ref=f1e335]:
+                                - link "👉 Apply" [ref=f1e336] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d0298c366bb95ba551bbd6?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e337]: 👉
+                                  - generic [ref=f1e338]: Apply
+                              - cell "Hybrid" [ref=f1e339]:
+                                - generic [ref=f1e340]: Hybrid
+                              - cell "Sunnyvale, California, United States of America" [ref=f1e341]
+                              - cell "General Motors" [ref=f1e342]
+                              - cell "$123200-$189100/yr" [ref=f1e343]
+                              - cell "10000+" [ref=f1e344]:
+                                - generic [ref=f1e345]: 10000+
+                              - cell "Automotive Robotics" [ref=f1e346]:
+                                - generic [ref=f1e347]:
+                                  - generic [ref=f1e348]: Automotive
+                                  - generic [ref=f1e349]: Robotics
+                              - cell "1. Master's degree in Computer Science, Software Engineering, Data Science, or related fields. 2. 1–3 years of professional software engineering experience (including internships, co-ops, or research engineering roles) building automation, internal tools, or data/analysis pipelines. 3. Using large language models (LLMs) to summarize results, generate reports, or accelerate analysis. ... expand-alt" [ref=f1e350]:
+                                - generic [ref=f1e351]:
+                                  - generic [ref=f1e352]: 1. Master's degree in Computer Science, Software Engineering, Data Science, or related fields. 2. 1–3 years of professional software engineering experience (including internships, co-ops, or research engineering roles) building automation, internal tools, or data/analysis pipelines. 3. Using large language models (LLMs) to summarize results, generate reports, or accelerate analysis. ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "Not Sure" [ref=f1e353]:
+                                - generic [ref=f1e354]: Not Sure
+                              - cell "Not Sure" [ref=f1e355]:
+                                - generic [ref=f1e356]: Not Sure
+                            - row "10 Applied Researcher I 1 hour ago 👉 Apply Hybrid Austin, TX eBay $98000-$173600/yr 10000+ E-Commerce Big Data 1. Master’s degree in a quantitative field such as computer science, math, or statistics. 2. Experience working with Big Data tools such as Hadoop, Hive, and Spark. 3. Expertise in machine learning packages like Python and R. ... expand-alt Not Sure Not Sure" [ref=f1e357]:
+                              - cell "10" [ref=f1e358]:
+                                - generic [ref=f1e359]: "10"
+                              - cell "Applied Researcher I" [ref=f1e360]
+                              - cell "1 hour ago" [ref=f1e361]
+                              - cell "👉 Apply" [ref=f1e362]:
+                                - link "👉 Apply" [ref=f1e363] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d027810b098b7a67076cc3?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e364]: 👉
+                                  - generic [ref=f1e365]: Apply
+                              - cell "Hybrid" [ref=f1e366]:
+                                - generic [ref=f1e367]: Hybrid
+                              - cell "Austin, TX" [ref=f1e368]
+                              - cell "eBay" [ref=f1e369]
+                              - cell "$98000-$173600/yr" [ref=f1e370]
+                              - cell "10000+" [ref=f1e371]:
+                                - generic [ref=f1e372]: 10000+
+                              - cell "E-Commerce Big Data" [ref=f1e373]:
+                                - generic [ref=f1e374]:
+                                  - generic [ref=f1e375]: E-Commerce
+                                  - generic [ref=f1e376]: Big Data
+                              - cell "1. Master’s degree in a quantitative field such as computer science, math, or statistics. 2. Experience working with Big Data tools such as Hadoop, Hive, and Spark. 3. Expertise in machine learning packages like Python and R. ... expand-alt" [ref=f1e377]:
+                                - generic [ref=f1e378]:
+                                  - generic [ref=f1e379]: 1. Master’s degree in a quantitative field such as computer science, math, or statistics. 2. Experience working with Big Data tools such as Hadoop, Hive, and Spark. 3. Expertise in machine learning packages like Python and R. ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "Not Sure" [ref=f1e380]:
+                                - generic [ref=f1e381]: Not Sure
+                              - cell "Not Sure" [ref=f1e382]:
+                                - generic [ref=f1e383]: Not Sure
+                            - 'row "11 Technical Artist/Unity Developer 1 hour ago 👉 Apply Hybrid Chicago, IL Light & Wonder $72000-$90000/yr 5001-10000 Gaming 1. BA/BS in Game Development/Art or related field (In lieu of degree, 4 years relevant work experience) 2. 1 year game development experience or academic equivalent 3. Experience with game assets (examples: shaders, particles, animations, VFX) ... expand-alt Not Sure Not Sure" [ref=f1e384]':
+                              - cell "11" [ref=f1e385]:
+                                - generic [ref=f1e386]: "11"
+                              - cell "Technical Artist/Unity Developer" [ref=f1e387]
+                              - cell "1 hour ago" [ref=f1e388]
+                              - cell "👉 Apply" [ref=f1e389]:
+                                - link "👉 Apply" [ref=f1e390] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d0266854f00230c6d0f80e?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e391]: 👉
+                                  - generic [ref=f1e392]: Apply
+                              - cell "Hybrid" [ref=f1e393]:
+                                - generic [ref=f1e394]: Hybrid
+                              - cell "Chicago, IL" [ref=f1e395]
+                              - cell "Light & Wonder" [ref=f1e396]
+                              - cell "$72000-$90000/yr" [ref=f1e397]
+                              - cell "5001-10000" [ref=f1e398]:
+                                - generic [ref=f1e399]: 5001-10000
+                              - cell "Gaming" [ref=f1e400]:
+                                - generic [ref=f1e402]: Gaming
+                              - 'cell "1. BA/BS in Game Development/Art or related field (In lieu of degree, 4 years relevant work experience) 2. 1 year game development experience or academic equivalent 3. Experience with game assets (examples: shaders, particles, animations, VFX) ... expand-alt" [ref=f1e403]':
+                                - generic [ref=f1e404]:
+                                  - generic [ref=f1e405]: "1. BA/BS in Game Development/Art or related field (In lieu of degree, 4 years relevant work experience) 2. 1 year game development experience or academic equivalent 3. Experience with game assets (examples: shaders, particles, animations, VFX) ..."
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "Not Sure" [ref=f1e406]:
+                                - generic [ref=f1e407]: Not Sure
+                              - cell "Not Sure" [ref=f1e408]:
+                                - generic [ref=f1e409]: Not Sure
+                            - row "12 Software Engineer I – Android 1 hour ago 👉 Apply Hybrid Seattle, Washington, United States Axon $106500-$170400/yr 1001-5000 Internet of Things Software Transportation 1. Industry experience shipping Android applications to the Google Play Store. 2. Deep understanding of Android and mobile devices; you’re comfortable leading mobile design reviews and driving implementations through release and post‑release monitoring. 3. Experience with modern architecture patterns (MVVM, MVI, etc.) including solid unit testing practices. ... expand-alt Not Sure Not Sure" [ref=f1e410]:
+                              - cell "12" [ref=f1e411]:
+                                - generic [ref=f1e412]: "12"
+                              - cell "Software Engineer I – Android" [ref=f1e413]
+                              - cell "1 hour ago" [ref=f1e414]
+                              - cell "👉 Apply" [ref=f1e415]:
+                                - link "👉 Apply" [ref=f1e416] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d02505891d7b11cfcd8ecd?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e417]: 👉
+                                  - generic [ref=f1e418]: Apply
+                              - cell "Hybrid" [ref=f1e419]:
+                                - generic [ref=f1e420]: Hybrid
+                              - cell "Seattle, Washington, United States" [ref=f1e421]
+                              - cell "Axon" [ref=f1e422]
+                              - cell "$106500-$170400/yr" [ref=f1e423]
+                              - cell "1001-5000" [ref=f1e424]:
+                                - generic [ref=f1e425]: 1001-5000
+                              - cell "Internet of Things Software Transportation" [ref=f1e426]:
+                                - generic [ref=f1e427]:
+                                  - generic [ref=f1e428]: Internet of Things
+                                  - generic [ref=f1e429]: Software
+                                  - generic [ref=f1e430]: Transportation
+                              - cell "1. Industry experience shipping Android applications to the Google Play Store. 2. Deep understanding of Android and mobile devices; you’re comfortable leading mobile design reviews and driving implementations through release and post‑release monitoring. 3. Experience with modern architecture patterns (MVVM, MVI, etc.) including solid unit testing practices. ... expand-alt" [ref=f1e431]:
+                                - generic [ref=f1e432]:
+                                  - generic [ref=f1e433]: 1. Industry experience shipping Android applications to the Google Play Store. 2. Deep understanding of Android and mobile devices; you’re comfortable leading mobile design reviews and driving implementations through release and post‑release monitoring. 3. Experience with modern architecture patterns (MVVM, MVI, etc.) including solid unit testing practices. ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "Not Sure" [ref=f1e434]:
+                                - generic [ref=f1e435]: Not Sure
+                              - cell "Not Sure" [ref=f1e436]:
+                                - generic [ref=f1e437]: Not Sure
+                            - row "13 Microsoft 365 Identity Engineer 1 hour ago 👉 Apply On Site Colorado Springs, CO Trace3 $100000-$125000/yr 1001-5000 Government Information Technology 1. 1-4 years demonstrated Cloud Engineering experience 2. Strong understanding of hybrid identity environments 3. Ability to troubleshoot across AD → Okta → Entra → M365 flow ... expand-alt No Not Sure" [ref=f1e438]:
+                              - cell "13" [ref=f1e439]:
+                                - generic [ref=f1e440]: "13"
+                              - cell "Microsoft 365 Identity Engineer" [ref=f1e441]
+                              - cell "1 hour ago" [ref=f1e442]
+                              - cell "👉 Apply" [ref=f1e443]:
+                                - link "👉 Apply" [ref=f1e444] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d02400366bb95ba551ba74?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e445]: 👉
+                                  - generic [ref=f1e446]: Apply
+                              - cell "On Site" [ref=f1e447]:
+                                - generic [ref=f1e448]: On Site
+                              - cell "Colorado Springs, CO" [ref=f1e449]
+                              - cell "Trace3" [ref=f1e450]
+                              - cell "$100000-$125000/yr" [ref=f1e451]
+                              - cell "1001-5000" [ref=f1e452]:
+                                - generic [ref=f1e453]: 1001-5000
+                              - cell "Government Information Technology" [ref=f1e454]:
+                                - generic [ref=f1e455]:
+                                  - generic [ref=f1e456]: Government
+                                  - generic [ref=f1e457]: Information Technology
+                              - cell "1. 1-4 years demonstrated Cloud Engineering experience 2. Strong understanding of hybrid identity environments 3. Ability to troubleshoot across AD → Okta → Entra → M365 flow ... expand-alt" [ref=f1e458]:
+                                - generic [ref=f1e459]:
+                                  - generic [ref=f1e460]: 1. 1-4 years demonstrated Cloud Engineering experience 2. Strong understanding of hybrid identity environments 3. Ability to troubleshoot across AD → Okta → Entra → M365 flow ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e461]:
+                                - generic [ref=f1e462]: "No"
+                              - cell "Not Sure" [ref=f1e463]:
+                                - generic [ref=f1e464]: Not Sure
+                            - row "14 Corporate AI and Machine Learning Engineer 1 hour ago 👉 Apply Hybrid McLean, VA Booz Allen Hamilton $77600-$176000/yr 10000+ Consulting Government 1. 1+ years of experience using R or Python for data manipulation, statistical analysis, and machine learning model development 2. Experience utilizing SQL for querying and manipulating data 3. Experience with statistical inference, hypothesis testing, experimental design, and causal analysis ... expand-alt No Not Sure" [ref=f1e465]:
+                              - cell "14" [ref=f1e466]:
+                                - generic [ref=f1e467]: "14"
+                              - cell "Corporate AI and Machine Learning Engineer" [ref=f1e468]
+                              - cell "1 hour ago" [ref=f1e469]
+                              - cell "👉 Apply" [ref=f1e470]:
+                                - link "👉 Apply" [ref=f1e471] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d02173cdb525785fba7927?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e472]: 👉
+                                  - generic [ref=f1e473]: Apply
+                              - cell "Hybrid" [ref=f1e474]:
+                                - generic [ref=f1e475]: Hybrid
+                              - cell "McLean, VA" [ref=f1e476]
+                              - cell "Booz Allen Hamilton" [ref=f1e477]
+                              - cell "$77600-$176000/yr" [ref=f1e478]
+                              - cell "10000+" [ref=f1e479]:
+                                - generic [ref=f1e480]: 10000+
+                              - cell "Consulting Government" [ref=f1e481]:
+                                - generic [ref=f1e482]:
+                                  - generic [ref=f1e483]: Consulting
+                                  - generic [ref=f1e484]: Government
+                              - cell "1. 1+ years of experience using R or Python for data manipulation, statistical analysis, and machine learning model development 2. Experience utilizing SQL for querying and manipulating data 3. Experience with statistical inference, hypothesis testing, experimental design, and causal analysis ... expand-alt" [ref=f1e485]:
+                                - generic [ref=f1e486]:
+                                  - generic [ref=f1e487]: 1. 1+ years of experience using R or Python for data manipulation, statistical analysis, and machine learning model development 2. Experience utilizing SQL for querying and manipulating data 3. Experience with statistical inference, hypothesis testing, experimental design, and causal analysis ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e488]:
+                                - generic [ref=f1e489]: "No"
+                              - cell "Not Sure" [ref=f1e490]:
+                                - generic [ref=f1e491]: Not Sure
+                            - row "15 Cloud Engineer, Junior 1 hour ago 👉 Apply Hybrid McLean, VA Booz Allen Hamilton $53000-$108000/yr 10000+ Cloud Computing Consulting Cyber Security 1. Experience with AWS 2. Experience working with microservices and containerization, including orchestration, cluster management, and container storage, including Docker, Kubernetes, or Rancher 3. Experience developing and deploying microservice architectures ... expand-alt No Not Sure" [ref=f1e492]:
+                              - cell "15" [ref=f1e493]:
+                                - generic [ref=f1e494]: "15"
+                              - cell "Cloud Engineer, Junior" [ref=f1e495]
+                              - cell "1 hour ago" [ref=f1e496]
+                              - cell "👉 Apply" [ref=f1e497]:
+                                - link "👉 Apply" [ref=f1e498] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d0213354f00230c6d0f529?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e499]: 👉
+                                  - generic [ref=f1e500]: Apply
+                              - cell "Hybrid" [ref=f1e501]:
+                                - generic [ref=f1e502]: Hybrid
+                              - cell "McLean, VA" [ref=f1e503]
+                              - cell "Booz Allen Hamilton" [ref=f1e504]
+                              - cell "$53000-$108000/yr" [ref=f1e505]
+                              - cell "10000+" [ref=f1e506]:
+                                - generic [ref=f1e507]: 10000+
+                              - cell "Cloud Computing Consulting Cyber Security" [ref=f1e508]:
+                                - generic [ref=f1e509]:
+                                  - generic [ref=f1e510]: Cloud Computing
+                                  - generic [ref=f1e511]: Consulting
+                                  - generic [ref=f1e512]: Cyber Security
+                              - cell "1. Experience with AWS 2. Experience working with microservices and containerization, including orchestration, cluster management, and container storage, including Docker, Kubernetes, or Rancher 3. Experience developing and deploying microservice architectures ... expand-alt" [ref=f1e513]:
+                                - generic [ref=f1e514]:
+                                  - generic [ref=f1e515]: 1. Experience with AWS 2. Experience working with microservices and containerization, including orchestration, cluster management, and container storage, including Docker, Kubernetes, or Rancher 3. Experience developing and deploying microservice architectures ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e516]:
+                                - generic [ref=f1e517]: "No"
+                              - cell "Not Sure" [ref=f1e518]:
+                                - generic [ref=f1e519]: Not Sure
+                            - row "16 New Graduate Engineer, Software 1 hour ago 👉 Apply On Site Hawthorne, CA SpaceX $125000-$145000/yr 10000+ Aerospace Embedded Software 1. Bachelor's degree in computer science, software engineering, computer engineering, electrical engineering or other engineering discipline. 2. Graduating with a bachelor's degree, master's degree, or PhD in 2026 or 2027. 3. Must be willing to work extended hours and weekends as needed. ... expand-alt No Yes" [ref=f1e520]:
+                              - cell "16" [ref=f1e521]:
+                                - generic [ref=f1e522]: "16"
+                              - cell "New Graduate Engineer, Software" [ref=f1e523]
+                              - cell "1 hour ago" [ref=f1e524]
+                              - cell "👉 Apply" [ref=f1e525]:
+                                - link "👉 Apply" [ref=f1e526] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d02126891d7b11cfcd8c7c?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e527]: 👉
+                                  - generic [ref=f1e528]: Apply
+                              - cell "On Site" [ref=f1e529]:
+                                - generic [ref=f1e530]: On Site
+                              - cell "Hawthorne, CA" [ref=f1e531]
+                              - cell "SpaceX" [ref=f1e532]
+                              - cell "$125000-$145000/yr" [ref=f1e533]
+                              - cell "10000+" [ref=f1e534]:
+                                - generic [ref=f1e535]: 10000+
+                              - cell "Aerospace Embedded Software" [ref=f1e536]:
+                                - generic [ref=f1e537]:
+                                  - generic [ref=f1e538]: Aerospace
+                                  - generic [ref=f1e539]: Embedded Software
+                              - cell "1. Bachelor's degree in computer science, software engineering, computer engineering, electrical engineering or other engineering discipline. 2. Graduating with a bachelor's degree, master's degree, or PhD in 2026 or 2027. 3. Must be willing to work extended hours and weekends as needed. ... expand-alt" [ref=f1e540]:
+                                - generic [ref=f1e541]:
+                                  - generic [ref=f1e542]: 1. Bachelor's degree in computer science, software engineering, computer engineering, electrical engineering or other engineering discipline. 2. Graduating with a bachelor's degree, master's degree, or PhD in 2026 or 2027. 3. Must be willing to work extended hours and weekends as needed. ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e543]:
+                                - generic [ref=f1e544]: "No"
+                              - cell "Yes" [ref=f1e545]:
+                                - generic [ref=f1e546]: "Yes"
+                            - row "17 Software Engineer I, Instrument Software 1 hour ago 👉 Apply On Site Cambridge, MA USA Lila Sciences $108000-$140000/yr 101-250 Biotechnology Pharmaceutical Robotics 1. Proficiency in Python, C#/.NET, or other programming languages or frameworks is essential 2. Demonstrated ability in debugging and problem-solving, preferably hardware-software integration issues. 3. Strong analytical thinking and a structured approach to troubleshooting and resolving complex technical problems. ... expand-alt Not Sure Not Sure" [ref=f1e547]:
+                              - cell "17" [ref=f1e548]:
+                                - generic [ref=f1e549]: "17"
+                              - cell "Software Engineer I, Instrument Software" [ref=f1e550]
+                              - cell "1 hour ago" [ref=f1e551]
+                              - cell "👉 Apply" [ref=f1e552]:
+                                - link "👉 Apply" [ref=f1e553] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69bdcc7f393a1008f7436fb4?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e554]: 👉
+                                  - generic [ref=f1e555]: Apply
+                              - cell "On Site" [ref=f1e556]:
+                                - generic [ref=f1e557]: On Site
+                              - cell "Cambridge, MA USA" [ref=f1e558]
+                              - cell "Lila Sciences" [ref=f1e559]
+                              - cell "$108000-$140000/yr" [ref=f1e560]
+                              - cell "101-250" [ref=f1e561]:
+                                - generic [ref=f1e562]: 101-250
+                              - cell "Biotechnology Pharmaceutical Robotics" [ref=f1e563]:
+                                - generic [ref=f1e564]:
+                                  - generic [ref=f1e565]: Biotechnology
+                                  - generic [ref=f1e566]: Pharmaceutical
+                                  - generic [ref=f1e567]: Robotics
+                              - cell "1. Proficiency in Python, C#/.NET, or other programming languages or frameworks is essential 2. Demonstrated ability in debugging and problem-solving, preferably hardware-software integration issues. 3. Strong analytical thinking and a structured approach to troubleshooting and resolving complex technical problems. ... expand-alt" [ref=f1e568]:
+                                - generic [ref=f1e569]:
+                                  - generic [ref=f1e570]: 1. Proficiency in Python, C#/.NET, or other programming languages or frameworks is essential 2. Demonstrated ability in debugging and problem-solving, preferably hardware-software integration issues. 3. Strong analytical thinking and a structured approach to troubleshooting and resolving complex technical problems. ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "Not Sure" [ref=f1e571]:
+                                - generic [ref=f1e572]: Not Sure
+                              - cell "Not Sure" [ref=f1e573]:
+                                - generic [ref=f1e574]: Not Sure
+                            - row "18 Member of Technical Staff - Government 1 hour ago 👉 Apply On Site Washington, DC SpaceX $150000-$350000/yr 10000+ Government 1. Bachelor's degree in computer science or another STEM discipline; OR 2+ years of professional experience in software development in lieu of a degree 2. Must be willing to work extended hours and weekends as needed 3. 20% travel may be required to government sites ... expand-alt No Not Sure" [ref=f1e575]:
+                              - cell "18" [ref=f1e576]:
+                                - generic [ref=f1e577]: "18"
+                              - cell "Member of Technical Staff - Government" [ref=f1e578]
+                              - cell "1 hour ago" [ref=f1e579]
+                              - cell "👉 Apply" [ref=f1e580]:
+                                - link "👉 Apply" [ref=f1e581] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d020fd0b098b7a670769f7?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e582]: 👉
+                                  - generic [ref=f1e583]: Apply
+                              - cell "On Site" [ref=f1e584]:
+                                - generic [ref=f1e585]: On Site
+                              - cell "Washington, DC" [ref=f1e586]
+                              - cell "SpaceX" [ref=f1e587]
+                              - cell "$150000-$350000/yr" [ref=f1e588]
+                              - cell "10000+" [ref=f1e589]:
+                                - generic [ref=f1e590]: 10000+
+                              - cell "Government" [ref=f1e591]:
+                                - generic [ref=f1e593]: Government
+                              - cell "1. Bachelor's degree in computer science or another STEM discipline; OR 2+ years of professional experience in software development in lieu of a degree 2. Must be willing to work extended hours and weekends as needed 3. 20% travel may be required to government sites ... expand-alt" [ref=f1e594]:
+                                - generic [ref=f1e595]:
+                                  - generic [ref=f1e596]: 1. Bachelor's degree in computer science or another STEM discipline; OR 2+ years of professional experience in software development in lieu of a degree 2. Must be willing to work extended hours and weekends as needed 3. 20% travel may be required to government sites ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e597]:
+                                - generic [ref=f1e598]: "No"
+                              - cell "Not Sure" [ref=f1e599]:
+                                - generic [ref=f1e600]: Not Sure
+                            - row "19 Service Operations Analyst I - Linux & Cloud - Hybrid 1 hour ago 👉 Apply Hybrid New York, NY Weill Cornell Medicine $85000-$98100/yr 10000+ Healthcare Information Technology Cloud Computing 1. Bachelor's Degree 2. Strong Unix/Linux administration experience. 3. Basic understanding of configuration management tools such as Salt, Ansible, Chef, etc. ... expand-alt Not Sure Not Sure" [ref=f1e601]:
+                              - cell "19" [ref=f1e602]:
+                                - generic [ref=f1e603]: "19"
+                              - cell "Service Operations Analyst I - Linux & Cloud - Hybrid" [ref=f1e604]
+                              - cell "1 hour ago" [ref=f1e605]
+                              - cell "👉 Apply" [ref=f1e606]:
+                                - link "👉 Apply" [ref=f1e607] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69b2095ad04c69566c74ae0f?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e608]: 👉
+                                  - generic [ref=f1e609]: Apply
+                              - cell "Hybrid" [ref=f1e610]:
+                                - generic [ref=f1e611]: Hybrid
+                              - cell "New York, NY" [ref=f1e612]
+                              - cell "Weill Cornell Medicine" [ref=f1e613]
+                              - cell "$85000-$98100/yr" [ref=f1e614]
+                              - cell "10000+" [ref=f1e615]:
+                                - generic [ref=f1e616]: 10000+
+                              - cell "Healthcare Information Technology Cloud Computing" [ref=f1e617]:
+                                - generic [ref=f1e618]:
+                                  - generic [ref=f1e619]: Healthcare
+                                  - generic [ref=f1e620]: Information Technology
+                                  - generic [ref=f1e621]: Cloud Computing
+                              - cell "1. Bachelor's Degree 2. Strong Unix/Linux administration experience. 3. Basic understanding of configuration management tools such as Salt, Ansible, Chef, etc. ... expand-alt" [ref=f1e622]:
+                                - generic [ref=f1e623]:
+                                  - generic [ref=f1e624]: 1. Bachelor's Degree 2. Strong Unix/Linux administration experience. 3. Basic understanding of configuration management tools such as Salt, Ansible, Chef, etc. ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "Not Sure" [ref=f1e625]:
+                                - generic [ref=f1e626]: Not Sure
+                              - cell "Not Sure" [ref=f1e627]:
+                                - generic [ref=f1e628]: Not Sure
+                            - row "20 TechOps Administrator I 1 hour ago 👉 Apply On Site Redmond, WA Zachary Piper Solutions $130000-$130000/yr 101-250 Government 1. Active TS/SCI clearance with Full Scope Polygraph required 2. Bachelor’s Degree in a related field or equivalent combination of IT training and hands-on experience 3. Strong customer service mindset and communication skills ... expand-alt No Not Sure" [ref=f1e629]:
+                              - cell "20" [ref=f1e630]:
+                                - generic [ref=f1e631]: "20"
+                              - cell "TechOps Administrator I" [ref=f1e632]
+                              - cell "1 hour ago" [ref=f1e633]
+                              - cell "👉 Apply" [ref=f1e634]:
+                                - link "👉 Apply" [ref=f1e635] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d020940b098b7a67076916?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e636]: 👉
+                                  - generic [ref=f1e637]: Apply
+                              - cell "On Site" [ref=f1e638]:
+                                - generic [ref=f1e639]: On Site
+                              - cell "Redmond, WA" [ref=f1e640]
+                              - cell "Zachary Piper Solutions" [ref=f1e641]
+                              - cell "$130000-$130000/yr" [ref=f1e642]
+                              - cell "101-250" [ref=f1e643]:
+                                - generic [ref=f1e644]: 101-250
+                              - cell "Government" [ref=f1e645]:
+                                - generic [ref=f1e647]: Government
+                              - cell "1. Active TS/SCI clearance with Full Scope Polygraph required 2. Bachelor’s Degree in a related field or equivalent combination of IT training and hands-on experience 3. Strong customer service mindset and communication skills ... expand-alt" [ref=f1e648]:
+                                - generic [ref=f1e649]:
+                                  - generic [ref=f1e650]: 1. Active TS/SCI clearance with Full Scope Polygraph required 2. Bachelor’s Degree in a related field or equivalent combination of IT training and hands-on experience 3. Strong customer service mindset and communication skills ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e651]:
+                                - generic [ref=f1e652]: "No"
+                              - cell "Not Sure" [ref=f1e653]:
+                                - generic [ref=f1e654]: Not Sure
+                            - row "21 Embedded Software Engineer | Ground Support Equipment 2 hours ago 👉 Apply On Site South Burlington, VT BETA TECHNOLOGIES $75000-$90000/yr 501-1000 Electric Vehicle Embedded Software Automotive 1. Bachelor's degree in Computer Science, Electrical Engineering, Computer Engineering, or a related field (or equivalent practical experience) 2. 0-2 years of experience with embedded systems, firmware, or hardware-software integration (internships and academic projects count) 3. Programming skills in C/C++ ... expand-alt No Not Sure" [ref=f1e655]:
+                              - cell "21" [ref=f1e656]:
+                                - generic [ref=f1e657]: "21"
+                              - cell "Embedded Software Engineer | Ground Support Equipment" [ref=f1e658]
+                              - cell "2 hours ago" [ref=f1e659]
+                              - cell "👉 Apply" [ref=f1e660]:
+                                - link "👉 Apply" [ref=f1e661] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/69d01f8f891d7b11cfcd8b28?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e662]: 👉
+                                  - generic [ref=f1e663]: Apply
+                              - cell "On Site" [ref=f1e664]:
+                                - generic [ref=f1e665]: On Site
+                              - cell "South Burlington, VT" [ref=f1e666]
+                              - cell "BETA TECHNOLOGIES" [ref=f1e667]
+                              - cell "$75000-$90000/yr" [ref=f1e668]
+                              - cell "501-1000" [ref=f1e669]:
+                                - generic [ref=f1e670]: 501-1000
+                              - cell "Electric Vehicle Embedded Software Automotive" [ref=f1e671]:
+                                - generic [ref=f1e672]:
+                                  - generic [ref=f1e673]: Electric Vehicle
+                                  - generic [ref=f1e674]: Embedded Software
+                                  - generic [ref=f1e675]: Automotive
+                              - cell "1. Bachelor's degree in Computer Science, Electrical Engineering, Computer Engineering, or a related field (or equivalent practical experience) 2. 0-2 years of experience with embedded systems, firmware, or hardware-software integration (internships and academic projects count) 3. Programming skills in C/C++ ... expand-alt" [ref=f1e676]:
+                                - generic [ref=f1e677]:
+                                  - generic [ref=f1e678]: 1. Bachelor's degree in Computer Science, Electrical Engineering, Computer Engineering, or a related field (or equivalent practical experience) 2. 0-2 years of experience with embedded systems, firmware, or hardware-software integration (internships and academic projects count) 3. Programming skills in C/C++ ...
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e679]:
+                                - generic [ref=f1e680]: "No"
+                              - cell "Not Sure" [ref=f1e681]:
+                                - generic [ref=f1e682]: Not Sure
+                            - row "22 Network Operations Residency Program, University Graduate, 2026 Start 2 hours ago 👉 Apply On Site Thornton, CO Google $87000-$122000/yr 10000+ Information Technology 1. Bachelor's degree or equivalent practical experience. 2. Experience working with networking fundamentals (e.g., TCP/IP, ARP, IP Tables, routing) or Unix systems administration, including coding (e.g., Java, C/C++) or scripting in shell or Python. expand-alt No Yes" [ref=f1e683]:
+                              - cell "22" [ref=f1e684]:
+                                - generic [ref=f1e685]: "22"
+                              - cell "Network Operations Residency Program, University Graduate, 2026 Start" [ref=f1e686]
+                              - cell "2 hours ago" [ref=f1e687]
+                              - cell "👉 Apply" [ref=f1e688]:
+                                - link "👉 Apply" [ref=f1e689] [cursor=pointer]:
+                                  - /url: https://jobright.ai/jobs/info/697405e337785856350dee3e?utm_source=1100&utm_campaign=Software%20Engineering
+                                  - generic [ref=f1e690]: 👉
+                                  - generic [ref=f1e691]: Apply
+                              - cell "On Site" [ref=f1e692]:
+                                - generic [ref=f1e693]: On Site
+                              - cell "Thornton, CO" [ref=f1e694]
+                              - cell "Google" [ref=f1e695]
+                              - cell "$87000-$122000/yr" [ref=f1e696]
+                              - cell "10000+" [ref=f1e697]:
+                                - generic [ref=f1e698]: 10000+
+                              - cell "Information Technology" [ref=f1e699]:
+                                - generic [ref=f1e701]: Information Technology
+                              - cell "1. Bachelor's degree or equivalent practical experience. 2. Experience working with networking fundamentals (e.g., TCP/IP, ARP, IP Tables, routing) or Unix systems administration, including coding (e.g., Java, C/C++) or scripting in shell or Python. expand-alt" [ref=f1e702]:
+                                - generic [ref=f1e703]:
+                                  - generic [ref=f1e704]: 1. Bachelor's degree or equivalent practical experience. 2. Experience working with networking fundamentals (e.g., TCP/IP, ARP, IP Tables, routing) or Unix systems administration, including coding (e.g., Java, C/C++) or scripting in shell or Python.
+                                  - generic:
+                                    - img "expand-alt":
+                                      - img
+                              - cell "No" [ref=f1e705]:
+                                - generic [ref=f1e706]: "No"
+                              - cell "Yes" [ref=f1e707]:
+                                - generic [ref=f1e708]: "Yes"
+                        - generic [ref=f1e712]: 2345 records
+                  - alert [ref=f1e715]
+        - form "email" [ref=e118]:
+          - generic [ref=e119]:
+            - heading "Subscribe to Fresh New Grad Jobs Alerts" [level=3] [ref=e120]
+            - generic [ref=e121]:
+              - textbox "Job Title Of Interest" [ref=e123]
+              - textbox "Your Email Address" [ref=e125]
+              - button "Subscribe" [ref=e126] [cursor=pointer]
+        - generic [ref=e127]:
+          - heading "Hot Opening Job Lists for Newgrads" [level=3] [ref=e129]
+          - generic [ref=e130]:
+            - generic [ref=e131]:
+              - link "🌍 Entry Level Remote Jobs for New Graduates" [ref=e132] [cursor=pointer]:
+                - /url: /entry-level-jobs/remote
+                - generic [ref=e134]: 🌍
+                - generic [ref=e135]: Entry Level Remote Jobs for New Graduates
+              - link "🛡️ Cyber Security Jobs With No Experience" [ref=e136] [cursor=pointer]:
+                - /url: /entry-level-jobs/cyber-security
+                - generic [ref=e138]: 🛡️
+                - generic [ref=e139]: Cyber Security Jobs With No Experience
+              - link "📊 Remote Entry Level Data Analyst Jobs" [ref=e140] [cursor=pointer]:
+                - /url: /entry-level-jobs/data-analyst
+                - generic [ref=e142]: 📊
+                - generic [ref=e143]: Remote Entry Level Data Analyst Jobs
+            - generic [ref=e144]:
+              - link "💻 Software Engineer Jobs With No Experience" [ref=e145] [cursor=pointer]:
+                - /url: /entry-level-jobs/software-engineer-jobs
+                - generic [ref=e147]: 💻
+                - generic [ref=e148]: Software Engineer Jobs With No Experience
+              - link "Google Entry Level Jobs For Software Engineer" [ref=e149] [cursor=pointer]:
+                - /url: /entry-level-jobs/google
+                - generic [ref=e151]: Google Entry Level Jobs For Software Engineer
+              - link "Amazon Entry Level Jobs For New Graduates" [ref=e152] [cursor=pointer]:
+                - /url: /entry-level-jobs/amazon
+                - generic [ref=e154]: Amazon Entry Level Jobs For New Graduates
+            - generic [ref=e155]:
+              - link "Tesla Entry Level Jobs For New Graduates" [ref=e156] [cursor=pointer]:
+                - /url: /entry-level-jobs/tesla
+                - generic [ref=e158]: Tesla Entry Level Jobs For New Graduates
+              - link "Apple Entry Level Jobs For New Graduates" [ref=e159] [cursor=pointer]:
+                - /url: /entry-level-jobs/apple
+                - generic [ref=e161]: Apple Entry Level Jobs For New Graduates
+              - link "🗽 Remote Software Engineer Jobs in New York" [ref=e162] [cursor=pointer]:
+                - /url: /entry-level-jobs/nyc
+                - generic [ref=e164]: 🗽
+                - generic [ref=e165]: Remote Software Engineer Jobs in New York
+            - generic [ref=e166]:
+              - link "🧢 Entry Level Jobs Without Experience in Chicago" [ref=e167] [cursor=pointer]:
+                - /url: /entry-level-jobs/chicago
+                - generic [ref=e169]: 🧢
+                - generic [ref=e170]: Entry Level Jobs Without Experience in Chicago
+              - link "🚀 No Experience Entry Level Jobs in Houston" [ref=e171] [cursor=pointer]:
+                - /url: /entry-level-jobs/houston
+                - generic [ref=e173]: 🚀
+                - generic [ref=e174]: No Experience Entry Level Jobs in Houston
+              - link "🏝️ Entry Level Remote Jobs in Los Angeles" [ref=e175] [cursor=pointer]:
+                - /url: /entry-level-jobs/los-angeles
+                - generic [ref=e177]: 🏝️
+                - generic [ref=e178]: Entry Level Remote Jobs in Los Angeles
+          - link "Explore more" [ref=e179] [cursor=pointer]:
+            - /url: /entry-level-jobs
+        - generic [ref=e180]:
+          - heading "Step by Step Guide to Securing Full time role in 2025" [level=3] [ref=e182]:
+            - text: Step by Step Guide to Securing
+            - text: Full time role in 2025
+          - generic [ref=e184]:
+            - 'heading "Step 1: Identify the Goal" [level=4] [ref=e185]'
+            - generic [ref=e186]:
+              - link "How to set clear career goals" [ref=e187] [cursor=pointer]:
+                - /url: https://joinhandshake.com/blog/students/how-to-set-clear-career-goals/
+                - generic [ref=e188]: How to set clear career goals
+                - img [ref=e190]
+              - link "How To Choose a Career Path in 9 Steps (With Examples)" [ref=e192] [cursor=pointer]:
+                - /url: https://www.indeed.com/career-advice/finding-a-job/choosing-a-career-path
+                - generic [ref=e193]: How To Choose a Career Path in 9 Steps (With Examples)
+                - img [ref=e195]
+          - generic [ref=e198]:
+            - 'heading "Step 2: Build the Foundation" [level=4] [ref=e199]'
+            - generic [ref=e200]:
+              - generic [ref=e201]:
+                - heading "Prep Your Resume" [level=5] [ref=e202]
+                - link "How To Make a Comprehensive Resume (With Examples)" [ref=e203] [cursor=pointer]:
+                  - /url: https://www.indeed.com/career-advice/resumes-cover-letters/how-to-make-a-resume-with-examples
+                  - generic [ref=e204]: How To Make a Comprehensive Resume (With Examples)
+                  - img [ref=e206]
+                - link "How to Use Keywords and Phrases in Your Resume" [ref=e208] [cursor=pointer]:
+                  - /url: https://www.indeed.com/career-advice/resumes-cover-letters/resume-keywords-and-phrases
+                  - generic [ref=e209]: How to Use Keywords and Phrases in Your Resume
+                  - img [ref=e211]
+                - link "Do NOT make these resume mistakes!" [ref=e213] [cursor=pointer]:
+                  - /url: https://youtu.be/5Ol1dtCHSoc?si=-rpNI8NaULtHxXCE
+                  - generic [ref=e214]: Do NOT make these resume mistakes!
+                  - img [ref=e216]
+              - generic [ref=e218]:
+                - heading "Prep Your Cover Letter" [level=5] [ref=e219]
+                - link "How to write a Cover Letter (with example)" [ref=e220] [cursor=pointer]:
+                  - /url: https://joinhandshake.com/blog/students/internship-cover-letter-tips/
+                  - generic [ref=e221]: How to write a Cover Letter (with example)
+                  - img [ref=e223]
+              - generic [ref=e225]:
+                - heading "Build Your LinkedIn Profile" [level=5] [ref=e226]
+                - link "How To Make A Linkedin Profile" [ref=e227] [cursor=pointer]:
+                  - /url: https://youtu.be/meH__burrrU?si=czBpcyzYnc8VHedA
+                  - generic [ref=e228]: How To Make A Linkedin Profile
+                  - img [ref=e230]
+                - link "How to Write a Professional LinkedIn Summary" [ref=e232] [cursor=pointer]:
+                  - /url: https://blog.hubspot.com/sales/linkedin-summary-examples
+                  - generic [ref=e233]: How to Write a Professional LinkedIn Summary
+                  - img [ref=e235]
+                - link "Make Yourself a LinkedIn Headshot (Tool)" [ref=e237] [cursor=pointer]:
+                  - /url: https://instaheadshots.com/linkedin-headshots/?utm_source=google&utm_medium=display-ads&utm_campaign=Pmax_NA_Prospecting&gad_source=1&gclid=Cj0KCQjwzby1BhCQARIsAJ_0t5PfIi3T2OCxWNqH9-82zvhQIquklk2keMXP2czRXDGIK0VWItFPwYkaAqmyEALw_wcB
+                  - generic [ref=e238]: Make Yourself a LinkedIn Headshot (Tool)
+                  - img [ref=e240]
+              - generic [ref=e242]:
+                - heading "Attend Career Fair" [level=5] [ref=e243]
+                - link "What To Do at a Career Fair To Stand Out" [ref=e244] [cursor=pointer]:
+                  - /url: https://www.indeed.com/career-advice/finding-a-job/what-to-do-at-a-career-fair
+                  - generic [ref=e245]: What To Do at a Career Fair To Stand Out
+                  - img [ref=e247]
+                - link "Tips for a Successful Career Fair" [ref=e249] [cursor=pointer]:
+                  - /url: https://www.indeed.com/career-advice/finding-a-job/tips-for-a-career-fair
+                  - generic [ref=e250]: Tips for a Successful Career Fair
+                  - img [ref=e252]
+          - generic [ref=e255]:
+            - 'heading "Step 3: Take Action" [level=4] [ref=e256]'
+            - generic [ref=e257]:
+              - generic [ref=e258]:
+                - heading "Apply to New Grad Roles" [level=5] [ref=e259]
+                - link "When?" [ref=e260] [cursor=pointer]:
+                  - /url: https://www.northwestern.edu/careers/images/industry-timeline.pdf
+                  - generic [ref=e261]: When?
+                  - img [ref=e263]
+                - 'link "The Essential Guide to Industry Recruiting Timelines: 2024-2025" [ref=e265] [cursor=pointer]':
+                  - /url: https://careerdevelopment.princeton.edu/internships-jobs/recruiting-timelines
+                  - generic [ref=e266]: "The Essential Guide to Industry Recruiting Timelines: 2024-2025"
+                  - img [ref=e268]
+                - link "Where?" [ref=e270] [cursor=pointer]:
+                  - /url: https://www.barraiser.com/blogs/top-best-job-sites-in-the-usa-for
+                  - generic [ref=e271]: Where?
+                  - img [ref=e273]
+                - link "Need Help?" [ref=e275] [cursor=pointer]:
+                  - /url: https://www.educations.com/articles-and-advice/5-reasons-to-use-your-universitys-career-services-12821
+                  - generic [ref=e276]: Need Help?
+                  - img [ref=e278]
+              - generic [ref=e280]:
+                - heading "Network" [level=5] [ref=e281]
+                - link "What is Networking? Why is it so important?" [ref=e282] [cursor=pointer]:
+                  - /url: https://www.northwestern.edu/careers/jobs-internships/networking/
+                  - generic [ref=e283]: What is Networking? Why is it so important?
+                  - img [ref=e285]
+                - link "5 tips with sample scripts!—for cold outreach in your job search" [ref=e287] [cursor=pointer]:
+                  - /url: https://joinhandshake.com/blog/students/cold-outreach-in-job-search/
+                  - generic [ref=e288]: 5 tips with sample scripts!—for cold outreach in your job search
+                  - img [ref=e290]
+                - link "What to say?" [ref=e292] [cursor=pointer]:
+                  - /url: https://hbr.org/2020/11/what-to-say-when-youre-reaching-out-to-someone-on-linkedin
+                  - generic [ref=e293]: What to say?
+                  - img [ref=e295]
+          - generic [ref=e298]:
+            - 'heading "Step 4: Show Yourself" [level=4] [ref=e299]'
+            - generic [ref=e300]:
+              - generic [ref=e301]:
+                - heading "Practice Interview Questions" [level=5] [ref=e302]
+                - link "How to Prepare for a Job Interview" [ref=e303] [cursor=pointer]:
+                  - /url: https://www.themuse.com/advice/the-ultimate-interview-guide-30-prep-tips-for-job-interview-success
+                  - generic [ref=e304]: How to Prepare for a Job Interview
+                  - img [ref=e306]
+                - link "How To Use the STAR Interview Method" [ref=e308] [cursor=pointer]:
+                  - /url: https://www.indeed.com/career-advice/interviewing/how-to-use-the-star-interview-response-technique
+                  - generic [ref=e309]: How To Use the STAR Interview Method
+                  - img [ref=e311]
+                - link "36 Questions To Ask in a Job Interview" [ref=e313] [cursor=pointer]:
+                  - /url: https://www.indeed.com/career-advice/interviewing/questions-to-ask-in-an-interview
+                  - generic [ref=e314]: 36 Questions To Ask in a Job Interview
+                  - img [ref=e316]
+                - link "How To Prepare for an Interview" [ref=e318] [cursor=pointer]:
+                  - /url: https://www.indeed.com/career-advice/interviewing/how-to-prepare-for-an-interview
+                  - generic [ref=e319]: How To Prepare for an Interview
+                  - img [ref=e321]
+              - generic [ref=e323]:
+                - heading "Interview Day" [level=5] [ref=e324]
+                - link "Advice for the day before and day of interview" [ref=e325] [cursor=pointer]:
+                  - /url: https://www.preplounge.com/en/consulting-forum/advice-for-the-day-before-and-day-of-interview-16799
+                  - generic [ref=e326]: Advice for the day before and day of interview
+                  - img [ref=e328]
+                - link "Remember to write a Thank-You Email after the interview!" [ref=e330] [cursor=pointer]:
+                  - /url: https://www.indeed.com/career-advice/interviewing/sample-thank-you-letter-after-interview
+                  - generic [ref=e331]: Remember to write a Thank-You Email after the interview!
+                  - img [ref=e333]
+        - generic [ref=e335]:
+          - heading "FAQs About This Entry Level Job List" [level=3] [ref=e337]: FAQs About This Entry Level Job List
+          - generic [ref=e338]:
+            - generic [ref=e339] [cursor=pointer]:
+              - heading "Where does the job listing information come from?" [level=5] [ref=e341]
+              - generic [ref=e343]: This job list is sourced directly from official company career pages, first-hand partnerships with employers, and verified job posting platforms (like Linkedin, Indeed, Glassdoor, etc). And it is carefully verified to ensure accuracy and authenticity.
+            - generic [ref=e344] [cursor=pointer]:
+              - heading "How do you verify these job postings and keep them updated?" [level=5] [ref=e346]
+              - generic [ref=e348]:
+                - text: "We employ a multi-step verification process:"
+                - text: · Direct verification with company career pages
+                - text: · Regular automated checks for posting validity
+                - text: · Manual review by our team
+                - text: · Real-time updates through our automated system
+            - generic [ref=e349] [cursor=pointer]:
+              - heading "What qualifies as an \"entry-level\" position?" [level=5] [ref=e351]
+              - generic [ref=e353]: Entry-level positions on our platform are specifically designed for recent graduates, typically requiring 0-2 years of professional experience. These roles are often labeled as "New Grad" or "University Grad" positions and usually include comprehensive training programs.
+            - generic [ref=e354] [cursor=pointer]:
+              - heading "I'm graduating in 2025, can I apply for these positions now?" [level=5] [ref=e356]
+              - generic [ref=e358]: Most companies begin their 2025 new grad recruitment from Fall 2024. Each posting includes recommended application timing.
+            - generic [ref=e359] [cursor=pointer]:
+              - heading "Do I need to be a US citizen/permanent resident to apply?" [level=5] [ref=e361]
+              - generic [ref=e363]: Each posting clearly indicates visa sponsorship availability. We mark positions that offer H1B sponsorship, and international students should focus on positions marked with visa support. Some positions may require permanent work authorization.
+            - generic [ref=e364] [cursor=pointer]:
+              - heading "What is the relationship between Jobright and this website?" [level=5] [ref=e366]
+              - generic [ref=e368]:
+                - text: This job listing is maintained by
+                - link "Jobright" [ref=e369]:
+                  - /url: https://jobright.ai
+                - text: . Jobright specializes in streamlining the job search process with AI-powered application assistance. Beyond new grad positions, you can find opportunities for various career stages and industries on Jobright.ai, all designed to help you secure interviews and job offers more efficiently.
+      - generic [ref=e370]:
+        - heading "newgrad-jobs.com" [level=3] [ref=e371]
+        - generic [ref=e372]:
+          - generic [ref=e373]:
+            - link "Hot Jobs" [ref=e375] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=e376]:
+              - link "Cyber Security Jobs" [ref=e377] [cursor=pointer]:
+                - /url: /entry-level-jobs/cyber-security
+              - img [ref=e379]
+            - generic [ref=e381]:
+              - link "Data Analyst Jobs" [ref=e382] [cursor=pointer]:
+                - /url: /entry-level-jobs/cyber-security
+              - img [ref=e384]
+            - generic [ref=e386]:
+              - link "Project Manager Jobs" [ref=e387] [cursor=pointer]:
+                - /url: /entry-level-jobs/project-manager-jobs
+              - img [ref=e389]
+            - generic [ref=e391]:
+              - link "Software Engineer Jobs" [ref=e392] [cursor=pointer]:
+                - /url: /entry-level-jobs/software-engineer-jobs
+              - img [ref=e394]
+            - generic [ref=e396]:
+              - link "IT Support Jobs" [ref=e397] [cursor=pointer]:
+                - /url: /entry-level-jobs/it-support
+              - img [ref=e399]
+            - generic [ref=e401]:
+              - link "Explore More" [ref=e402] [cursor=pointer]:
+                - /url: /entry-level-jobs
+              - img [ref=e404]
+          - generic [ref=e406]:
+            - link "Job Search Resources" [ref=e408] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=e409]:
+              - link "Best Paid Jobs With No Experience" [ref=e410] [cursor=pointer]:
+                - /url: /blog/best-paid-jobs-with-no-experience
+              - img [ref=e412]
+            - generic [ref=e414]:
+              - link "Best Work From Home Companies" [ref=e415] [cursor=pointer]:
+                - /url: /blog/best-work-from-home-companies-no-experience
+              - img [ref=e417]
+            - generic [ref=e419]:
+              - link "Best Paying Entry Level Jobs" [ref=e420] [cursor=pointer]:
+                - /url: /blog/best-paying-entry-level-jobs
+              - img [ref=e422]
+            - generic [ref=e424]:
+              - link "Explore More" [ref=e425] [cursor=pointer]:
+                - /url: /blog
+              - img [ref=e427]

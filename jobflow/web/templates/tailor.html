@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Tailor — JobFlow{% endblock %}
+{% block content %}
+
+<hgroup>
+    <h2>Resume Tailor</h2>
+    <p>Paste a job description to generate a tailored resume</p>
+</hgroup>
+
+<article>
+    <form hx-post="/api/tailor/generate" hx-target="#tailor-results" hx-swap="innerHTML">
+        <label for="jd_text">Job Description</label>
+        <textarea id="jd_text" name="jd_text" rows="14"
+                  placeholder="Paste the full job description here..."
+                  required></textarea>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 0.5rem;">
+            <label>Model
+                <select name="model">
+                    <option value="sonnet" selected>Sonnet (Fast)</option>
+                    <option value="opus">Opus (Thorough)</option>
+                    <option value="haiku">Haiku (Fastest)</option>
+                </select>
+            </label>
+            <label>Effort
+                <select name="effort">
+                    <option value="low" selected>Low (Fast)</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High (Slow)</option>
+                </select>
+            </label>
+        </div>
+        <button type="submit">Tailor Resume</button>
+    </form>
+</article>
+
+<div id="tailor-results"></div>
+
+{% endblock %}

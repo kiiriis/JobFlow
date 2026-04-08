@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Scanner — JobFlow{% endblock %}
+{% block content %}
+
+<hgroup>
+    <h2>Job Scanner</h2>
+    <p>Scan 82+ company job boards for new grad positions</p>
+</hgroup>
+
+<article>
+    <header>Run New Scan</header>
+    <form hx-post="/api/scan/trigger" hx-target="#scan-results" hx-swap="innerHTML">
+        <div class="grid">
+            <div>
+                <label for="platform">Platform</label>
+                <select id="platform" name="platform">
+                    <option value="">All Platforms</option>
+                    <option value="lever">Lever (11 companies)</option>
+                    <option value="greenhouse">Greenhouse (40 companies)</option>
+                    <option value="ashby">Ashby (31 companies)</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="github">GitHub Repos</option>
+                </select>
+            </div>
+            <div>
+                <label for="hours">Posted within</label>
+                <select id="hours" name="hours">
+                    <option value="0">All time</option>
+                    <option value="24" selected>Last 24 hours</option>
+                    <option value="48">Last 48 hours</option>
+                    <option value="72">Last 3 days</option>
+                    <option value="168">Last 7 days</option>
+                </select>
+            </div>
+            <div>
+                <label>Options</label>
+                <label style="font-weight:normal">
+                    <input type="checkbox" name="new_only" value="true"> New jobs only (skip seen)
+                </label>
+            </div>
+        </div>
+        <button type="submit" class="scan-btn">Start Scan</button>
+    </form>
+</article>
+
+<div id="scan-results">
+    {% set results_exist = False %}
+</div>
+
+{% endblock %}

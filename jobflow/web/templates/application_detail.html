@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ job.company }} — {{ job.role }} — JobFlow{% endblock %}
+{% block content %}
+
+<a href="/applications">&larr; Back to Applications</a>
+
+<article style="margin-top:1rem">
+    <header>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+            <div>
+                <h3 style="margin:0">{{ job.company }} — {{ job.role }}</h3>
+                <p style="margin:0; opacity:0.7;">
+                    Score: <span class="score-badge {% if job.score|int >= 80 %}score-high{% elif job.score|int >= 50 %}score-mid{% else %}score-low{% endif %}">{{ job.score }}</span>
+                    &nbsp; Variant: <code>{{ job.variant }}</code>
+                    &nbsp; Source: {{ job.source or "manual" }}
+                    {% if job.link %}
+                    &nbsp; <a href="{{ job.link }}" target="_blank" rel="noopener">Job Posting &rarr;</a>
+                    {% endif %}
+                </p>
+            </div>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+                <select name="status"
+                    hx-patch="/api/applications/{{ index }}/status"
+                    hx-target="this"
+                    hx-swap="outerHTML"
+                    class="status-select status-{{ job.status|lower }}">
+                    {% for s in statuses %}
+                    <option value="{{ s }}" {% if s == job.status %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <div class="grid">
+        <div>
+            <h4>Job Description</h4>
+            {% if jd_text %}
+            <pre style="white-space:pre-wrap; font-size:0.85em; max-height:500px; overflow-y:auto; background:var(--pico-card-background-color); padding:1rem; border-radius:8px;">{{ jd_text }}</pre>
+            {% else %}
+            <p style="opacity:0.5">No job description saved</p>
+            {% endif %}
+        </div>
+        <div>
+            <h4>Files</h4>
+            {% if file_infos %}
+            <ul>
+                {% for f in file_infos %}
+                <li>
+                    <a href="/api/file/{{ f.path }}" target="_blank">{{ f.name }}</a>
+                    <small style="opacity:0.5">({{ f.size_kb }}KB)</small>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p style="opacity:0.5">No files generated yet</p>
+            {% endif %}
+
+            {% set pdf_files = file_infos|selectattr('suffix', 'equalto', '.pdf')|list %}
+            {% if pdf_files %}
+            <h4>Resume Preview</h4>
+            <embed src="/api/file/{{ pdf_files[0].path }}" type="application/pdf" width="100%" height="600px" style="border-radius:8px;">
+            {% endif %}
+        </div>
+    </div>
+
+    <h4>Notes</h4>
+    <div style="margin-bottom:1rem;">
+        <input type="text" name="notes" value="{{ job.notes or '' }}" placeholder="Add notes..."
+            hx-patch="/api/applications/{{ index }}/notes"
+            hx-trigger="blur, keydown[key=='Enter']"
+            hx-swap="none"
+            style="max-width:600px">
+    </div>
+
+    <footer>
+        <small>Found: {{ job.date_found }} {% if job.date_applied %}| Applied: {{ job.date_applied }}{% endif %}</small>
+    </footer>
+</article>
+
+{% endblock %}

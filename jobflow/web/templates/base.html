@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}JobFlow{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>JobFlow</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/applications" {% if request.path in ['/', '/applications'] %}class="active"{% endif %}>Dashboard</a></li>
+            <li><a href="/scan" {% if request.path == '/scan' %}class="active"{% endif %}>Scanner</a></li>
+            <li><a href="/tailor" {% if request.path == '/tailor' %}class="active"{% endif %}>Tailor</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="container">
+        <small>JobFlow v0.1.0 — Running locally</small>
+    </footer>
+</body>
+</html>

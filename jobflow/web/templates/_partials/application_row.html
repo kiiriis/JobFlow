@@ -1,0 +1,42 @@
+<tr id="row-{{ job._index }}">
+    <td>{{ job._index }}</td>
+    <td><strong>{{ job.company }}</strong></td>
+    <td>
+        {% if job.link %}
+        <a href="{{ job.link }}" target="_blank" rel="noopener">{{ job.role }}</a>
+        {% else %}
+        {{ job.role }}
+        {% endif %}
+    </td>
+    <td>
+        <span class="score-badge {% if job.score|int >= 80 %}score-high{% elif job.score|int >= 50 %}score-mid{% else %}score-low{% endif %}">
+            {{ job.score }}
+        </span>
+    </td>
+    <td>
+        <select name="status"
+            hx-patch="/api/applications/{{ job._index }}/status"
+            hx-target="#row-{{ job._index }}"
+            hx-swap="outerHTML"
+            class="status-select status-{{ job.status|lower }}">
+            {% for s in statuses %}
+            <option value="{{ s }}" {% if s == job.status %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+    </td>
+    <td>{{ job.date_found }}</td>
+    <td>{{ job.date_applied }}</td>
+    <td>
+        <span class="notes-text"
+            hx-get="/api/applications/{{ job._index }}/notes/edit"
+            hx-trigger="click"
+            hx-swap="outerHTML">
+            {{ job.notes or "Click to add..." }}
+        </span>
+    </td>
+    <td>
+        {% if job.resume_path %}
+        <a href="/application/{{ job._index }}" class="btn-small">View</a>
+        {% endif %}
+    </td>
+</tr>

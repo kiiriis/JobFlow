@@ -1,0 +1,65 @@
+{% if running %}
+<article aria-busy="true"
+    hx-get="/api/scan/status" hx-trigger="every 2s" hx-swap="outerHTML">
+    <p>Scanning job boards... This may take a minute.</p>
+</article>
+
+{% elif error %}
+<article>
+    <header style="color: var(--pico-del-color);">Scan Error</header>
+    <pre>{{ error }}</pre>
+</article>
+
+{% elif results %}
+<article>
+    <header>
+        Scan Complete — {{ relevant }} relevant / {{ total }} total ({{ skipped }} filtered out)
+    </header>
+
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Company</th>
+                    <th>Role</th>
+                    <th>Location</th>
+                    <th>Score</th>
+                    <th>Variant</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in results %}
+                <tr>
+                    <td>{{ job.index }}</td>
+                    <td><strong>{{ job.company }}</strong></td>
+                    <td>
+                        {% if job.url %}
+                        <a href="{{ job.url }}" target="_blank" rel="noopener">{{ job.title }}</a>
+                        {% else %}
+                        {{ job.title }}
+                        {% endif %}
+                    </td>
+                    <td>{{ job.location }}</td>
+                    <td>
+                        <span class="score-badge {% if job.score >= 80 %}score-high{% elif job.score >= 50 %}score-mid{% else %}score-low{% endif %}">
+                            {{ job.score }}
+                        </span>
+                    </td>
+                    <td><code>{{ job.variant }}</code></td>
+                    <td>
+                        <button class="btn-small"
+                            hx-post="/api/scan/track"
+                            hx-vals='{"company":"{{ job.company }}","role":"{{ job.title }}","url":"{{ job.url }}","score":"{{ job.score }}","variant":"{{ job.variant }}","source":"scan"}'
+                            hx-swap="outerHTML">
+                            Track
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</article>
+{% endif %}

@@ -1,0 +1,137 @@
+/* ── Stat Cards ─────────────────────────── */
+.stat-card {
+    text-align: center;
+    padding: 1rem;
+}
+.stat-card header {
+    font-size: 0.85em;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0.5rem 0 0;
+}
+.stat-pending { color: #f0ad4e; }
+.stat-applied { color: #5bc0de; }
+.stat-active  { color: #5cb85c; }
+
+/* ── Score Badges ──────────────────────── */
+.score-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+.score-high { background: #2d5a2d; color: #5cb85c; }
+.score-mid  { background: #4a3f2a; color: #f0ad4e; }
+.score-low  { background: #4a2a2a; color: #d9534f; }
+
+/* ── Status Badges ─────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 500;
+}
+.badge-pending    { background: #3d3520; color: #f0ad4e; }
+.badge-applied    { background: #1a3a4a; color: #5bc0de; }
+.badge-interview  { background: #1a3a1a; color: #5cb85c; }
+.badge-oa         { background: #1a3a3a; color: #46b8da; }
+.badge-offer      { background: #3a1a3a; color: #d946ef; }
+.badge-rejected   { background: #3a1a1a; color: #d9534f; }
+.badge-skipped    { background: #2a2a2a; color: #888; }
+.badge-withdrawn  { background: #2a2a2a; color: #888; }
+
+/* ── Status Select Dropdown ────────────── */
+.status-select {
+    margin: 0;
+    padding: 4px 8px;
+    font-size: 0.85em;
+    border-radius: 8px;
+    min-width: 110px;
+    background: var(--pico-card-background-color);
+}
+
+/* ── Notes Inline Edit ─────────────────── */
+.notes-text {
+    cursor: pointer;
+    opacity: 0.6;
+    font-size: 0.85em;
+    border-bottom: 1px dashed transparent;
+    transition: all 0.2s;
+}
+.notes-text:hover {
+    opacity: 1;
+    border-bottom-color: var(--pico-primary);
+}
+
+/* ── Buttons ───────────────────────────── */
+.btn-small {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 0.8em;
+    border-radius: 6px;
+    background: var(--pico-primary);
+    color: var(--pico-primary-inverse);
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+.btn-small:hover {
+    opacity: 0.85;
+}
+.scan-btn {
+    width: auto;
+    padding: 0.75rem 2rem;
+}
+
+/* ── Tracked/Duplicate badges ──────────── */
+.badge-tracked {
+    color: #5cb85c;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+.badge-duplicate {
+    color: #f0ad4e;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+/* ── Nav active state ──────────────────── */
+nav a.active {
+    color: var(--pico-primary);
+    font-weight: 600;
+}
+
+/* ── Global font size ──────────────────── */
+html {
+    font-size: 14px;
+}
+
+/* ── Table tweaks ──────────────────────── */
+table {
+    font-size: 0.85em;
+}
+td, th {
+    padding: 0.4rem 0.6rem;
+}
+
+/* ── Tailor Tab ────────────────────────── */
+.tailor-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* ── Responsive ────────────────────────── */
+@media (max-width: 768px) {
+    .stat-number { font-size: 1.8rem; }
+    .grid { grid-template-columns: 1fr !important; }
+}

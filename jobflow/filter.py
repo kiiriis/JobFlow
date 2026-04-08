@@ -62,7 +62,7 @@ APPDEV_KEYWORDS = [
 ]
 
 
-def _count_matches(text: str, patterns: list[str]) -> int:
+def count_matches(text: str, patterns: list[str]) -> int:
     count = 0
     for pattern in patterns:
         if re.search(pattern, text, re.IGNORECASE):
@@ -70,13 +70,13 @@ def _count_matches(text: str, patterns: list[str]) -> int:
     return count
 
 
-def _has_match(text: str, patterns: list[str]) -> bool:
-    return _count_matches(text, patterns) > 0
+def has_match(text: str, patterns: list[str]) -> bool:
+    return count_matches(text, patterns) > 0
 
 
-def _select_variant(description: str) -> str:
-    ml_score = _count_matches(description, ML_KEYWORDS)
-    appdev_score = _count_matches(description, APPDEV_KEYWORDS)
+def select_variant(description: str) -> str:
+    ml_score = count_matches(description, ML_KEYWORDS)
+    appdev_score = count_matches(description, APPDEV_KEYWORDS)
 
     if ml_score > appdev_score and ml_score >= 2:
         return "ml"
@@ -92,20 +92,20 @@ def evaluate_job(job: JobPosting) -> FilterResult:
     reasons = []
 
     # Check disqualifying visa/citizenship phrases
-    if _has_match(text, DISQUALIFYING_PHRASES):
+    if has_match(text, DISQUALIFYING_PHRASES):
         return FilterResult(
             score=0,
             should_apply=False,
             reason="Job explicitly does not offer visa sponsorship or requires citizenship/clearance.",
-            resume_variant=_select_variant(text),
+            resume_variant=select_variant(text),
         )
 
     # Check experience level
-    if _has_match(text, SENIOR_PHRASES):
+    if has_match(text, SENIOR_PHRASES):
         score -= 30
         reasons.append("Mentions senior-level experience requirements")
 
-    if _has_match(text, ENTRY_LEVEL_SIGNALS):
+    if has_match(text, ENTRY_LEVEL_SIGNALS):
         score += 30
         reasons.append("Entry-level / new grad signals found")
 
@@ -122,12 +122,12 @@ def evaluate_job(job: JobPosting) -> FilterResult:
         r"\bsydney\b", r"\bseoul\b", r"\btel\s+aviv\b", r"\bisrael\b",
     ]
     loc_lower = job.location.lower()
-    if _has_match(loc_lower, non_us_patterns):
+    if has_match(loc_lower, non_us_patterns):
         return FilterResult(
             score=10,
             should_apply=False,
             reason=f"Non-US location: {job.location}",
-            resume_variant=_select_variant(text),
+            resume_variant=select_variant(text),
         )
 
     # USA location check
@@ -143,7 +143,7 @@ def evaluate_job(job: JobPosting) -> FilterResult:
         r"\b[A-Z]{2}\b",
     ]
     location_text = f"{job.location}".lower()
-    if _has_match(location_text, us_patterns):
+    if has_match(location_text, us_patterns):
         score += 10
         reasons.append("US-based or remote position")
     else:
@@ -153,7 +153,7 @@ def evaluate_job(job: JobPosting) -> FilterResult:
     # Clamp score
     score = max(0, min(100, score))
     should_apply = score >= 40
-    variant = _select_variant(text)
+    variant = select_variant(text)
 
     reason = "; ".join(reasons) if reasons else "Meets basic criteria"
     if not should_apply:

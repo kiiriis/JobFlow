@@ -39,12 +39,16 @@ ENTRY_LEVEL_SIGNALS = [
     r"\bentry[\s-]*level\b",
     r"\bjunior\b",
     r"\b0[\s-]*[12]\s*(?:years?|yrs?)\b",
+    r"\b1\+?\s*(?:years?|yrs?)\b",
     r"\bearly\s+career\b",
     r"\brecent\s+graduate\b",
     r"\buniversity\s+grad",
     r"\bsde[\s-]*[i1]\b",
     r"\bswe[\s-]*[i1]\b",
+    r"\bsoftware\s+engineer\s*(?:ii|2)\b",
+    r"\bsde[\s-]*(?:ii|2)\b",
     r"\bassociate\b",
+    r"\bfirst\s+opportunity\b",
 ]
 
 # ML/AI keywords for variant selection

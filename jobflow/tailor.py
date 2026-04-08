@@ -89,7 +89,9 @@ def build_tailor_prompt(job: JobPosting, base_tex: str, master_prompt: str) -> s
         f"{job.description}\n\n"
         f"---\n\n"
         f"## My Current Resume (LaTeX)\n\n"
-        f"```latex\n{base_tex}\n```"
+        f"```latex\n{base_tex}\n```\n\n"
+        f"CRITICAL: The tailored resume MUST fit on exactly ONE page. "
+        f"Keep bullets concise (1-2 lines max). Do NOT modify margins or font sizes."
     )
 
 

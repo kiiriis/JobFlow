@@ -16,11 +16,12 @@ from ..config import load_config
 from ..filter import (
     select_variant,
     has_match,
+    count_matches,
     DISQUALIFYING_PHRASES,
     SENIOR_PHRASES,
     ENTRY_LEVEL_SIGNALS,
 )
-from ..latex import compile_pdf
+from ..latex import compile_pdf, get_page_count
 from ..tailor import load_base_resume, load_master_prompt, save_tailored_resume
 from ..tracker import list_jobs, update_status, append_job, STATUSES, HEADERS
 
@@ -339,11 +340,13 @@ def create_app():
                 error="This role does not sponsor visas or requires U.S. citizenship / security clearance. Skipping.",
             )
 
-        if has_match(jd_lower, SENIOR_PHRASES) and not has_match(jd_lower, ENTRY_LEVEL_SIGNALS):
+        senior_count = count_matches(jd_lower, SENIOR_PHRASES)
+        entry_count = count_matches(jd_lower, ENTRY_LEVEL_SIGNALS)
+        if senior_count > 0 and entry_count == 0 and senior_count >= 3:
             return render_template(
                 "_partials/tailor_status.html",
                 status="error",
-                error="This role requires senior-level experience (3+ years) and has no new-grad / entry-level signals. Skipping.",
+                error="This role requires senior-level experience and has no entry-level signals. Skipping.",
             )
 
         session_id = str(uuid.uuid4())
@@ -568,7 +571,8 @@ def _build_tailor_prompt(jd_text, base_tex, master_prompt):
         f"2. Then output the COMPLETE modified .tex file — from \\documentclass to \\end{{document}}\n"
         f"3. Do NOT wrap the output in markdown code fences (no ```)\n"
         f"4. Do NOT add any commentary or explanation\n"
-        f"5. The output must be a valid, compilable LaTeX file\n\n"
+        f"5. The output must be a valid, compilable LaTeX file\n"
+        f"6. The resume MUST fit on exactly ONE PAGE. Keep bullets concise (1-2 lines max). Do NOT modify margins or font sizes.\n\n"
         f"{base_tex}"
     )
 
@@ -648,11 +652,76 @@ def _run_tailor(session_id, config):
         pdf_path = compile_pdf(tex_path)
         session["pdf_path"] = str(pdf_path) if pdf_path else None
 
+        # Auto-fix: if PDF exceeds 1 page, ask Claude to condense
+        if pdf_path and get_page_count(Path(pdf_path)) > 1:
+            _auto_condense(session_id, config)
+            return
+
         session["status"] = "done"
 
     except subprocess.TimeoutExpired:
         session["status"] = "error"
         session["error"] = "Claude CLI timed out (>180s). Try again."
+    except Exception as e:
+        session["status"] = "error"
+        session["error"] = str(e)
+
+
+def _auto_condense(session_id, config):
+    """Automatically condense a resume that spilled to 2+ pages."""
+    session = tailor_sessions[session_id]
+    session["iteration"] += 1
+    try:
+        previous_tex = session["current_tex"]
+        master_prompt = load_master_prompt(config)
+
+        prompt = (
+            f"{master_prompt}\n\n"
+            f"---\n\n"
+            f"## CRITICAL: The resume below compiled to MORE THAN ONE PAGE. Fix it.\n\n"
+            f"You MUST condense it to fit on exactly ONE page. Strategies:\n"
+            f"- Shorten bullet points — cut filler words, merge clauses, aim for 1 line each\n"
+            f"- Reduce skills per category to 4-5 items max\n"
+            f"- Shorten project descriptions\n"
+            f"- Do NOT remove sections, experience entries, or projects\n"
+            f"- Do NOT change margins, font size, or spacing commands\n\n"
+            f"Output the COMPLETE condensed .tex file from \\documentclass to \\end{{document}}.\n"
+            f"No markdown fences. No commentary.\n\n"
+            f"{previous_tex}"
+        )
+
+        result = subprocess.run(
+            ["claude", "-p", prompt, "--model", session["model"], "--effort", session["effort"]],
+            capture_output=True,
+            timeout=180,
+        )
+
+        stdout = result.stdout.decode("utf-8", errors="replace")
+        if result.returncode != 0:
+            stderr = result.stderr.decode("utf-8", errors="replace")
+            session["status"] = "error"
+            session["error"] = f"Auto-condense failed: {stderr or 'unknown error'}"
+            return
+
+        output = stdout.strip()
+        if not output:
+            session["status"] = "error"
+            session["error"] = "Auto-condense returned empty output."
+            return
+
+        full_tex = _extract_tex_from_output(output)
+        session["current_tex"] = full_tex
+        session["conversation"].append({"role": "assistant", "content": full_tex})
+
+        output_dir = session["output_dir"]
+        tex_path = save_tailored_resume(full_tex, output_dir, session["company"], session["role"])
+        pdf_path = compile_pdf(tex_path)
+        session["pdf_path"] = str(pdf_path) if pdf_path else None
+        session["status"] = "done"
+
+    except subprocess.TimeoutExpired:
+        session["status"] = "error"
+        session["error"] = "Auto-condense timed out (>180s)."
     except Exception as e:
         session["status"] = "error"
         session["error"] = str(e)
@@ -689,6 +758,7 @@ def _run_tailor_refine(session_id, config, feedback):
             f"2. Do NOT wrap the output in markdown code fences (no ```)\n"
             f"3. Do NOT add any commentary or explanation\n"
             f"4. The output must be a valid, compilable LaTeX file\n"
+            f"5. The resume MUST fit on exactly ONE PAGE. Keep bullets concise (1-2 lines max). Do NOT modify margins or font sizes.\n"
         )
 
         result = subprocess.run(
@@ -723,6 +793,11 @@ def _run_tailor_refine(session_id, config, feedback):
         tex_path = save_tailored_resume(full_tex, output_dir, session["company"], session["role"])
         pdf_path = compile_pdf(tex_path)
         session["pdf_path"] = str(pdf_path) if pdf_path else None
+
+        # Auto-fix: if PDF exceeds 1 page, ask Claude to condense
+        if pdf_path and get_page_count(Path(pdf_path)) > 1:
+            _auto_condense(session_id, config)
+            return
 
         session["status"] = "done"
 

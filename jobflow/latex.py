@@ -1,3 +1,4 @@
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -64,3 +65,17 @@ def compile_pdf(tex_path: Path, final_name: str = "") -> Path | None:
                 print(f"LaTeX errors:\n" + "\n".join(errors[:5]))
 
     return None
+
+
+def get_page_count(pdf_path: Path) -> int:
+    """Return the number of pages in a PDF file.
+
+    Uses a simple regex on raw PDF bytes — reliable for pdflatex output.
+    Returns 0 if the file can't be read.
+    """
+    try:
+        data = pdf_path.read_bytes()
+        # Match /Type /Page but not /Type /Pages (the page-tree root)
+        return len(re.findall(rb"/Type\s*/Page(?!s)", data))
+    except Exception:
+        return 0

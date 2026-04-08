@@ -7,118 +7,65 @@
     <p>Your job search at a glance</p>
 </hgroup>
 
-<div class="grid">
-    <article class="stat-card">
-        <header>Total</header>
-        <p class="stat-number">{{ total }}</p>
-    </article>
-    <article class="stat-card">
-        <header>Pending</header>
-        <p class="stat-number stat-pending">{{ pending }}</p>
-    </article>
-    <article class="stat-card">
-        <header>Applied</header>
-        <p class="stat-number stat-applied">{{ applied }}</p>
-    </article>
-    <article class="stat-card">
-        <header>Active (Interview/OA/Offer)</header>
-        <p class="stat-number stat-active">{{ active }}</p>
-    </article>
-</div>
+<!-- Summary row -->
+<table style="margin-bottom:1.5rem;">
+    <thead>
+        <tr>
+            <th>Total</th>
+            <th>Pending</th>
+            <th>Applied</th>
+            <th>Active</th>
+            <th>Rejected</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>{{ total }}</strong></td>
+            <td style="color:#f0ad4e;"><strong>{{ pending }}</strong></td>
+            <td style="color:#5bc0de;"><strong>{{ applied }}</strong></td>
+            <td style="color:#5cb85c;"><strong>{{ active }}</strong></td>
+            <td style="color:#d9534f;"><strong>{{ rejected }}</strong></td>
+        </tr>
+    </tbody>
+</table>
 
-<div class="grid">
-    <article>
-        <header>Status Breakdown</header>
-        <canvas id="statusChart" style="max-height:300px"></canvas>
-    </article>
-    <article>
-        <header>Weekly Activity</header>
-        <canvas id="weeklyChart" style="max-height:300px"></canvas>
-    </article>
-</div>
-
+<!-- Recent Applications -->
 {% if recent %}
-<article>
-    <header>Recent Applications</header>
-    <table>
-        <thead>
-            <tr>
-                <th>Company</th>
-                <th>Role</th>
-                <th>Score</th>
-                <th>Status</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for job in recent %}
-            <tr>
-                <td>{{ job.company }}</td>
-                <td>{{ job.role }}</td>
-                <td>{{ job.score }}</td>
-                <td><span class="badge badge-{{ job.status|lower }}">{{ job.status }}</span></td>
-                <td>{{ job.date_found }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</article>
+<h4>Recent Applications</h4>
+<div style="overflow-x:auto;">
+<table>
+    <thead>
+        <tr>
+            <th>Company</th>
+            <th>Role</th>
+            <th>Score</th>
+            <th>Status</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job in recent %}
+        <tr data-href="/application/{{ job._index }}" style="cursor:pointer;">
+            <td><strong>{{ job.company }}</strong></td>
+            <td>{{ job.role }}</td>
+            <td>
+                {% set s = job.score|int %}
+                <span class="score-badge {% if s >= 80 %}score-high{% elif s >= 50 %}score-mid{% else %}score-low{% endif %}">{{ s }}</span>
+            </td>
+            <td><span class="badge badge-{{ job.status|lower }}">{{ job.status }}</span></td>
+            <td>{{ job.date_found }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+<p style="text-align:right; margin:0.5rem 0 0;"><a href="/applications">View all &rarr;</a></p>
 {% else %}
-<article>
-    <p>No applications tracked yet. <a href="/scan">Run a scan</a> to find jobs.</p>
-</article>
+<div class="empty-state">
+    <h3>No applications yet</h3>
+    <p>Start by scanning for jobs, then track the ones you like.</p>
+    <a href="/scan" role="button">Scan for Jobs</a>
+</div>
 {% endif %}
-
-<script>
-fetch('/api/stats')
-    .then(r => r.json())
-    .then(data => {
-        const colors = {
-            'Pending': '#f0ad4e',
-            'Applied': '#5bc0de',
-            'Interview': '#5cb85c',
-            'OA': '#46b8da',
-            'Offer': '#d946ef',
-            'Rejected': '#d9534f',
-            'Skipped': '#666',
-            'Withdrawn': '#888',
-        };
-        const labels = Object.keys(data.status_counts);
-        const values = Object.values(data.status_counts);
-        const bgColors = labels.map(l => colors[l] || '#999');
-
-        new Chart(document.getElementById('statusChart'), {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{ data: values, backgroundColor: bgColors, borderWidth: 0 }]
-            },
-            options: {
-                plugins: { legend: { position: 'right', labels: { color: '#ccc' } } },
-                cutout: '60%',
-            }
-        });
-
-        new Chart(document.getElementById('weeklyChart'), {
-            type: 'bar',
-            data: {
-                labels: data.week_labels,
-                datasets: [{
-                    label: 'Jobs Found',
-                    data: data.week_values,
-                    backgroundColor: '#5bc0de',
-                    borderRadius: 4,
-                }]
-            },
-            options: {
-                scales: {
-                    y: { beginAtZero: true, ticks: { color: '#aaa', stepSize: 1 } },
-                    x: { ticks: { color: '#aaa' } }
-                },
-                plugins: { legend: { display: false } },
-            }
-        });
-    });
-</script>
 
 {% endblock %}

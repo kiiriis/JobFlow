@@ -89,7 +89,20 @@ def create_app():
 
     @app.route("/")
     def dashboard():
-        return redirect("/applications")
+        jobs = list_jobs(config["csv_path"])
+        from collections import Counter
+        counts = Counter(j.get("status", "Unknown") for j in jobs)
+        recent = [{"_index": i + 1, **j} for i, j in enumerate(jobs)]
+        recent.sort(key=lambda j: j.get("date_found", ""), reverse=True)
+        return render_template(
+            "dashboard.html",
+            total=len(jobs),
+            pending=counts.get("Pending", 0),
+            applied=counts.get("Applied", 0),
+            active=counts.get("Interview", 0) + counts.get("OA", 0) + counts.get("Offer", 0),
+            rejected=counts.get("Rejected", 0),
+            recent=recent[:10],
+        )
 
     @app.route("/applications")
     def applications():
@@ -212,7 +225,7 @@ def create_app():
             writer.writeheader()
             writer.writerows(rows)
 
-        return f'<span class="notes-text" hx-get="/api/applications/{index}/notes/edit" hx-trigger="click" hx-swap="outerHTML">{notes or "Click to add..."}</span>'
+        return f'<span class="notes-text" hx-get="/api/applications/{index}/notes/edit" hx-trigger="click" hx-swap="outerHTML" hx-on::load="showToast(\'Notes saved\')">{notes or "Add notes..."}</span>'
 
     @app.route("/api/applications/<int:index>/notes/edit")
     def api_edit_notes(index):

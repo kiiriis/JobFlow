@@ -2,28 +2,31 @@
 {% block title %}{{ job.company }} — {{ job.role }} — JobFlow{% endblock %}
 {% block content %}
 
-<a href="/applications">&larr; Back to Applications</a>
+<a href="/applications" style="font-size:0.85em;">&larr; Back to Applications</a>
 
 <article style="margin-top:1rem">
     <header>
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <div class="detail-header">
             <div>
-                <h3 style="margin:0">{{ job.company }} — {{ job.role }}</h3>
-                <p style="margin:0; opacity:0.7;">
-                    Score: <span class="score-badge {% if job.score|int >= 80 %}score-high{% elif job.score|int >= 50 %}score-mid{% else %}score-low{% endif %}">{{ job.score }}</span>
-                    &nbsp; Variant: <code>{{ job.variant }}</code>
-                    &nbsp; Source: {{ job.source or "manual" }}
-                    {% if job.link %}
-                    &nbsp; <a href="{{ job.link }}" target="_blank" rel="noopener">Job Posting &rarr;</a>
-                    {% endif %}
-                </p>
+                <h3 style="margin:0">{{ job.company }} &mdash; {{ job.role }}</h3>
+                <div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center;">
+                    {% set s = job.score|int %}
+                    <span class="score-badge {% if s >= 80 %}score-high{% elif s >= 50 %}score-mid{% else %}score-low{% endif %}">{{ s }}%</span>
+                    <code style="font-size:0.8em;">{{ job.variant }}</code>
+                    <span class="badge badge-{{ job.status|lower }}">{{ job.status }}</span>
+                    {% if job.source %}<small style="opacity:0.5;">via {{ job.source }}</small>{% endif %}
+                </div>
             </div>
-            <div style="display:flex; gap:0.5rem; align-items:center;">
+            <div class="detail-actions">
+                {% if job.link %}
+                <a href="{{ job.link }}" target="_blank" rel="noopener" role="button" class="btn-small">Open Job Posting</a>
+                {% endif %}
                 <select name="status"
                     hx-patch="/api/applications/{{ index }}/status"
                     hx-target="this"
                     hx-swap="outerHTML"
-                    class="status-select status-{{ job.status|lower }}">
+                    hx-on::after-request="showToast('Status updated')"
+                    class="status-select">
                     {% for s in statuses %}
                     <option value="{{ s }}" {% if s == job.status %}selected{% endif %}>{{ s }}</option>
                     {% endfor %}
@@ -33,48 +36,57 @@
     </header>
 
     <div class="grid">
+        <!-- Job Description -->
         <div>
             <h4>Job Description</h4>
             {% if jd_text %}
-            <pre style="white-space:pre-wrap; font-size:0.85em; max-height:500px; overflow-y:auto; background:var(--pico-card-background-color); padding:1rem; border-radius:8px;">{{ jd_text }}</pre>
+            <pre style="white-space:pre-wrap; font-size:0.85em; max-height:500px; overflow-y:auto; background:var(--pico-card-background-color); padding:1rem; border-radius:8px; line-height:1.5;">{{ jd_text }}</pre>
             {% else %}
-            <p style="opacity:0.5">No job description saved</p>
+            <div class="empty-state" style="padding:1.5rem;">
+                <p>No job description saved</p>
+            </div>
             {% endif %}
         </div>
+
+        <!-- Files & Preview -->
         <div>
             <h4>Files</h4>
             {% if file_infos %}
-            <ul>
+            <ul class="file-list">
                 {% for f in file_infos %}
                 <li>
-                    <a href="/api/file/{{ f.path }}" target="_blank">{{ f.name }}</a>
-                    <small style="opacity:0.5">({{ f.size_kb }}KB)</small>
+                    <span>
+                        <span class="file-icon">{% if f.suffix == '.pdf' %}&#128196;{% elif f.suffix == '.tex' %}&#128221;{% elif f.suffix == '.txt' %}&#128203;{% elif f.suffix == '.json' %}&#128218;{% else %}&#128193;{% endif %}</span>
+                        <a href="/api/file/{{ f.path }}" target="_blank">{{ f.name }}</a>
+                    </span>
+                    <small style="opacity:0.4;">{{ f.size_kb }}KB</small>
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p style="opacity:0.5">No files generated yet</p>
+            <p style="opacity:0.5; font-size:0.85em;">No files generated yet. <a href="/tailor">Tailor a resume</a> for this job.</p>
             {% endif %}
 
             {% set pdf_files = file_infos|selectattr('suffix', 'equalto', '.pdf')|list %}
             {% if pdf_files %}
-            <h4>Resume Preview</h4>
+            <h4 style="margin-top:1rem;">Resume Preview</h4>
             <embed src="/api/file/{{ pdf_files[0].path }}" type="application/pdf" width="100%" height="600px" style="border-radius:8px;">
             {% endif %}
         </div>
     </div>
 
-    <h4>Notes</h4>
-    <div style="margin-bottom:1rem;">
-        <input type="text" name="notes" value="{{ job.notes or '' }}" placeholder="Add notes..."
-            hx-patch="/api/applications/{{ index }}/notes"
-            hx-trigger="blur, keydown[key=='Enter']"
-            hx-swap="none"
-            style="max-width:600px">
-    </div>
+    <!-- Notes -->
+    <h4>Notes <span class="notes-save-indicator" id="notes-saved">Saved</span></h4>
+    <textarea name="notes" rows="4" placeholder="Add interview notes, follow-up items, salary expectations..."
+        hx-patch="/api/applications/{{ index }}/notes"
+        hx-trigger="blur, keydown[ctrlKey&&key=='Enter']"
+        hx-swap="none"
+        hx-on::after-request="document.getElementById('notes-saved').classList.add('show'); setTimeout(function(){document.getElementById('notes-saved').classList.remove('show');}, 2000); showToast('Notes saved');"
+        style="max-width:700px;">{{ job.notes or '' }}</textarea>
+    <small style="opacity:0.4;">Auto-saves on blur or Ctrl+Enter</small>
 
-    <footer>
-        <small>Found: {{ job.date_found }} {% if job.date_applied %}| Applied: {{ job.date_applied }}{% endif %}</small>
+    <footer style="margin-top:1rem;">
+        <small style="opacity:0.5;">Found: {{ job.date_found }} {% if job.date_applied %}&middot; Applied: {{ job.date_applied }}{% endif %}</small>
     </footer>
 </article>
 

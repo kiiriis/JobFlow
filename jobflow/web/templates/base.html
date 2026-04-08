@@ -10,12 +10,19 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <!-- HTMX Progress Bar -->
+    <div id="htmx-progress"></div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
     <nav class="container-fluid">
         <ul>
             <li><strong>JobFlow</strong></li>
         </ul>
         <ul>
-            <li><a href="/applications" {% if request.path in ['/', '/applications'] %}class="active"{% endif %}>Dashboard</a></li>
+            <li><a href="/" {% if request.path == '/' %}class="active"{% endif %}>Dashboard</a></li>
+            <li><a href="/applications" {% if request.path.startswith('/application') %}class="active"{% endif %}>Applications</a></li>
             <li><a href="/scan" {% if request.path == '/scan' %}class="active"{% endif %}>Scanner</a></li>
             <li><a href="/tailor" {% if request.path == '/tailor' %}class="active"{% endif %}>Tailor</a></li>
         </ul>
@@ -26,7 +33,41 @@
     </main>
 
     <footer class="container">
-        <small>JobFlow v0.1.0 — Running locally</small>
+        <small style="opacity:0.4;">JobFlow v0.1.0</small>
     </footer>
+
+    <script>
+    // ── Toast system ──────────────────────
+    function showToast(message, type) {
+        type = type || 'success';
+        var container = document.getElementById('toast-container');
+        var toast = document.createElement('div');
+        toast.className = 'toast toast-' + type;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(function() {
+            toast.classList.add('toast-out');
+            setTimeout(function() { toast.remove(); }, 300);
+        }, 2500);
+    }
+
+    // ── HTMX Progress Bar ─────────────────
+    var bar = document.getElementById('htmx-progress');
+    document.body.addEventListener('htmx:beforeRequest', function() {
+        bar.className = 'active';
+    });
+    document.body.addEventListener('htmx:afterRequest', function() {
+        bar.className = 'done';
+        setTimeout(function() { bar.className = ''; }, 600);
+    });
+
+    // ── Clickable table rows ──────────────
+    document.addEventListener('click', function(e) {
+        var row = e.target.closest('tr[data-href]');
+        if (row && !e.target.closest('select, button, a, input')) {
+            window.location = row.dataset.href;
+        }
+    });
+    </script>
 </body>
 </html>

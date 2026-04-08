@@ -7,11 +7,21 @@
     <p>Paste a job description to generate a tailored resume</p>
 </hgroup>
 
+<!-- Step indicator -->
+<div class="steps" id="tailor-steps">
+    <div class="step active" id="step-1"><div class="step-num">1</div><br>Paste JD</div>
+    <div class="step" id="step-2"><div class="step-num">2</div><br>Generating</div>
+    <div class="step" id="step-3"><div class="step-num">3</div><br>Review PDF</div>
+    <div class="step" id="step-4"><div class="step-num">4</div><br>Refine</div>
+</div>
+
 <article>
     <form hx-post="/api/tailor/generate" hx-target="#tailor-results" hx-swap="innerHTML"
-          hx-disabled-elt="find button[type='submit']">
+          hx-disabled-elt="find button[type='submit']"
+          hx-on::before-request="setStep(2)"
+          hx-on::after-request="if(event.detail.successful) setStep(3)">
         <label for="jd_text">Job Description</label>
-        <textarea id="jd_text" name="jd_text" rows="14"
+        <textarea id="jd_text" name="jd_text" rows="12"
                   placeholder="Paste the full job description here..."
                   required></textarea>
         <div class="grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 0.5rem;">
@@ -35,5 +45,22 @@
 </article>
 
 <div id="tailor-results"></div>
+
+<script>
+function setStep(n) {
+    for (var i = 1; i <= 4; i++) {
+        var el = document.getElementById('step-' + i);
+        el.className = 'step' + (i < n ? ' done' : '') + (i === n ? ' active' : '');
+    }
+}
+// Listen for tailor completion (htmx swaps in done state)
+document.body.addEventListener('htmx:afterSettle', function(e) {
+    var results = document.getElementById('tailor-results');
+    if (!results) return;
+    if (results.querySelector('iframe')) setStep(3);
+    if (results.querySelector('[name="feedback"]')) setStep(3);
+    if (results.querySelector('.toast-error, [style*="del-color"]')) setStep(1);
+});
+</script>
 
 {% endblock %}

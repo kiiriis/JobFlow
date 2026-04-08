@@ -18,7 +18,7 @@
 
 <article>
     <header><strong style="color: var(--pico-del-color);">Tailoring Error</strong></header>
-    <pre style="white-space: pre-wrap;">{{ error }}</pre>
+    <pre style="white-space: pre-wrap; font-size:0.85em;">{{ error }}</pre>
     <p><small>Check that the <code>claude</code> CLI is available and authenticated.</small></p>
 </article>
 
@@ -27,10 +27,11 @@
 <article>
     <header class="tailor-meta">
         <div>
-            <strong>{{ company }}</strong> — {{ role }}
-            <br><small>Variant: <code>{{ variant }}</code> | Location: {{ location }} | Iteration: {{ iteration }}</small>
+            <strong style="font-size:1.1em;">{{ company }}</strong> &mdash; {{ role }}
+            <br><small style="opacity:0.6;">Variant: <code>{{ variant }}</code> &middot; Location: {{ location }} &middot; Iteration: {{ iteration }}</small>
         </div>
-        <div>
+        <div style="display:flex; gap:0.5rem;">
+            <a href="/api/tailor/pdf/{{ session_id }}" target="_blank" class="btn-small btn-outline">Open PDF</a>
             <a href="/api/tailor/download/{{ session_id }}" role="button" class="btn-small">Download PDF</a>
         </div>
     </header>
@@ -48,11 +49,14 @@
     <footer>
         <form hx-post="/api/tailor/refine/{{ session_id }}" hx-target="#tailor-results" hx-swap="innerHTML"
               hx-disabled-elt="find button[type='submit']">
+            <label for="feedback" style="font-weight:600;">Refine this resume</label>
             <textarea name="feedback" rows="3"
-                      placeholder="Not happy? Describe what to change (e.g., 'emphasize distributed systems experience')..."
+                      placeholder="Describe what to change (e.g., 'emphasize distributed systems experience', 'make bullets more concise')..."
                       required></textarea>
-            <button type="submit" style="width:auto; margin-top:0.5rem;">Regenerate</button>
-            <small style="opacity:0.6;">Each regeneration passes your feedback + previous output to Claude ({{ model }}, {{ effort }} effort).</small>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem;">
+                <button type="submit" style="width:auto;">Regenerate</button>
+                <small style="opacity:0.5;">Model: {{ model }} &middot; Effort: {{ effort }}</small>
+            </div>
         </form>
     </footer>
 </article>

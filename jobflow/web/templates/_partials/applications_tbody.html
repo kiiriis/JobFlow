@@ -3,5 +3,13 @@
     {% include "_partials/application_row.html" %}
     {% endfor %}
 {% else %}
-    <tr><td colspan="9" style="text-align:center; opacity:0.6;">No applications found</td></tr>
+    <tr>
+        <td colspan="9">
+            <div class="empty-state" style="padding:2rem;">
+                <h3>No applications found</h3>
+                <p>Start by scanning for jobs to find opportunities.</p>
+                <a href="/scan" role="button" class="btn-small" style="padding:8px 20px;">Go to Scanner</a>
+            </div>
+        </td>
+    </tr>
 {% endif %}

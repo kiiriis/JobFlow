@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — JobFlow{% endblock %}
+{% block title %}Applications — JobFlow{% endblock %}
 {% block content %}
 
 <hgroup>
-    <h2>Dashboard</h2>
+    <h2>Applications</h2>
     <p>Track and manage your job applications</p>
 </hgroup>
 
-<div class="grid" style="grid-template-columns: auto auto 1fr auto; align-items: end; gap: 1rem; margin-bottom: 1rem;">
+<div class="grid" style="grid-template-columns: 140px 180px 1fr; align-items:end; gap:1rem; margin-bottom:1rem;">
     <div>
         <label for="status-filter">Status</label>
         <select id="status-filter" name="status"
@@ -20,7 +20,7 @@
         </select>
     </div>
     <div>
-        <label for="sort-select">Sort by</label>
+        <label for="sort-select">Sort by <span id="sort-dir-icon" style="cursor:pointer; opacity:0.6;" onclick="toggleSortDir()" title="Toggle sort direction">&#x25BC;</span></label>
         <select id="sort-select" name="sort"
             hx-get="/api/applications" hx-target="#applications-body" hx-swap="innerHTML"
             hx-include="#status-filter, #search-input, #sort-dir">
@@ -28,6 +28,7 @@
             <option value="score">Score</option>
             <option value="company">Company</option>
         </select>
+        <input type="hidden" id="sort-dir" name="dir" value="desc">
     </div>
     <div>
         <label for="search-input">Search</label>
@@ -35,10 +36,6 @@
             hx-get="/api/applications" hx-target="#applications-body" hx-swap="innerHTML"
             hx-trigger="input changed delay:300ms"
             hx-include="#status-filter, #sort-select, #sort-dir">
-    </div>
-    <div>
-        <label>&nbsp;</label>
-        <input type="hidden" id="sort-dir" name="dir" value="desc">
     </div>
 </div>
 
@@ -51,17 +48,45 @@
                 <th>Role</th>
                 <th width="60">Score</th>
                 <th width="130">Status</th>
-                <th width="100">Found</th>
-                <th width="100">Applied</th>
-                <th>Notes</th>
-                <th width="80">Actions</th>
+                <th width="100" class="col-found">Found</th>
+                <th width="100" class="col-applied">Applied</th>
+                <th class="col-notes" width="180">Notes</th>
+                <th width="80" class="col-actions">Actions</th>
             </tr>
         </thead>
         <tbody id="applications-body"
             hx-get="/api/applications" hx-trigger="load" hx-swap="innerHTML">
-            <tr><td colspan="9" style="text-align:center">Loading...</td></tr>
+            <!-- Skeleton loader -->
+            {% for _ in range(6) %}
+            <tr class="skeleton-row">
+                <td><div class="skeleton" style="width:20px;">&nbsp;</div></td>
+                <td><div class="skeleton" style="width:80px;">&nbsp;</div></td>
+                <td><div class="skeleton" style="width:140px;">&nbsp;</div></td>
+                <td><div class="skeleton" style="width:30px;">&nbsp;</div></td>
+                <td><div class="skeleton" style="width:70px;">&nbsp;</div></td>
+                <td class="col-found"><div class="skeleton" style="width:60px;">&nbsp;</div></td>
+                <td class="col-applied"><div class="skeleton" style="width:60px;">&nbsp;</div></td>
+                <td class="col-notes"><div class="skeleton" style="width:100px;">&nbsp;</div></td>
+                <td class="col-actions"><div class="skeleton" style="width:40px;">&nbsp;</div></td>
+            </tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>
+
+<script>
+function toggleSortDir() {
+    var input = document.getElementById('sort-dir');
+    var icon = document.getElementById('sort-dir-icon');
+    if (input.value === 'desc') {
+        input.value = 'asc';
+        icon.innerHTML = '&#x25B2;';
+    } else {
+        input.value = 'desc';
+        icon.innerHTML = '&#x25BC;';
+    }
+    document.getElementById('sort-select').dispatchEvent(new Event('change'));
+}
+</script>
 
 {% endblock %}

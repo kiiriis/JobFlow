@@ -1,4 +1,4 @@
-<tr id="row-{{ job._index }}">
+<tr id="row-{{ job._index }}" class="just-updated" data-href="/application/{{ job._index }}">
     <td>{{ job._index }}</td>
     <td><strong>{{ job.company }}</strong></td>
     <td>
@@ -9,7 +9,8 @@
         {% endif %}
     </td>
     <td>
-        <span class="score-badge {% if job.score|int >= 80 %}score-high{% elif job.score|int >= 50 %}score-mid{% else %}score-low{% endif %}">
+        {% set s = job.score|int %}
+        <span class="score-badge {% if s >= 80 %}score-high{% elif s >= 50 %}score-mid{% else %}score-low{% endif %}">
             {{ job.score }}
         </span>
     </td>
@@ -18,25 +19,26 @@
             hx-patch="/api/applications/{{ job._index }}/status"
             hx-target="#row-{{ job._index }}"
             hx-swap="outerHTML"
-            class="status-select status-{{ job.status|lower }}">
+            hx-on::after-request="showToast('Status updated')"
+            class="status-select">
             {% for s in statuses %}
             <option value="{{ s }}" {% if s == job.status %}selected{% endif %}>{{ s }}</option>
             {% endfor %}
         </select>
     </td>
-    <td>{{ job.date_found }}</td>
-    <td>{{ job.date_applied }}</td>
-    <td>
+    <td class="col-found">{{ job.date_found }}</td>
+    <td class="col-applied">{{ job.date_applied }}</td>
+    <td class="col-notes">
         <span class="notes-text"
             hx-get="/api/applications/{{ job._index }}/notes/edit"
             hx-trigger="click"
-            hx-swap="outerHTML">
-            {{ job.notes or "Click to add..." }}
+            hx-swap="outerHTML"
+            role="button"
+            tabindex="0">
+            {{ job.notes or "Add notes..." }}
         </span>
     </td>
-    <td>
-        {% if job.resume_path %}
-        <a href="/application/{{ job._index }}" class="btn-small">View</a>
-        {% endif %}
+    <td class="col-actions">
+        <a href="/application/{{ job._index }}" class="btn-small btn-outline">View</a>
     </td>
 </tr>

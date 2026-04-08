@@ -1,32 +1,33 @@
 {% if running %}
 <article aria-busy="true"
-    hx-get="/api/scan/status" hx-trigger="every 2s" hx-swap="outerHTML">
+    hx-get="/api/scan/status" hx-trigger="every 3s" hx-swap="outerHTML">
     <p>Scanning job boards... This may take a minute.</p>
 </article>
 
 {% elif error %}
 <article>
-    <header style="color: var(--pico-del-color);">Scan Error</header>
-    <pre>{{ error }}</pre>
+    <header><strong style="color: var(--pico-del-color);">Scan Error</strong></header>
+    <pre style="white-space:pre-wrap; font-size:0.85em;">{{ error }}</pre>
+    <p><small>Try adjusting filters or scanning a specific platform.</small></p>
 </article>
 
-{% elif results %}
+{% elif results is defined and results %}
 <article>
     <header>
-        Scan Complete — {{ relevant }} relevant / {{ total }} total ({{ skipped }} filtered out)
+        <strong>Scan Complete</strong> &mdash; {{ relevant }} relevant / {{ total }} total ({{ skipped }} filtered out)
     </header>
 
     <div style="overflow-x:auto;">
         <table>
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th width="40">#</th>
                     <th>Company</th>
                     <th>Role</th>
-                    <th>Location</th>
-                    <th>Score</th>
-                    <th>Variant</th>
-                    <th>Action</th>
+                    <th class="col-location">Location</th>
+                    <th width="60">Score</th>
+                    <th width="70" class="col-variant">Variant</th>
+                    <th width="100">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -41,18 +42,20 @@
                         {{ job.title }}
                         {% endif %}
                     </td>
-                    <td>{{ job.location }}</td>
+                    <td class="col-location">{{ job.location }}</td>
                     <td>
-                        <span class="score-badge {% if job.score >= 80 %}score-high{% elif job.score >= 50 %}score-mid{% else %}score-low{% endif %}">
+                        <span class="score-badge {% if job.score >= 80 %}score-high{% elif job.score >= 50 %}score-mid{% else %}score-low{% endif %}"
+                              title="{{ job.reason }}">
                             {{ job.score }}
                         </span>
                     </td>
-                    <td><code>{{ job.variant }}</code></td>
+                    <td class="col-variant"><code>{{ job.variant }}</code></td>
                     <td>
                         <button class="btn-small"
                             hx-post="/api/scan/track"
                             hx-vals='{"company":"{{ job.company }}","role":"{{ job.title }}","url":"{{ job.url }}","score":"{{ job.score }}","variant":"{{ job.variant }}","source":"scan"}'
-                            hx-swap="outerHTML">
+                            hx-swap="outerHTML"
+                            hx-on::after-request="showToast('Job tracked')">
                             Track
                         </button>
                     </td>
@@ -61,5 +64,11 @@
             </tbody>
         </table>
     </div>
+</article>
+
+{% elif results is defined %}
+<article class="empty-state">
+    <h3>No relevant jobs found</h3>
+    <p>Try scanning a different platform or increasing the time range.</p>
 </article>
 {% endif %}

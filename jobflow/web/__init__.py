@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import threading
+import time
 import uuid
 from collections import Counter
 from datetime import date, datetime, timedelta
@@ -38,6 +39,40 @@ scan_state = {
 
 # In-memory store for tailor sessions
 tailor_sessions = {}
+
+MAX_SESSIONS = 20  # Evict oldest sessions beyond this
+
+
+def _evict_old_sessions():
+    """Remove oldest completed sessions when we exceed MAX_SESSIONS."""
+    if len(tailor_sessions) <= MAX_SESSIONS:
+        return
+    # Sort by creation time (embedded in UUID v4 isn't ordered, so use _created_at)
+    completed = [
+        (sid, s) for sid, s in tailor_sessions.items()
+        if s["status"] in ("done", "error")
+    ]
+    completed.sort(key=lambda x: x[1].get("_created_at", 0))
+    # Remove oldest completed until we're at limit
+    to_remove = len(tailor_sessions) - MAX_SESSIONS
+    for sid, _ in completed[:to_remove]:
+        tailor_sessions.pop(sid, None)
+
+
+def _cancel_session(session):
+    """Cancel a running session and kill its subprocess if possible."""
+    session["_cancelled"] = True
+    proc = session.get("_process")
+    if proc and proc.poll() is None:
+        try:
+            proc.kill()
+        except OSError:
+            pass
+
+
+def _is_cancelled(session):
+    """Check if session has been cancelled."""
+    return session.get("_cancelled", False)
 
 
 def create_app():
@@ -349,6 +384,15 @@ def create_app():
                 error="This role requires senior-level experience and has no entry-level signals. Skipping.",
             )
 
+        # Cancel any currently running sessions to avoid orphaned Claude processes
+        for sid, s in list(tailor_sessions.items()):
+            if s["status"] == "running":
+                _cancel_session(s)
+                s["status"] = "error"
+                s["error"] = "Cancelled — new tailor request started."
+
+        _evict_old_sessions()
+
         session_id = str(uuid.uuid4())
         output_dir = config["output_dir"] / f"tailor_{session_id[:8]}"
         variant = select_variant(jd_text)
@@ -372,6 +416,9 @@ def create_app():
             "iteration": 1,
             "model": model,
             "effort": effort,
+            "_created_at": time.time(),
+            "_cancelled": False,
+            "_process": None,
         }
 
         thread = threading.Thread(
@@ -430,6 +477,14 @@ def create_app():
         session = tailor_sessions.get(session_id)
         if not session:
             abort(404)
+
+        if session["status"] == "running":
+            return render_template(
+                "_partials/tailor_status.html",
+                status="running",
+                session_id=session_id,
+                iteration=session["iteration"],
+            )
 
         feedback = (request.form.get("feedback") or "").strip()
         if not feedback:
@@ -599,6 +654,33 @@ def _extract_tex_from_output(output):
     return cleaned
 
 
+def _run_claude(session, prompt):
+    """Run Claude CLI and return (stdout, stderr, returncode). Handles cancellation."""
+    proc = subprocess.Popen(
+        ["claude", "-p", prompt, "--model", session["model"], "--effort", session["effort"]],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    session["_process"] = proc
+    try:
+        stdout, stderr = proc.communicate(timeout=180)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.communicate()
+        raise
+    finally:
+        session["_process"] = None
+
+    if _is_cancelled(session):
+        return None, None, -1
+
+    return (
+        stdout.decode("utf-8", errors="replace"),
+        stderr.decode("utf-8", errors="replace"),
+        proc.returncode,
+    )
+
+
 def _run_tailor(session_id, config):
     """Run initial resume tailoring in background thread."""
     session = tailor_sessions[session_id]
@@ -611,22 +693,17 @@ def _run_tailor(session_id, config):
 
         prompt = _build_tailor_prompt(jd_text, base_tex, master_prompt)
 
-        # Call Claude CLI
-        result = subprocess.run(
-            ["claude", "-p", prompt, "--model", session["model"], "--effort", session["effort"]],
-            capture_output=True,
-            timeout=180,
-        )
+        stdout, stderr, returncode = _run_claude(session, prompt)
 
-        stdout = result.stdout.decode("utf-8", errors="replace")
-        stderr = result.stderr.decode("utf-8", errors="replace")
-
-        if result.returncode != 0:
-            session["status"] = "error"
-            session["error"] = stderr or f"Claude CLI exited with code {result.returncode}"
+        if _is_cancelled(session):
             return
 
-        output = stdout.strip()
+        if returncode != 0:
+            session["status"] = "error"
+            session["error"] = stderr or f"Claude CLI exited with code {returncode}"
+            return
+
+        output = (stdout or "").strip()
         if not output:
             session["status"] = "error"
             session["error"] = "Claude returned empty output."
@@ -672,6 +749,9 @@ def _auto_condense(session_id, config):
     session = tailor_sessions[session_id]
     session["iteration"] += 1
     try:
+        if _is_cancelled(session):
+            return
+
         previous_tex = session["current_tex"]
         master_prompt = load_master_prompt(config)
 
@@ -690,20 +770,17 @@ def _auto_condense(session_id, config):
             f"{previous_tex}"
         )
 
-        result = subprocess.run(
-            ["claude", "-p", prompt, "--model", session["model"], "--effort", session["effort"]],
-            capture_output=True,
-            timeout=180,
-        )
+        stdout, stderr, returncode = _run_claude(session, prompt)
 
-        stdout = result.stdout.decode("utf-8", errors="replace")
-        if result.returncode != 0:
-            stderr = result.stderr.decode("utf-8", errors="replace")
+        if _is_cancelled(session):
+            return
+
+        if returncode != 0:
             session["status"] = "error"
             session["error"] = f"Auto-condense failed: {stderr or 'unknown error'}"
             return
 
-        output = stdout.strip()
+        output = (stdout or "").strip()
         if not output:
             session["status"] = "error"
             session["error"] = "Auto-condense returned empty output."
@@ -761,21 +838,17 @@ def _run_tailor_refine(session_id, config, feedback):
             f"5. The resume MUST fit on exactly ONE PAGE. Keep bullets concise (1-2 lines max). Do NOT modify margins or font sizes.\n"
         )
 
-        result = subprocess.run(
-            ["claude", "-p", prompt, "--model", session["model"], "--effort", session["effort"]],
-            capture_output=True,
-            timeout=180,
-        )
+        stdout, stderr, returncode = _run_claude(session, prompt)
 
-        stdout = result.stdout.decode("utf-8", errors="replace")
-        stderr = result.stderr.decode("utf-8", errors="replace")
-
-        if result.returncode != 0:
-            session["status"] = "error"
-            session["error"] = stderr or f"Claude CLI exited with code {result.returncode}"
+        if _is_cancelled(session):
             return
 
-        output = stdout.strip()
+        if returncode != 0:
+            session["status"] = "error"
+            session["error"] = stderr or f"Claude CLI exited with code {returncode}"
+            return
+
+        output = (stdout or "").strip()
         if not output:
             session["status"] = "error"
             session["error"] = "Claude returned empty output."

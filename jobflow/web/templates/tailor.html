@@ -8,7 +8,8 @@
 </hgroup>
 
 <article>
-    <form hx-post="/api/tailor/generate" hx-target="#tailor-results" hx-swap="innerHTML">
+    <form hx-post="/api/tailor/generate" hx-target="#tailor-results" hx-swap="innerHTML"
+          hx-disabled-elt="find button[type='submit']">
         <label for="jd_text">Job Description</label>
         <textarea id="jd_text" name="jd_text" rows="14"
                   placeholder="Paste the full job description here..."

@@ -39,7 +39,8 @@
     {% endif %}
 
     <footer>
-        <form hx-post="/api/tailor/refine/{{ session_id }}" hx-target="#tailor-results" hx-swap="innerHTML">
+        <form hx-post="/api/tailor/refine/{{ session_id }}" hx-target="#tailor-results" hx-swap="innerHTML"
+              hx-disabled-elt="find button[type='submit']">
             <textarea name="feedback" rows="3"
                       placeholder="Not happy? Describe what to change (e.g., 'emphasize distributed systems experience')..."
                       required></textarea>

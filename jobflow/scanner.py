@@ -1,8 +1,10 @@
 """Scan job boards from JobBoards_Links.json and return matching jobs."""
 
 import json
+import random
 import re
 import ssl
+import time
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from html import unescape
@@ -25,18 +27,30 @@ _OPENER.addheaders = [
 ]
 
 
-def _fetch_json(url: str) -> dict | list | None:
-    """Fetch JSON from a URL using stdlib urllib."""
-    try:
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-            "Accept": "application/json",
-        })
-        with urllib.request.urlopen(req, timeout=15, context=_SSL_CTX) as resp:
-            return json.loads(resp.read().decode())
-    except Exception as e:
-        console.print(f"  [red]Failed to fetch {url}: {e}[/red]")
-        return None
+def _fetch_json(url: str, retries: int = 3) -> dict | list | None:
+    """Fetch JSON from a URL using stdlib urllib with retry/backoff."""
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+                "Accept": "application/json",
+            })
+            with urllib.request.urlopen(req, timeout=15, context=_SSL_CTX) as resp:
+                return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt < retries - 1:
+                wait = int(e.headers.get("Retry-After", 3 ** (attempt + 1)))
+                console.print(f"  [yellow]Rate limited, waiting {wait}s...[/yellow]")
+                time.sleep(wait)
+                continue
+            console.print(f"  [red]Failed to fetch {url}: {e}[/red]")
+            return None
+        except Exception as e:
+            if attempt < retries - 1:
+                time.sleep(3 ** (attempt + 1))
+                continue
+            console.print(f"  [red]Failed to fetch {url}: {e}[/red]")
+            return None
 
 
 def _strip_html(html: str) -> str:
@@ -359,21 +373,36 @@ def scan_linkedin_guest(linkedin_config: dict, include_kw: list[str], max_age_ho
             jobs = _parse_linkedin_html(html, include_kw, seen_titles)
             all_jobs.extend(jobs)
 
+            # Small delay between requests to avoid rate limiting
+            time.sleep(random.uniform(0.5, 1.5))
+
     return all_jobs
 
 
-def _fetch_text(url: str) -> str | None:
-    """Fetch text/HTML from a URL."""
-    try:
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-            "Accept": "text/html,application/xhtml+xml",
-        })
-        with urllib.request.urlopen(req, timeout=15, context=_SSL_CTX) as resp:
-            return resp.read().decode("utf-8", errors="replace")
-    except Exception as e:
-        console.print(f"  [red]Failed: {e}[/red]")
-        return None
+def _fetch_text(url: str, retries: int = 3) -> str | None:
+    """Fetch text/HTML from a URL with retry/backoff."""
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                "Accept": "text/html,application/xhtml+xml",
+            })
+            with urllib.request.urlopen(req, timeout=15, context=_SSL_CTX) as resp:
+                return resp.read().decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt < retries - 1:
+                wait = int(e.headers.get("Retry-After", 3 ** (attempt + 1)))
+                console.print(f"  [yellow]Rate limited, waiting {wait}s...[/yellow]")
+                time.sleep(wait)
+                continue
+            console.print(f"  [red]Failed: {e}[/red]")
+            return None
+        except Exception as e:
+            if attempt < retries - 1:
+                time.sleep(3 ** (attempt + 1))
+                continue
+            console.print(f"  [red]Failed: {e}[/red]")
+            return None
 
 
 def _parse_linkedin_html(html: str, include_kw: list[str], seen: set) -> list[JobPosting]:

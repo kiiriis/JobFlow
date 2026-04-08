@@ -248,10 +248,9 @@ def scan(
     apply_jobs = [(j, r) for j, r in results if r.should_apply]
     if apply_jobs and save_results:
         import json
-        output = []
-        for i, (job, filt) in enumerate(sorted(apply_jobs, key=lambda x: x[1].score, reverse=True), 1):
-            output.append({
-                "index": i,
+        new_entries = []
+        for job, filt in sorted(apply_jobs, key=lambda x: x[1].score, reverse=True):
+            new_entries.append({
                 "company": job.company,
                 "title": job.title,
                 "location": job.location,
@@ -264,8 +263,31 @@ def scan(
 
         results_path = config["output_dir"] / "scan_results.json"
         config["output_dir"].mkdir(parents=True, exist_ok=True)
-        results_path.write_text(json.dumps(output, indent=2))
-        console.print(f"\n[green]Results saved to:[/green] {results_path}")
+
+        # Merge with existing results (append, dedup by URL)
+        existing = []
+        if results_path.exists():
+            try:
+                existing = json.loads(results_path.read_text())
+            except (json.JSONDecodeError, ValueError):
+                existing = []
+
+        seen_urls = {e.get("url") for e in existing if e.get("url")}
+        for entry in new_entries:
+            if entry["url"] and entry["url"] not in seen_urls:
+                existing.append(entry)
+                seen_urls.add(entry["url"])
+
+        # Cap at 500 entries, keep highest-scored
+        existing.sort(key=lambda e: int(e.get("score", 0) or 0), reverse=True)
+        existing = existing[:500]
+
+        # Re-index
+        for i, entry in enumerate(existing, 1):
+            entry["index"] = i
+
+        results_path.write_text(json.dumps(existing, indent=2))
+        console.print(f"\n[green]Results saved to:[/green] {results_path} ({len(existing)} total jobs)")
         console.print(
             "\n[yellow]Next steps:[/yellow]\n"
             "  1. Review the results above\n"
@@ -403,7 +425,7 @@ def web(
     from .web import create_app
     console.print(f"\n[bold green]Starting JobFlow Dashboard at http://localhost:{port}[/bold green]\n")
     webapp = create_app()
-    webapp.run(host="0.0.0.0", port=port, debug=False)
+    webapp.run(host="0.0.0.0", port=port, debug=True)
 
 
 if __name__ == "__main__":

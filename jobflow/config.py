@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import yaml
@@ -6,7 +7,9 @@ import yaml
 DEFAULT_CONFIG_PATH = "config/config.yaml"
 
 
-def load_config(path: str = DEFAULT_CONFIG_PATH) -> dict:
+def load_config(path: str = "") -> dict:
+    if not path:
+        path = os.environ.get("JOBFLOW_CONFIG", DEFAULT_CONFIG_PATH)
     config_path = Path(path)
     if not config_path.exists():
         raise FileNotFoundError(

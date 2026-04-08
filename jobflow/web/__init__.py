@@ -514,6 +514,19 @@ def create_app():
             iteration=session["iteration"],
         )
 
+    @app.route("/api/tailor/cancel/<session_id>", methods=["POST"])
+    def api_tailor_cancel(session_id):
+        session = tailor_sessions.get(session_id)
+        if session and session["status"] == "running":
+            _cancel_session(session)
+            session["status"] = "error"
+            session["error"] = "Cancelled by user."
+        return render_template(
+            "_partials/tailor_status.html",
+            status="error",
+            error="Cancelled by user.",
+        )
+
     @app.route("/api/tailor/pdf/<session_id>")
     def api_tailor_pdf(session_id):
         session = tailor_sessions.get(session_id)

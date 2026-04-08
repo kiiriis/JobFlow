@@ -18,5 +18,9 @@ data/output/
 data/applications.csv
 data/output/seen_jobs.json
 
+# Track CI scan results
+!data/ci/
+!data/ci/**
+
 # Resumes and prompts (private)
 resumes/

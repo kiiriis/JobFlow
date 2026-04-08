@@ -5,6 +5,13 @@
          hx-trigger="every 2s"
          hx-swap="outerHTML">
     <p>Tailoring resume{% if iteration > 1 %} (iteration {{ iteration }}){% endif %}... Claude is generating optimized sections. This takes 15-45 seconds.</p>
+    <button hx-post="/api/tailor/cancel/{{ session_id }}"
+            hx-target="#tailor-results"
+            hx-swap="innerHTML"
+            class="secondary outline"
+            style="width:auto; margin-top:0.5rem;">
+        Cancel
+    </button>
 </article>
 
 {% elif status == "error" %}

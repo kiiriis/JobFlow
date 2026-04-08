@@ -31,7 +31,7 @@ jobs:
           JOBFLOW_CONFIG: config/config.ci.yaml
         run: |
           echo "Starting scan at $(date -u)"
-          jobflow scan --platform linkedin --new --save --hours 4 2>&1 || true
+          jobflow scan --platform linkedin --new --save --hours 1 2>&1 || true
           echo "Scan finished at $(date -u)"
 
       - name: Commit results

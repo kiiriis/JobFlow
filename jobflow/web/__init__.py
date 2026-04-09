@@ -19,8 +19,9 @@ from ..filter import (
     select_variant,
     has_match,
     count_matches,
+    _has_phrase,
     DISQUALIFYING_PHRASES,
-    SENIOR_PHRASES,
+    SENIOR_DESC_SIGNALS,
     ENTRY_LEVEL_SIGNALS,
 )
 from ..latex import compile_pdf, get_page_count
@@ -249,14 +250,14 @@ def create_app():
 
         # Fast pre-filter: reject non-new-grad / no-sponsorship JDs instantly
         jd_lower = jd_text.lower()
-        if has_match(jd_lower, DISQUALIFYING_PHRASES):
+        if _has_phrase(jd_lower, DISQUALIFYING_PHRASES):
             return render_template(
                 "_partials/tailor_status.html",
                 status="error",
                 error="This role does not sponsor visas or requires U.S. citizenship / security clearance. Skipping.",
             )
 
-        senior_count = count_matches(jd_lower, SENIOR_PHRASES)
+        senior_count = count_matches(jd_lower, SENIOR_DESC_SIGNALS)
         entry_count = count_matches(jd_lower, ENTRY_LEVEL_SIGNALS)
         if senior_count > 0 and entry_count == 0 and senior_count >= 3:
             return render_template(

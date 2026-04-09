@@ -13,6 +13,7 @@ dependencies = [
     "flask>=3.0",
     "python-jobspy>=1.1.0",
     "gunicorn>=21.0",
+    "pytest>=7.0",
 ]
 
 [project.scripts]

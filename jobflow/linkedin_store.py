@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 LINKEDIN_STATUSES = ["Tracking", "Applied", "Not Interested"]
-RECOMMENDED_THRESHOLD = 15  # score_pct >= this marks job as "recommended"
+RECOMMENDED_THRESHOLD = 25  # score_pct >= this marks job as "recommended"
 RETENTION_DAYS = 7
 # Statuses that survive the 7-day prune
 KEEP_STATUSES = {"Tracking", "Applied"}
@@ -28,58 +28,135 @@ def save_store(path: Path, store: dict) -> None:
     path.write_text(json.dumps(store, indent=2))
 
 
-def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
-    """Merge new jobs from scan_results.json into the store.
+def _dedup_key(entry: dict) -> str:
+    """Generate a dedup key: prefer URL, fall back to company+title normalized."""
+    url = entry.get("url", "")
+    if url:
+        return url
+    co = entry.get("company", "").lower().strip()
+    title = entry.get("title", "").lower().strip()
+    return f"{co}_{title}"
 
-    - New jobs get status 'New' or 'Should Apply' (score_pct >= threshold)
-    - Existing jobs keep their user-assigned status but update last_seen
+
+def _rescore_entry(entry: dict) -> dict:
+    """Re-score a job entry using the current filter logic."""
+    from .filter import (
+        keyword_score, synergy_bonus, level_tag, extract_experience,
+        competition_estimate, experience_score, recency_score,
+        has_match, DISQUALIFYING_PHRASES, H1B_PREFER, SCORE_MAX_RAW,
+    )
+    text = f"{entry.get('title', '')} {entry.get('description_preview', '')}"
+    text_lower = text.lower()
+
+    ks, hits = keyword_score(text)
+    sb = synergy_bonus(text)
+    level = level_tag(entry.get("title", ""), entry.get("description_preview", ""))
+    min_exp, max_exp = extract_experience(text_lower)
+    es = experience_score(min_exp, max_exp)
+    rs = recency_score(entry.get("first_seen"))
+    loc_score = 10  # assume US (LinkedIn US search)
+    h1b = 8 if any(p in text_lower for p in H1B_PREFER) else 0
+    comp = competition_estimate(entry.get("company", ""), 24)
+
+    # Level points
+    lp = {"New Grad": 20, "Entry": 15, "Mid": 5}.get(level, 4)
+
+    raw = ks + sb + lp + es + rs + loc_score + h1b
+    score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
+
+    entry["score"] = max(0, min(100, raw))
+    entry["score_pct"] = score_pct
+    entry["level"] = level
+    entry["min_exp"] = min_exp
+    entry["max_exp"] = max_exp
+    entry["competition"] = comp
+    entry["keyword_hits"] = hits
+    entry["recommended"] = score_pct >= RECOMMENDED_THRESHOLD
+    return entry
+
+
+def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
+    """Merge new jobs into the store with deduplication and re-scoring.
+
+    Dedup: same company+title across different locations → keep one (prefer the one with URL).
+    All jobs are re-scored using the current filter logic.
     """
     now = datetime.now(timezone.utc).isoformat()
     jobs = store.get("jobs", {})
 
+    # Pre-dedup scan results: group by company+title, keep best per group
+    seen_combos: dict[str, dict] = {}
     for entry in scan_results:
-        url = entry.get("url", "")
-        key = url if url else f"{entry.get('company', '')}_{entry.get('title', '')}".lower()
+        co = entry.get("company", "").lower().strip()
+        title = entry.get("title", "").lower().strip()
+        combo = f"{co}|{title}"
+        if combo in seen_combos:
+            # Keep the one with a URL, or the first one
+            if not seen_combos[combo].get("url") and entry.get("url"):
+                seen_combos[combo] = entry
+        else:
+            seen_combos[combo] = entry
+    deduped_results = list(seen_combos.values())
+
+    for entry in deduped_results:
+        key = _dedup_key(entry)
         if not key:
             continue
 
         if key in jobs:
-            # Update last_seen and scores
             jobs[key]["last_seen"] = now
-            jobs[key]["score"] = entry.get("score", jobs[key].get("score", 0))
-            score_pct = int(entry.get("score_pct", jobs[key].get("score_pct", 0)) or 0)
-            jobs[key]["score_pct"] = score_pct
-            jobs[key]["recommended"] = score_pct >= RECOMMENDED_THRESHOLD
-            # Backfill new fields if missing
-            for field in ("level", "min_exp", "max_exp", "competition", "search_term"):
-                if field in entry and entry[field] is not None:
-                    jobs[key][field] = entry[field]
+            # Keep user status, update description if better
+            if entry.get("description_preview") and len(entry.get("description_preview", "")) > len(jobs[key].get("description_preview", "")):
+                jobs[key]["description_preview"] = entry["description_preview"]
+            # Update date_posted if we now have one and didn't before
+            if entry.get("date_posted") and not jobs[key].get("date_posted"):
+                jobs[key]["date_posted"] = entry["date_posted"]
+                jobs[key]["first_seen"] = entry["date_posted"]
             # Migrate old statuses
             if jobs[key].get("status") in ("Should Apply", "New"):
                 jobs[key]["status"] = ""
+            # Re-score with latest logic
+            jobs[key] = _rescore_entry(jobs[key])
         else:
-            # New job
-            score_pct = int(entry.get("score_pct", 0) or 0)
+            # Use date_posted from source if available, else merge time
+            posted = entry.get("date_posted", "") or now
             jobs[key] = {
                 "company": entry.get("company", ""),
                 "title": entry.get("title", ""),
                 "location": entry.get("location", ""),
-                "url": url,
-                "score": int(entry.get("score", 0) or 0),
-                "score_pct": score_pct,
-                "recommended": score_pct >= RECOMMENDED_THRESHOLD,
-                "level": entry.get("level", "Unknown"),
-                "min_exp": entry.get("min_exp"),
-                "max_exp": entry.get("max_exp"),
-                "competition": int(entry.get("competition", 0) or 0),
+                "url": entry.get("url", ""),
+                "description_preview": entry.get("description_preview", ""),
                 "variant": entry.get("variant", "se"),
                 "reason": entry.get("reason", ""),
-                "description_preview": entry.get("description_preview", ""),
                 "status": "",
-                "first_seen": now,
+                "first_seen": posted,
                 "last_seen": now,
+                "date_posted": entry.get("date_posted", ""),
                 "search_term": entry.get("search_term", ""),
+                # Placeholders — _rescore_entry fills these
+                "score": 0, "score_pct": 0, "level": "Unknown",
+                "min_exp": None, "max_exp": None, "competition": 0,
+                "keyword_hits": 0, "recommended": False,
             }
+            jobs[key] = _rescore_entry(jobs[key])
+
+    # Also deduplicate existing store: remove jobs with same company+title (keep the one with user status or URL)
+    by_combo: dict[str, list[str]] = {}
+    for key, job in jobs.items():
+        combo = f"{job.get('company','').lower().strip()}|{job.get('title','').lower().strip()}"
+        by_combo.setdefault(combo, []).append(key)
+    for combo, keys in by_combo.items():
+        if len(keys) <= 1:
+            continue
+        # Keep the best: prefer one with user status, then URL, then newest
+        def rank(k):
+            j = jobs[k]
+            has_status = 1 if j.get("status") else 0
+            has_url = 1 if j.get("url") else 0
+            return (has_status, has_url, j.get("first_seen", ""))
+        keys.sort(key=rank, reverse=True)
+        for k in keys[1:]:  # remove all but the best
+            del jobs[k]
 
     store["jobs"] = jobs
     return store
@@ -131,38 +208,44 @@ def get_filtered_jobs(
     hour_filter: str = "",
     sort_col: str = "last_seen",
     sort_dir: str = "desc",
+    tz_offset: int = 0,
 ) -> list[dict]:
     """Return jobs as a sorted list with filtering.
 
-    time_range: "hour" (last 1h), "today" (since midnight UTC), "yesterday"
-    hour_filter: specific hour like "14" to show jobs first seen in that hour today
+    time_range: "hour" (last 1h), "today" (since user's midnight), "yesterday"
+    hour_filter: specific local hour like "22" to show jobs from that hour
+    tz_offset: user's timezone offset in minutes from UTC (e.g. 240 = UTC-4 EDT)
     """
     jobs = store.get("jobs", {})
     result = []
     q_lower = query.lower().strip() if query else ""
-    now = datetime.now(tz=timezone.utc)
+    now_utc = datetime.now(tz=timezone.utc)
+    user_tz = timezone(timedelta(minutes=-tz_offset))
+    now_local = now_utc.astimezone(user_tz)
 
-    # Compute time boundaries
+    # Compute time boundaries in UTC based on user's local time
     time_cutoff = None
     time_end = None
     if time_range == "hour":
-        time_cutoff = now - timedelta(hours=1)
+        time_cutoff = now_utc - timedelta(hours=1)
     elif time_range == "today":
-        time_cutoff = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        local_midnight = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+        time_cutoff = local_midnight.astimezone(timezone.utc)
     elif time_range == "yesterday":
-        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        time_cutoff = today_start - timedelta(days=1)
-        time_end = today_start
+        local_midnight = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+        time_cutoff = (local_midnight - timedelta(days=1)).astimezone(timezone.utc)
+        time_end = local_midnight.astimezone(timezone.utc)
 
-    # Hour filter (e.g. "14" means show jobs from 2 PM today)
+    # Hour filter: specific local hour
     hour_start = None
     hour_end = None
     if hour_filter:
         try:
             h = int(hour_filter)
-            hour_start = now.replace(hour=h, minute=0, second=0, microsecond=0)
-            if h > now.hour:
-                hour_start -= timedelta(days=1)
+            local_hour = now_local.replace(hour=h, minute=0, second=0, microsecond=0)
+            if h > now_local.hour:
+                local_hour -= timedelta(days=1)
+            hour_start = local_hour.astimezone(timezone.utc)
             hour_end = hour_start + timedelta(hours=1)
         except (ValueError, TypeError):
             pass
@@ -208,12 +291,15 @@ def get_filtered_jobs(
 
         result.append(entry)
 
-    # Sort
+    # Sort with secondary key: when primary is equal, sort by score_pct desc
     def sort_key(j):
         val = j.get(sort_col, "")
         if sort_col in ("score", "score_pct", "competition", "min_exp"):
-            return int(val) if val is not None and val != "" else -1
-        return str(val or "")
+            primary = int(val) if val is not None and val != "" else -1
+        else:
+            primary = str(val or "")
+        secondary = int(j.get("score_pct", 0) or 0)
+        return (primary, secondary)
 
     reverse = sort_dir == "desc"
 
@@ -265,7 +351,7 @@ def get_search_terms(store: dict) -> list[str]:
 
 
 def format_recency(iso_timestamp: str) -> str:
-    """Convert ISO timestamp to human-friendly relative time."""
+    """Server-side fallback: 'Xh ago (HH:MM UTC)'. JS overrides with local time."""
     if not iso_timestamp:
         return "--"
     try:
@@ -274,36 +360,47 @@ def format_recency(iso_timestamp: str) -> str:
             dt = dt.replace(tzinfo=timezone.utc)
         diff = datetime.now(tz=timezone.utc) - dt
         hours = diff.total_seconds() / 3600
+        clock = dt.strftime("%I:%M %p").lstrip("0")
         if hours < 1:
-            return "now"
-        if hours < 24:
-            return f"{int(hours)}h ago"
-        days = diff.days
-        if days == 1:
-            return "1d ago"
-        if days < 7:
-            return f"{days}d ago"
-        return dt.strftime("%b %d")
+            rel = "just now"
+        elif hours < 24:
+            rel = f"{int(hours)}h ago"
+        elif diff.days == 1:
+            rel = "1d ago"
+        elif diff.days < 7:
+            rel = f"{diff.days}d ago"
+        else:
+            return dt.strftime("%b %d")
+        return f"{rel} ({clock})"
     except (ValueError, TypeError):
         return "--"
 
 
-def get_time_counts(store: dict) -> dict:
-    """Return counts for time range tabs and hourly breakdown."""
-    now = datetime.now(tz=timezone.utc)
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    yesterday_start = today_start - timedelta(days=1)
-    one_hour_ago = now - timedelta(hours=1)
+def get_time_counts(store: dict, tz_offset: int = 0) -> dict:
+    """Return counts for time range tabs and hourly breakdown.
+
+    tz_offset: user's timezone offset in minutes from UTC (e.g. 240 = UTC-4).
+    All "today"/"yesterday" boundaries use the user's local midnight.
+    Hourly labels use UTC hours (converted to local in the browser).
+    """
+    now_utc = datetime.now(tz=timezone.utc)
+    user_tz = timezone(timedelta(minutes=-tz_offset))
+    now_local = now_utc.astimezone(user_tz)
+
+    local_midnight = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start_utc = local_midnight.astimezone(timezone.utc)
+    yesterday_start_utc = (local_midnight - timedelta(days=1)).astimezone(timezone.utc)
+    one_hour_ago = now_utc - timedelta(hours=1)
 
     hour_count = 0
     today_count = 0
     yesterday_count = 0
 
-    # Hourly breakdown: last 24 hours, keyed by hour number
-    hourly = {}
+    # Hourly breakdown: last 24 hours in UTC (browser converts to local)
+    hourly_buckets = {}
     for h in range(24):
-        dt = now.replace(minute=0, second=0, microsecond=0) - timedelta(hours=h)
-        hourly[dt.strftime("%I %p").lstrip("0")] = {"hour": dt.hour, "count": 0, "label": dt.strftime("%I %p").lstrip("0")}
+        dt = now_utc.replace(minute=0, second=0, microsecond=0) - timedelta(hours=h)
+        hourly_buckets[dt.hour] = {"hour": dt.hour, "count": 0, "label": dt.strftime("%I %p").lstrip("0")}
 
     for job in store.get("jobs", {}).values():
         fs = _parse_iso(job.get("first_seen", ""))
@@ -311,26 +408,23 @@ def get_time_counts(store: dict) -> dict:
             continue
         if fs >= one_hour_ago:
             hour_count += 1
-        if fs >= today_start:
+        if fs >= today_start_utc:
             today_count += 1
-        if yesterday_start <= fs < today_start:
+        if yesterday_start_utc <= fs < today_start_utc:
             yesterday_count += 1
 
-        # Hourly bucketing
-        diff_hours = (now - fs).total_seconds() / 3600
+        diff_hours = (now_utc - fs).total_seconds() / 3600
         if diff_hours < 24:
-            bucket_dt = fs.replace(minute=0, second=0, microsecond=0)
-            label = bucket_dt.strftime("%I %p").lstrip("0")
-            if label in hourly:
-                hourly[label]["count"] += 1
+            bucket_hour = fs.replace(minute=0, second=0, microsecond=0).hour
+            if bucket_hour in hourly_buckets:
+                hourly_buckets[bucket_hour]["count"] += 1
 
-    # Convert to sorted list (most recent first)
+    # Sorted list, most recent first
     hourly_list = []
     for h in range(24):
-        dt = now.replace(minute=0, second=0, microsecond=0) - timedelta(hours=h)
-        label = dt.strftime("%I %p").lstrip("0")
-        if label in hourly:
-            hourly_list.append(hourly[label])
+        dt = now_utc.replace(minute=0, second=0, microsecond=0) - timedelta(hours=h)
+        if dt.hour in hourly_buckets:
+            hourly_list.append(hourly_buckets[dt.hour])
 
     return {
         "this_hour": hour_count,
@@ -386,49 +480,13 @@ def get_sidebar_stats(store: dict) -> dict:
 
 
 def backfill_job(job: dict) -> dict:
-    """Add missing new fields to a job entry using available data."""
-    from .filter import (
-        keyword_score, synergy_bonus, level_tag, extract_experience,
-        competition_estimate, experience_score, recency_score, SCORE_MAX_RAW,
-    )
-
-    if "score_pct" in job and job.get("level") and job["level"] != "":
-        return job  # Already has new fields
-
-    text = f"{job.get('title', '')} {job.get('description_preview', '')}"
-
-    # Level
-    if not job.get("level") or job.get("level") == "":
-        job["level"] = level_tag(job.get("title", ""), job.get("description_preview", ""))
-
-    # Experience
-    if "min_exp" not in job:
-        min_exp, max_exp = extract_experience(text)
-        job["min_exp"] = min_exp
-        job["max_exp"] = max_exp
-
-    # Competition
-    if "competition" not in job:
-        job["competition"] = competition_estimate(job.get("company", ""), 24)
-
-    # Score PCT
-    if "score_pct" not in job or not job["score_pct"]:
-        ks, hits = keyword_score(text)
-        sb = synergy_bonus(text)
-        es = experience_score(job.get("min_exp"), job.get("max_exp"))
-        rs = recency_score(job.get("first_seen"))
-        raw = ks + sb + es + rs + 10  # assume US location
-        job["score_pct"] = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
-        job["keyword_hits"] = hits
-
-    if "search_term" not in job:
-        job["search_term"] = ""
-
+    """Re-score and fill all fields on a job entry."""
     # Migrate old statuses
     if job.get("status") in ("Should Apply", "New"):
         job["status"] = ""
 
-    # Set recommended flag
-    job["recommended"] = int(job.get("score_pct", 0) or 0) >= RECOMMENDED_THRESHOLD
+    if "search_term" not in job:
+        job["search_term"] = ""
 
-    return job
+    # Always re-score to ensure consistency
+    return _rescore_entry(job)

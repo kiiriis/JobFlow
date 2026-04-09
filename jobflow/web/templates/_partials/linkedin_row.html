@@ -22,7 +22,7 @@
                     <span class="li-badge badge-exp-tag">{% set mn = job.min_exp|default(0)|int %}{% set mx = job.max_exp %}{% if mx is not none and mx != mn %}{{ mn }}-{{ mx }} yrs{% else %}{{ mn }}+ yrs{% endif %}</span>
                     {% endif %}
                     <span class="sep">·</span>
-                    <span style="color:#6b7f96">{{ job._recency|default('--') }}</span>
+                    <span class="utc-recency" style="color:#6b7f96" data-utc="{{ job.first_seen }}">{{ job._recency|default('--') }}</span>
                 </div>
             </div>
         </div>

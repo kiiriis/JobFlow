@@ -402,12 +402,25 @@ def scan_linkedin_jobspy(max_age_hours: int = 0) -> list[JobPosting]:
                     continue
                 seen_urls.add(dedup_key)
 
+                date_posted = str(row.get("date_posted", "") or "")
+                # Normalize date_posted to ISO string
+                if date_posted and date_posted != "NaT":
+                    try:
+                        import pandas as pd
+                        dp = pd.to_datetime(date_posted, utc=True)
+                        date_posted = dp.isoformat() if not pd.isna(dp) else ""
+                    except Exception:
+                        pass
+                else:
+                    date_posted = ""
+
                 all_jobs.append(JobPosting(
                     url=url,
                     title=title,
                     company=company,
                     location=location,
                     description=description[:5000] if description else title,
+                    date_posted=date_posted,
                 ))
                 count += 1
             console.print(f"[green]{count} new[/green]")

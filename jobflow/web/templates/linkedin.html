@@ -198,8 +198,8 @@
 .sort-tab.active { color: #e9f1fb; background: rgba(255,255,255,0.06); }
 
 /* ── Hourly Cards ── */
-.hourly-strip { position: relative; margin-bottom: 14px; }
-.hourly-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; scrollbar-width: thin; scrollbar-color: rgba(70,96,125,0.3) transparent; }
+.hourly-strip { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
+.hourly-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; flex: 1; min-width: 0; scrollbar-width: thin; scrollbar-color: rgba(70,96,125,0.3) transparent; }
 .hourly-scroll::-webkit-scrollbar { height: 4px; }
 .hourly-scroll::-webkit-scrollbar-thumb { background: rgba(70,96,125,0.4); border-radius: 2px; }
 .hour-card { flex: 0 0 auto; min-width: 72px; padding: 8px 10px; border: 1px solid rgba(70,96,125,0.3); border-radius: 10px; text-align: center; cursor: pointer; transition: all 150ms; background: rgba(10,20,33,0.5); }
@@ -207,10 +207,8 @@
 .hour-card.active { border-color: rgba(52,211,196,0.8); background: rgba(52,211,196,0.08); }
 .hour-card .h-time { font-size: 0.7rem; font-weight: 700; color: #e9f1fb; font-family: "IBM Plex Mono", monospace; }
 .hour-card .h-count { font-size: 0.62rem; color: #6b7f96; font-family: "IBM Plex Mono", monospace; margin-top: 2px; }
-.hourly-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(70,96,125,0.4); background: rgba(10,20,33,0.9); color: #8fa4be; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.7rem; z-index: 2; }
+.hourly-nav { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(70,96,125,0.4); background: rgba(10,20,33,0.9); color: #8fa4be; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.7rem; }
 .hourly-nav:hover { border-color: var(--pico-primary); color: #e9f1fb; }
-.hourly-nav.nav-left { left: -4px; }
-.hourly-nav.nav-right { right: -4px; }
 </style>
 
 <div class="li-page">
@@ -223,7 +221,7 @@
         <div class="li-meta">
             <span class="li-live"><span class="li-live-dot"></span>Live Feed</span>
             <small style="color:#6b7f96; font-family:'IBM Plex Mono',monospace; font-size:0.72rem;" id="last-updated">
-                {% if last_updated %}Updated {{ last_updated[:16].replace('T', ' ') }}{% endif %}
+                {% if last_updated %}<span class="utc-time" data-utc="{{ last_updated }}"></span>{% endif %}
             </small>
             <button class="li-refresh"
                     hx-post="/api/linkedin/refresh"
@@ -238,32 +236,27 @@
     <!-- Time tabs + sort -->
     <div class="time-bar">
         <div class="time-tabs">
-            <button class="time-tab" onclick="setTime('hour')" data-time="hour">This Hour <span class="t-count">{{ time_counts.this_hour }}</span></button>
-            <button class="time-tab active" onclick="setTime('today')" data-time="today">Today <span class="t-count">{{ time_counts.today }}</span></button>
-            <button class="time-tab" onclick="setTime('yesterday')" data-time="yesterday">Yesterday <span class="t-count">{{ time_counts.yesterday }}</span></button>
-            <button class="time-tab" onclick="setTime('')" data-time="">All Time</button>
+            <button class="time-tab" onclick="setTime('hour')" data-time="hour">This Hour <span class="t-count" id="tc-hour">--</span></button>
+            <button class="time-tab" onclick="setTime('today')" data-time="today">Today <span class="t-count" id="tc-today">--</span></button>
+            <button class="time-tab" onclick="setTime('yesterday')" data-time="yesterday">Yesterday <span class="t-count" id="tc-yesterday">--</span></button>
+            <button class="time-tab active" onclick="setTime('')" data-time="">All Time</button>
         </div>
         <div class="sort-tabs">
-            <button class="sort-tab active" onclick="quickSort('score_pct')" data-qsort="score_pct">★ Score</button>
-            <button class="sort-tab" onclick="quickSort('first_seen')" data-qsort="first_seen">↓ Recent</button>
+            <button class="sort-tab" onclick="quickSort('score_pct')" data-qsort="score_pct">★ Score</button>
+            <button class="sort-tab active" onclick="quickSort('first_seen')" data-qsort="first_seen">↓ Recent</button>
         </div>
     </div>
 
-    <!-- Hourly cards -->
+    <!-- Hourly cards (rendered client-side for local timezone) -->
     <div class="hourly-strip">
-        <div class="hourly-scroll" id="hourly-scroll">
-            {% for h in time_counts.hourly %}
-            {% if h.count > 0 %}
-            <div class="hour-card" onclick="setHour('{{ h.hour }}')" data-hour="{{ h.hour }}">
-                <div class="h-time">{{ h.label }}</div>
-                <div class="h-count">{{ h.count }} jobs</div>
-            </div>
-            {% endif %}
-            {% endfor %}
-        </div>
-        <button class="hourly-nav nav-left" onclick="document.getElementById('hourly-scroll').scrollBy({left:-200,behavior:'smooth'})">&#8249;</button>
-        <button class="hourly-nav nav-right" onclick="document.getElementById('hourly-scroll').scrollBy({left:200,behavior:'smooth'})">&#8250;</button>
+        <button class="hourly-nav" onclick="document.getElementById('hourly-scroll').scrollBy({left:-200,behavior:'smooth'})">&#8249;</button>
+        <div class="hourly-scroll" id="hourly-scroll"></div>
+        <button class="hourly-nav" onclick="document.getElementById('hourly-scroll').scrollBy({left:200,behavior:'smooth'})">&#8250;</button>
     </div>
+    <script>
+    // Raw UTC hourly data from server
+    var HOURLY_DATA_UTC = {{ time_counts.hourly | tojson }};
+    </script>
 
     <div class="li-layout">
         <!-- Sidebar -->
@@ -361,9 +354,9 @@
             <!-- Hidden filter state -->
             <input type="hidden" id="filter-status" value="">
             <input type="hidden" id="filter-level" value="">
-            <input type="hidden" id="filter-sort" value="score_pct">
+            <input type="hidden" id="filter-sort" value="first_seen">
             <input type="hidden" id="filter-dir" value="desc">
-            <input type="hidden" id="filter-time" value="today">
+            <input type="hidden" id="filter-time" value="">
             <input type="hidden" id="filter-hour" value="">
 
             <!-- Table -->
@@ -476,6 +469,7 @@ function triggerFilter() {
     params.set('dir', document.getElementById('filter-dir').value);
     params.set('time', document.getElementById('filter-time').value);
     params.set('hour', document.getElementById('filter-hour').value);
+    params.set('tz', getUserTzOffset().toString());
     var termEl = document.getElementById('filter-search-term');
     if (termEl) params.set('search_term', termEl.value);
 
@@ -492,14 +486,94 @@ function triggerFilter() {
                 });
             } catch(e) {}
         }
+        // Update time tab counts
+        var timeStr = resp.headers.get('X-Time-Counts');
+        if (timeStr) {
+            try {
+                var tc = JSON.parse(timeStr);
+                var el;
+                el = document.getElementById('tc-hour'); if (el) el.textContent = tc.this_hour || 0;
+                el = document.getElementById('tc-today'); if (el) el.textContent = tc.today || 0;
+                el = document.getElementById('tc-yesterday'); if (el) el.textContent = tc.yesterday || 0;
+            } catch(e) {}
+        }
         return resp.text();
     }).then(function(html) {
         document.getElementById('linkedin-body').innerHTML = html;
         htmx.process(document.getElementById('linkedin-body'));
+        // Convert recency timestamps to local: "20h ago (11:58 PM)"
+        document.querySelectorAll('.utc-recency').forEach(function(el) {
+            var utc = el.dataset.utc;
+            if (!utc) return;
+            var d = new Date(utc.includes('T') ? utc + (utc.includes('+') || utc.includes('Z') ? '' : 'Z') : utc);
+            if (isNaN(d)) return;
+            var diffMs = Date.now() - d.getTime();
+            var diffH = Math.floor(diffMs / 3600000);
+            var rel;
+            if (diffH < 1) rel = 'just now';
+            else if (diffH < 24) rel = diffH + 'h ago';
+            else { var days = Math.floor(diffH / 24); rel = days === 1 ? '1d ago' : days + 'd ago'; }
+            var clock = d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+            el.textContent = rel + ' (' + clock + ')';
+        });
     });
 }
 
-document.addEventListener('DOMContentLoaded', triggerFilter);
+// ── Timezone-aware rendering ──
+function formatLocalTime(utcStr) {
+    if (!utcStr) return '';
+    var d = new Date(utcStr.replace(' ', 'T') + (utcStr.includes('+') || utcStr.includes('Z') ? '' : 'Z'));
+    if (isNaN(d)) return utcStr;
+    return 'Updated ' + d.toLocaleString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+}
+
+function renderUtcTimes() {
+    document.querySelectorAll('.utc-time').forEach(function(el) {
+        el.textContent = formatLocalTime(el.dataset.utc);
+    });
+}
+
+function renderHourlyCards() {
+    var now = new Date();
+    var container = document.getElementById('hourly-scroll');
+    if (!container) return;
+    // Group UTC hourly data into local hours
+    var localBuckets = {};
+    (HOURLY_DATA_UTC || []).forEach(function(h) {
+        // Build a UTC date for this hour
+        var utcDate = new Date();
+        utcDate.setUTCHours(h.hour, 0, 0, 0);
+        if (h.hour > now.getUTCHours()) utcDate.setUTCDate(utcDate.getUTCDate() - 1);
+        var localHour = utcDate.getHours();
+        var label = utcDate.toLocaleString(undefined, {hour:'numeric'});
+        if (!localBuckets[localHour]) localBuckets[localHour] = {hour: localHour, label: label, count: 0, utcDate: utcDate};
+        localBuckets[localHour].count += h.count;
+    });
+    // Sort by time descending (most recent first)
+    var cards = Object.values(localBuckets).filter(function(b){ return b.count > 0; });
+    cards.sort(function(a,b){ return b.utcDate - a.utcDate; });
+    container.innerHTML = cards.map(function(c) {
+        return '<div class="hour-card" onclick="setHour(\'' + c.hour + '\')" data-hour="' + c.hour + '">' +
+               '<div class="h-time">' + c.label + '</div>' +
+               '<div class="h-count">' + c.count + ' jobs</div></div>';
+    }).join('');
+}
+
+function renderTimeCounts() {
+    // Compute This Hour / Today / Yesterday based on local time
+    // We'll use a simple fetch with tz offset and read counts from response
+    // For now just update after first filter response
+}
+
+function getUserTzOffset() {
+    return new Date().getTimezoneOffset(); // minutes, e.g. 240 for EDT (UTC-4)
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    renderUtcTimes();
+    renderHourlyCards();
+    triggerFilter();
+});
 </script>
 
 {% endblock %}

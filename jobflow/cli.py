@@ -256,9 +256,15 @@ def scan(
                 "location": job.location,
                 "url": job.url,
                 "score": filt.score,
+                "score_pct": filt.score_pct,
+                "level": filt.level,
+                "min_exp": filt.min_exp,
+                "max_exp": filt.max_exp,
+                "competition": filt.competition,
                 "variant": filt.resume_variant,
                 "reason": filt.reason,
                 "description_preview": job.description[:200],
+                "date_posted": getattr(job, "date_posted", ""),
             })
 
         results_path = config["output_dir"] / "scan_results.json"

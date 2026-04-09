@@ -499,6 +499,7 @@ def create_app():
         hour_filter = request.args.get("hour", "")
         sort_col = request.args.get("sort", "last_seen")
         sort_dir = request.args.get("dir", "desc")
+        tz_offset = int(request.args.get("tz", "0") or "0")  # minutes from UTC
         store = load_store(linkedin_store_path)
         jobs = get_filtered_jobs(
             store,
@@ -510,9 +511,11 @@ def create_app():
             hour_filter=hour_filter,
             sort_col=sort_col,
             sort_dir=sort_dir,
+            tz_offset=tz_offset,
         )
         counts = get_status_counts(store)
         level_counts = get_level_counts(store)
+        time_counts = get_time_counts(store, tz_offset=tz_offset)
         resp = make_response(render_template(
             "_partials/linkedin_tbody.html",
             jobs=jobs,
@@ -521,6 +524,11 @@ def create_app():
         ))
         resp.headers["X-Counts"] = json.dumps(counts)
         resp.headers["X-Level-Counts"] = json.dumps(level_counts)
+        resp.headers["X-Time-Counts"] = json.dumps({
+            "this_hour": time_counts["this_hour"],
+            "today": time_counts["today"],
+            "yesterday": time_counts["yesterday"],
+        })
         return resp
 
     @app.route("/api/linkedin/jobs/<path:key>/status", methods=["PATCH"])
@@ -596,6 +604,7 @@ def _run_scan(config, platforms, hours, new_only):
                 "variant": filt.resume_variant,
                 "reason": filt.reason,
                 "description_preview": job.description[:200] if job.description else "",
+                "date_posted": getattr(job, "date_posted", ""),
             })
 
         results_path = config["output_dir"] / "scan_results.json"

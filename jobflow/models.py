@@ -8,6 +8,7 @@ class JobPosting:
     company: str
     location: str
     description: str
+    date_posted: str = ""  # ISO date string from the source
 
 
 @dataclass

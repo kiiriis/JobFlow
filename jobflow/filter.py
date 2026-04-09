@@ -1,8 +1,9 @@
 import re
+from datetime import datetime, timezone
 
 from .models import FilterResult, JobPosting
 
-# Disqualifying phrases (case-insensitive)
+# ── Disqualifying phrases (case-insensitive) ────────────────────────────────
 DISQUALIFYING_PHRASES = [
     r"no\s+visa\s+sponsorship",
     r"not\s+sponsor",
@@ -19,11 +20,14 @@ DISQUALIFYING_PHRASES = [
     r"permanent\s+resident\s+only",
     r"green\s+card\s+required",
     r"authorized\s+to\s+work.*without.*sponsorship",
+    r"must\s+be\s+authorized\s+to\s+work",
+    r"work\s+authorization\s+without\s+sponsorship",
+    r"eligible\s+to\s+work.*without\s+sponsorship",
 ]
 
-# Phrases suggesting too much experience required
+# ── Senior / high-experience phrases ────────────────────────────────────────
 SENIOR_PHRASES = [
-    r"\b[3-9]\+?\s*(?:years?|yrs?)\b",
+    r"\b[4-9]\+?\s*(?:years?|yrs?)\b",
     r"\b1[0-9]\+?\s*(?:years?|yrs?)\b",
     r"\bsenior\b",
     r"\bstaff\b",
@@ -33,7 +37,7 @@ SENIOR_PHRASES = [
     r"\bdirector\b",
 ]
 
-# Positive signals for new grad / entry level
+# ── Entry-level signals ─────────────────────────────────────────────────────
 ENTRY_LEVEL_SIGNALS = [
     r"\bnew\s*grad",
     r"\bentry[\s-]*level\b",
@@ -45,26 +49,78 @@ ENTRY_LEVEL_SIGNALS = [
     r"\buniversity\s+grad",
     r"\bsde[\s-]*[i1]\b",
     r"\bswe[\s-]*[i1]\b",
-    r"\bsoftware\s+engineer\s*(?:ii|2)\b",
-    r"\bsde[\s-]*(?:ii|2)\b",
     r"\bassociate\b",
     r"\bfirst\s+opportunity\b",
 ]
 
-# ML/AI keywords for variant selection
+# ── ML/AI keywords for variant selection ────────────────────────────────────
 ML_KEYWORDS = [
     r"\bmachine\s+learning\b", r"\bdeep\s+learning\b", r"\bml\s+engineer\b",
     r"\bdata\s+scien", r"\bcomputer\s+vision\b", r"\bnlp\b", r"\bllm\b",
     r"\bpytorch\b", r"\btensorflow\b", r"\bmodel\s+training\b",
 ]
 
-# Full-stack / AppDev keywords
+# ── Full-stack / AppDev keywords ────────────────────────────────────────────
 APPDEV_KEYWORDS = [
     r"\bfull[\s-]*stack\b", r"\bfrontend\b", r"\bfront[\s-]*end\b",
     r"\breact\b", r"\bangular\b", r"\bvue\b", r"\bnext\.?js\b",
     r"\bweb\s+developer\b", r"\bui/ux\b",
 ]
 
+# ── Personal tech stack (categorized, Atriveo-style) ────────────────────────
+STACK_CATEGORIES = {
+    "core": {
+        "python": 10, "c++": 6, "java": 4, "sql": 5, "go": 4,
+    },
+    "ml_ai": {
+        "machine learning": 10, "deep learning": 8, "pytorch": 8, "tensorflow": 7,
+        "llm": 8, "rag": 7, "langchain": 6, "hugging face": 5,
+        "computer vision": 5, "nlp": 6, "transformers": 6,
+    },
+    "backend": {
+        "distributed systems": 8, "rest": 4, "api": 4, "fastapi": 7,
+        "flask": 5, "microservices": 5, "grpc": 5,
+    },
+    "cloud": {
+        "aws": 7, "gcp": 4, "azure": 3, "lambda": 3, "ec2": 3,
+    },
+    "devops": {
+        "docker": 5, "kubernetes": 6, "ci/cd": 4, "terraform": 4, "linux": 4,
+    },
+    "data": {
+        "postgresql": 5, "mongodb": 4, "redis": 5, "kafka": 5,
+        "spark": 4, "airflow": 4, "elasticsearch": 4,
+    },
+}
+
+# Bonus when full tech combos appear together
+SYNERGY_COMBOS = [
+    ({"python", "fastapi", "aws"}, 10),
+    ({"python", "pytorch", "aws"}, 10),
+    ({"machine learning", "python", "docker"}, 8),
+    ({"llm", "python", "aws"}, 10),
+    ({"python", "docker", "kubernetes"}, 8),
+    ({"python", "kafka", "distributed systems"}, 8),
+    ({"postgresql", "redis", "api"}, 6),
+]
+
+# Practical maximum raw score for normalization
+SCORE_MAX_RAW = 130
+
+# Big tech companies (higher competition)
+BIG_TECH = {
+    "google", "amazon", "meta", "apple", "microsoft",
+    "netflix", "uber", "airbnb", "stripe", "openai",
+}
+
+# H1B sponsorship positive signals
+H1B_PREFER = [
+    "h1b", "h-1b", "visa sponsorship", "will sponsor",
+    "sponsorship available", "sponsorship provided", "open to sponsorship",
+]
+
+
+# ── Helper functions ────────────────────────────────────────────────────────
 
 def count_matches(text: str, patterns: list[str]) -> int:
     count = 0
@@ -81,7 +137,6 @@ def has_match(text: str, patterns: list[str]) -> bool:
 def select_variant(description: str) -> str:
     ml_score = count_matches(description, ML_KEYWORDS)
     appdev_score = count_matches(description, APPDEV_KEYWORDS)
-
     if ml_score > appdev_score and ml_score >= 2:
         return "ml"
     if appdev_score > ml_score and appdev_score >= 2:
@@ -89,92 +144,232 @@ def select_variant(description: str) -> str:
     return "se"
 
 
-# Krish's tech stack — keyword weights for JD matching
-PERSONAL_STACK = {
-    # Core languages
-    "python": 7, "c++": 5, "java": 4, "sql": 3,
-    # ML/AI
-    "machine learning": 8, "deep learning": 7, "pytorch": 7, "tensorflow": 6,
-    "llm": 7, "rag": 6, "langchain": 6, "hugging face": 5,
-    "computer vision": 5, "nlp": 5, "transformers": 5,
-    # Backend/Systems
-    "distributed systems": 7, "rest": 5, "api": 5, "fastapi": 6,
-    "microservices": 5, "docker": 5, "kubernetes": 6,
-    # Cloud
-    "aws": 6, "gcp": 4, "azure": 3,
-    # Data
-    "postgresql": 4, "mongodb": 4, "redis": 4, "kafka": 4,
-}
+# ── Scoring components (adapted from Atriveo) ──────────────────────────────
 
-KEYWORD_SCORE_MAX = 40  # max points from keyword matching
+def keyword_score(text: str) -> tuple[int, int]:
+    """Binary presence match across all stack categories.
 
-
-def keyword_score(text: str) -> int:
-    """Score a job description based on keyword overlap with personal stack."""
+    Returns (raw_score, hit_count).
+    """
     lower = text.lower()
-    raw = 0
-    for keyword, weight in PERSONAL_STACK.items():
-        if keyword in lower:
-            raw += weight
-    # Normalize to 0-KEYWORD_SCORE_MAX range
-    max_possible = sum(PERSONAL_STACK.values())
-    return min(KEYWORD_SCORE_MAX, round(raw / max_possible * KEYWORD_SCORE_MAX * 2))
+    score = 0
+    hits = 0
+    for category in STACK_CATEGORIES.values():
+        for keyword, weight in category.items():
+            if keyword in lower:
+                score += weight
+                hits += 1
+    return score, hits
 
 
-def evaluate_job(job: JobPosting) -> FilterResult:
-    """Evaluate a job posting for relevance."""
-    text = f"{job.title} {job.description}".lower()
-    score = 50  # baseline
-    reasons = []
+def synergy_bonus(text: str) -> int:
+    """Extra points when a full tech combo appears together."""
+    lower = text.lower()
+    bonus = 0
+    for keywords, points in SYNERGY_COMBOS:
+        if all(k in lower for k in keywords):
+            bonus += points
+    return bonus
 
-    # Check disqualifying visa/citizenship phrases
-    if has_match(text, DISQUALIFYING_PHRASES):
+
+def level_tag(title: str, description: str = "") -> str:
+    """Categorize job as New Grad / Entry / Mid / Unknown."""
+    text = f"{title} {description}".lower()
+
+    # Check for explicit new grad signals first
+    new_grad_patterns = [r"\bnew\s*grad", r"\buniversity\s+grad", r"\brecent\s+graduate"]
+    for p in new_grad_patterns:
+        if re.search(p, text):
+            return "New Grad"
+
+    # Entry-level signals
+    entry_patterns = [
+        r"\bentry[\s-]*level\b", r"\bjunior\b", r"\bassociate\b",
+        r"\bsde[\s-]*[i1]\b", r"\bswe[\s-]*[i1]\b",
+        r"\bearly\s+career\b", r"\bfirst\s+opportunity\b",
+    ]
+    for p in entry_patterns:
+        if re.search(p, text):
+            return "Entry"
+
+    # Mid-level signals
+    mid_patterns = [
+        r"\bsde[\s-]*(?:ii|2)\b", r"\bswe[\s-]*(?:ii|2)\b",
+        r"\bsoftware\s+engineer\s*(?:ii|2)\b", r"\bmid[\s-]*level\b",
+    ]
+    for p in mid_patterns:
+        if re.search(p, text):
+            return "Mid"
+
+    return "Unknown"
+
+
+def extract_experience(text: str) -> tuple[int | None, int | None]:
+    """Parse experience requirements from JD text.
+
+    Looks for patterns like "2-4 years", "2+ years", "minimum 3 years".
+    Returns (min_exp, max_exp).
+    """
+    text = text.lower()
+
+    # "X-Y years" or "X to Y years"
+    m = re.search(r"(\d+)\s*[-–to]+\s*(\d+)\s*(?:\+\s*)?(?:years?|yrs?)", text)
+    if m:
+        return int(m.group(1)), int(m.group(2))
+
+    # "X+ years"
+    m = re.search(r"(\d+)\+\s*(?:years?|yrs?)", text)
+    if m:
+        val = int(m.group(1))
+        return val, None
+
+    # "minimum X years" or "at least X years"
+    m = re.search(r"(?:minimum|at\s+least|min)\s*(?:of\s+)?(\d+)\s*(?:years?|yrs?)", text)
+    if m:
+        return int(m.group(1)), None
+
+    # "X years of experience" (standalone)
+    m = re.search(r"(\d+)\s*(?:years?|yrs?)\s+(?:of\s+)?(?:experience|exp)", text)
+    if m:
+        val = int(m.group(1))
+        return val, val
+
+    return None, None
+
+
+def experience_score(min_exp: int | None, max_exp: int | None) -> int:
+    """Score based on how well the experience requirement fits ~0-2 years.
+
+    Sweet spot (range includes 0-2) → 10
+    1-year max role              →  8
+    Exactly 3-year min           →  6
+    Min > 3 (too senior)         →  0
+    No exp data                  →  0
+    """
+    if min_exp is None and max_exp is None:
+        return 0
+    if (min_exp is None or min_exp <= 2) and (max_exp is None or max_exp >= 2):
+        return 10
+    if max_exp is not None and max_exp <= 1:
+        return 8
+    if min_exp is not None and min_exp == 3:
+        return 6
+    if min_exp is not None and min_exp > 3:
+        return 0
+    return 4
+
+
+def recency_score(iso_timestamp: str | None) -> int:
+    """Freshness bonus — decays sharply after 24 hours."""
+    if not iso_timestamp:
+        return 0
+    try:
+        posted = datetime.fromisoformat(iso_timestamp.replace("Z", "+00:00"))
+        if posted.tzinfo is None:
+            posted = posted.replace(tzinfo=timezone.utc)
+        hours = max((datetime.now(tz=timezone.utc) - posted).total_seconds() / 3600, 0)
+    except (ValueError, TypeError):
+        return 0
+    if hours < 6:
+        return 10
+    if hours < 12:
+        return 8
+    if hours < 24:
+        return 5
+    if hours < 48:
+        return 2
+    return -5
+
+
+def competition_estimate(company: str, hours_old: float = 0) -> int:
+    """Estimate competition level (0-10). Higher = more competitive."""
+    company_lower = company.lower()
+    score = 0
+    if any(bt in company_lower for bt in BIG_TECH):
+        score += 5
+    if hours_old > 48:
+        score += 5
+    elif hours_old > 24:
+        score += 2
+    return min(10, score)
+
+
+def _level_points(level: str) -> int:
+    """Points based on level tag."""
+    return {
+        "New Grad": 20,
+        "Entry": 15,
+        "Mid": 5,
+        "Unknown": 4,
+    }.get(level, 4)
+
+
+# ── Main evaluation ─────────────────────────────────────────────────────────
+
+def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult:
+    """Evaluate a job posting with multi-signal scoring."""
+    text = f"{job.title} {job.description}"
+    text_lower = text.lower()
+    variant = select_variant(text_lower)
+
+    # Hard disqualifiers: visa/citizenship/clearance
+    if has_match(text_lower, DISQUALIFYING_PHRASES):
         return FilterResult(
-            score=0,
-            should_apply=False,
-            reason="Job explicitly does not offer visa sponsorship or requires citizenship/clearance.",
-            resume_variant=select_variant(text),
+            score=0, score_pct=0, should_apply=False,
+            reason="No visa sponsorship or requires citizenship/clearance",
+            resume_variant=variant, level=level_tag(job.title, job.description),
         )
 
-    # Check experience level
-    if has_match(text, SENIOR_PHRASES):
-        score -= 30
-        reasons.append("Mentions senior-level experience requirements")
-
-    if has_match(text, ENTRY_LEVEL_SIGNALS):
-        score += 30
-        reasons.append("Entry-level / new grad signals found")
-
-    # Keyword scoring — boost jobs that match personal tech stack
-    has_real_description = len(job.description) > 100 and job.description != job.title
-    if has_real_description:
-        kw_score = keyword_score(text)
-        if kw_score > 0:
-            score += kw_score
-            reasons.append(f"Stack match +{kw_score}")
-
-    # Non-US location disqualifier (check location field specifically)
+    # Non-US location check
     non_us_patterns = [
         r"\bindia\b", r"\bgermany\b", r"\bfrance\b", r"\bbrazil\b",
         r"\bcanada\b", r"\bjapan\b", r"\bkorea\b", r"\bsingapore\b",
         r"\baustralia\b", r"\buk\b", r"\bunited\s+kingdom\b", r"\blondon\b",
         r"\bberlin\b", r"\bdublin\b", r"\bparis\b", r"\bamsterdam\b",
-        r"\bdenmark\b", r"\bserbia\b", r"\bbelgrade\b", r"\bsão\s+paulo\b",
-        r"\btoronto\b", r"\bvancouver\b", r"\bbangalore\b", r"\bhyperabad\b",
-        r"\bgurgaon\b", r"\bmumbai\b", r"\bluxembourg\b", r"\bsweden\b",
-        r"\bstockholm\b", r"\baarhus\b", r"\bnetherlands\b", r"\bmelbourne\b",
+        r"\bdenmark\b", r"\bserbia\b", r"\bbelgrade\b",
+        r"\btoronto\b", r"\bvancouver\b", r"\bbangalore\b",
+        r"\bmumbai\b", r"\bluxembourg\b", r"\bsweden\b",
+        r"\bstockholm\b", r"\bnetherlands\b", r"\bmelbourne\b",
         r"\bsydney\b", r"\bseoul\b", r"\btel\s+aviv\b", r"\bisrael\b",
     ]
-    loc_lower = job.location.lower()
-    if has_match(loc_lower, non_us_patterns):
+    if has_match(job.location.lower(), non_us_patterns):
         return FilterResult(
-            score=10,
-            should_apply=False,
+            score=10, score_pct=0, should_apply=False,
             reason=f"Non-US location: {job.location}",
-            resume_variant=select_variant(text),
+            resume_variant=variant, level=level_tag(job.title, job.description),
         )
 
-    # USA location check
+    # ── Compute all score signals ──
+    reasons = []
+
+    # Keyword matching
+    ks, hits = keyword_score(text)
+    if ks > 0:
+        reasons.append(f"Stack +{ks}")
+
+    # Synergy bonus
+    sb = synergy_bonus(text)
+    if sb > 0:
+        reasons.append(f"Synergy +{sb}")
+
+    # Level
+    level = level_tag(job.title, job.description)
+    lp = _level_points(level)
+    if level != "Unknown":
+        reasons.append(f"{level} +{lp}")
+
+    # Experience extraction and scoring
+    min_exp, max_exp = extract_experience(text_lower)
+    es = experience_score(min_exp, max_exp)
+    if es > 0:
+        reasons.append(f"Exp fit +{es}")
+
+    # Recency
+    rs = recency_score(first_seen)
+    if rs != 0:
+        reasons.append(f"Recency {'+' if rs > 0 else ''}{rs}")
+
+    # Location bonus
     us_patterns = [
         r"\bunited\s+states\b", r"\busa\b", r"\bu\.s\.\b",
         r"\bremote\b", r"\bnew\s+york\b", r"\bsan\s+francisco\b",
@@ -186,26 +381,59 @@ def evaluate_job(job: JobPosting) -> FilterResult:
         r"\bmiami\b", r"\bdallas\b", r"\bhouston\b", r"\bphoenix\b",
         r"\b[A-Z]{2}\b",
     ]
-    location_text = f"{job.location}".lower()
-    if has_match(location_text, us_patterns):
-        score += 10
-        reasons.append("US-based or remote position")
+    loc_score = 0
+    if has_match(job.location.lower(), us_patterns):
+        loc_score = 10
+        reasons.append("US +10")
     else:
-        score -= 20
-        reasons.append("Location may not be in the US")
+        loc_score = -10
 
-    # Clamp score
-    score = max(0, min(100, score))
-    should_apply = score >= 40
-    variant = select_variant(text)
+    # H1B bonus
+    h1b_bonus = 0
+    if any(p in text_lower for p in H1B_PREFER):
+        h1b_bonus = 8
+        reasons.append("H1B +8")
 
+    # Competition
+    hours_old = 0.0
+    if first_seen:
+        try:
+            posted = datetime.fromisoformat(first_seen.replace("Z", "+00:00"))
+            if posted.tzinfo is None:
+                posted = posted.replace(tzinfo=timezone.utc)
+            hours_old = max((datetime.now(tz=timezone.utc) - posted).total_seconds() / 3600, 0)
+        except (ValueError, TypeError):
+            pass
+    comp = competition_estimate(job.company, hours_old)
+
+    # Senior penalty (only if no positive level signals)
+    senior_count = count_matches(text_lower, SENIOR_PHRASES)
+    entry_count = count_matches(text_lower, ENTRY_LEVEL_SIGNALS)
+    senior_penalty = 0
+    if senior_count >= 3 and entry_count == 0:
+        senior_penalty = -30
+        reasons.append("Senior -30")
+
+    # ── Aggregate raw score ──
+    raw = ks + sb + lp + es + rs + loc_score + h1b_bonus + senior_penalty
+    score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
+
+    # Clamp display score to 0-100
+    score = max(0, min(100, raw))
+    should_apply = score_pct >= 30
     reason = "; ".join(reasons) if reasons else "Meets basic criteria"
     if not should_apply:
-        reason = f"Score too low ({score}/100): {reason}"
+        reason = f"Low match ({score_pct}%): {reason}"
 
     return FilterResult(
         score=score,
+        score_pct=score_pct,
         should_apply=should_apply,
         reason=reason,
         resume_variant=variant,
+        level=level,
+        min_exp=min_exp,
+        max_exp=max_exp,
+        competition=comp,
+        keyword_hits=hits,
     )

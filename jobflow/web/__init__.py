@@ -11,7 +11,7 @@ from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from flask import Flask, render_template, request, jsonify, send_file, abort, redirect
+from flask import Flask, render_template, request, jsonify, send_file, abort, redirect, make_response
 
 from ..config import load_config
 from ..filter import (
@@ -24,7 +24,14 @@ from ..filter import (
 )
 from ..latex import compile_pdf, get_page_count
 from ..tailor import load_base_resume, load_master_prompt, save_tailored_resume
-from ..tracker import list_jobs, update_status, append_job, STATUSES, HEADERS
+from ..tracker import list_jobs, append_job, STATUSES
+from ..linkedin_store import (
+    load_store, save_store, merge_scan_results, prune_old_jobs,
+    update_job_status, get_filtered_jobs, get_status_counts,
+    get_level_counts, get_search_terms, get_sidebar_stats, get_time_counts,
+    backfill_job,
+    LINKEDIN_STATUSES,
+)
 
 
 # Shared scan state for background thread
@@ -88,158 +95,14 @@ def create_app():
     # ── Page Routes ──────────────────────────────────────────────
 
     @app.route("/")
-    def dashboard():
-        jobs = list_jobs(config["csv_path"])
-        from collections import Counter
-        counts = Counter(j.get("status", "Unknown") for j in jobs)
-        recent = [{"_index": i + 1, **j} for i, j in enumerate(jobs)]
-        recent.sort(key=lambda j: j.get("date_found", ""), reverse=True)
-        return render_template(
-            "dashboard.html",
-            total=len(jobs),
-            pending=counts.get("Pending", 0),
-            applied=counts.get("Applied", 0),
-            active=counts.get("Interview", 0) + counts.get("OA", 0) + counts.get("Offer", 0),
-            rejected=counts.get("Rejected", 0),
-            recent=recent[:10],
-        )
-
-    @app.route("/applications")
-    def applications():
-        return render_template("applications.html", statuses=STATUSES)
-
-    @app.route("/application/<int:index>")
-    def application_detail(index):
-        jobs = list_jobs(config["csv_path"])
-        if index < 1 or index > len(jobs):
-            abort(404)
-        job = jobs[index - 1]
-
-        # Find output folder and files
-        resume_path = job.get("resume_path", "")
-        output_base = config["output_dir"].resolve()
-        job_dir = None
-        files = []
-        file_infos = []
-        jd_text = ""
-        if resume_path:
-            job_dir = (Path(config["_root"]) / Path(resume_path).parent).resolve()
-            if job_dir.exists():
-                files = sorted(job_dir.iterdir())
-                for f in files:
-                    try:
-                        rel = f.resolve().relative_to(output_base)
-                    except ValueError:
-                        rel = f.name
-                    file_infos.append({
-                        "name": f.name,
-                        "path": str(rel),
-                        "size_kb": round(f.stat().st_size / 1024, 1),
-                        "suffix": f.suffix,
-                    })
-            jd_path = job_dir / "job_description.txt" if job_dir else None
-            if jd_path and jd_path.exists():
-                jd_text = jd_path.read_text()
-
-        return render_template(
-            "application_detail.html",
-            job=job,
-            index=index,
-            file_infos=file_infos,
-            jd_text=jd_text,
-            statuses=STATUSES,
-        )
+    def index():
+        return redirect("/linkedin")
 
     @app.route("/scan")
     def scan_page():
         return render_template("scan.html")
 
     # ── API Routes ───────────────────────────────────────────────
-
-    @app.route("/api/applications")
-    def api_applications():
-        jobs = list_jobs(config["csv_path"])
-        status_filter = request.args.get("status", "")
-        query = request.args.get("q", "").lower()
-        sort_by = request.args.get("sort", "date_found")
-        sort_dir = request.args.get("dir", "desc")
-
-        # Add original index before filtering
-        indexed = [{"_index": i + 1, **j} for i, j in enumerate(jobs)]
-
-        if status_filter:
-            indexed = [j for j in indexed if j.get("status") == status_filter]
-        if query:
-            indexed = [j for j in indexed if
-                       query in j.get("company", "").lower() or
-                       query in j.get("role", "").lower() or
-                       query in j.get("notes", "").lower()]
-
-        # Sort
-        reverse = sort_dir == "desc"
-        if sort_by == "score":
-            indexed.sort(key=lambda j: int(j.get("score", 0) or 0), reverse=reverse)
-        elif sort_by == "company":
-            indexed.sort(key=lambda j: j.get("company", "").lower(), reverse=reverse)
-        else:
-            indexed.sort(key=lambda j: j.get("date_found", ""), reverse=reverse)
-
-        return render_template(
-            "_partials/applications_tbody.html",
-            jobs=indexed,
-            statuses=STATUSES,
-        )
-
-    @app.route("/api/applications/<int:index>/status", methods=["PATCH"])
-    def api_update_status(index):
-        data = request.form or request.json or {}
-        new_status = data.get("status", "")
-        notes = data.get("notes", "")
-        if not new_status:
-            return "Missing status", 400
-
-        update_status(config["csv_path"], index, new_status, notes)
-
-        # Return updated row
-        jobs = list_jobs(config["csv_path"])
-        if index < 1 or index > len(jobs):
-            return "Not found", 404
-        job = {"_index": index, **jobs[index - 1]}
-        return render_template("_partials/application_row.html", job=job, statuses=STATUSES)
-
-    @app.route("/api/applications/<int:index>/notes", methods=["PATCH"])
-    def api_update_notes(index):
-        data = request.form or request.json or {}
-        notes = data.get("notes", "")
-
-        jobs = list_jobs(config["csv_path"])
-        if index < 1 or index > len(jobs):
-            return "Not found", 404
-
-        # Direct CSV update for notes
-        import csv
-        rows = jobs
-        rows[index - 1]["notes"] = notes
-        with open(config["csv_path"], "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=HEADERS, extrasaction="ignore")
-            writer.writeheader()
-            writer.writerows(rows)
-
-        return f'<span class="notes-text" hx-get="/api/applications/{index}/notes/edit" hx-trigger="click" hx-swap="outerHTML" hx-on::load="showToast(\'Notes saved\')">{notes or "Add notes..."}</span>'
-
-    @app.route("/api/applications/<int:index>/notes/edit")
-    def api_edit_notes(index):
-        jobs = list_jobs(config["csv_path"])
-        if index < 1 or index > len(jobs):
-            return "Not found", 404
-        current = jobs[index - 1].get("notes", "")
-        return (
-            f'<input type="text" name="notes" value="{current}" '
-            f'hx-patch="/api/applications/{index}/notes" '
-            f'hx-trigger="blur, keydown[key==\'Enter\']" '
-            f'hx-swap="outerHTML" '
-            f'style="margin:0;padding:2px 6px;font-size:0.85em" autofocus>'
-        )
 
     @app.route("/api/scan/trigger", methods=["POST"])
     def api_trigger_scan():
@@ -561,6 +424,134 @@ def create_app():
         download_name = f"{session['company']}_{session['role']}.pdf".replace(" ", "_")
         return send_file(pdf, mimetype="application/pdf", as_attachment=True, download_name=download_name)
 
+    # ── LinkedIn Scanner Routes ──────────────────────────────────
+
+    linkedin_store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
+    scan_results_path = config["_root"] / "data" / "ci" / "scan_results.json"
+
+    def _do_linkedin_merge():
+        """Merge scan_results.json into linkedin_jobs.json."""
+        if not scan_results_path.exists():
+            return
+        try:
+            scan_data = json.loads(scan_results_path.read_text())
+        except (json.JSONDecodeError, ValueError):
+            return
+        store = load_store(linkedin_store_path)
+        store = merge_scan_results(store, scan_data)
+        store = prune_old_jobs(store)
+        # Backfill new fields on existing jobs
+        for key in store.get("jobs", {}):
+            store["jobs"][key] = backfill_job(store["jobs"][key])
+        save_store(linkedin_store_path, store)
+
+    # Merge once on startup
+    _do_linkedin_merge()
+
+    # Auto-pull thread
+    def _auto_pull_loop():
+        while True:
+            time.sleep(3600)
+            try:
+                subprocess.run(
+                    ["git", "pull", "--rebase", "origin", "main"],
+                    cwd=str(config["_root"]),
+                    capture_output=True,
+                    timeout=30,
+                )
+                _do_linkedin_merge()
+            except Exception:
+                pass
+
+    pull_thread = threading.Thread(target=_auto_pull_loop, daemon=True)
+    pull_thread.start()
+
+    @app.route("/boards")
+    def boards_page():
+        return render_template("boards.html")
+
+    @app.route("/linkedin")
+    def linkedin_page():
+        store = load_store(linkedin_store_path)
+        counts = get_status_counts(store)
+        level_counts = get_level_counts(store)
+        search_terms = get_search_terms(store)
+        sidebar = get_sidebar_stats(store)
+        time_counts = get_time_counts(store)
+        return render_template(
+            "linkedin.html",
+            statuses=LINKEDIN_STATUSES,
+            counts=counts,
+            level_counts=level_counts,
+            search_terms=search_terms,
+            sidebar=sidebar,
+            time_counts=time_counts,
+            last_updated=store.get("last_updated", ""),
+        )
+
+    @app.route("/api/linkedin/jobs")
+    def api_linkedin_jobs():
+        status_filter = request.args.get("status", "")
+        level_filter = request.args.get("level", "")
+        query = request.args.get("q", "")
+        search_term = request.args.get("search_term", "")
+        time_range = request.args.get("time", "")
+        hour_filter = request.args.get("hour", "")
+        sort_col = request.args.get("sort", "last_seen")
+        sort_dir = request.args.get("dir", "desc")
+        store = load_store(linkedin_store_path)
+        jobs = get_filtered_jobs(
+            store,
+            status=status_filter,
+            level=level_filter,
+            query=query,
+            search_term=search_term,
+            time_range=time_range,
+            hour_filter=hour_filter,
+            sort_col=sort_col,
+            sort_dir=sort_dir,
+        )
+        counts = get_status_counts(store)
+        level_counts = get_level_counts(store)
+        resp = make_response(render_template(
+            "_partials/linkedin_tbody.html",
+            jobs=jobs,
+            statuses=LINKEDIN_STATUSES,
+            counts=counts,
+        ))
+        resp.headers["X-Counts"] = json.dumps(counts)
+        resp.headers["X-Level-Counts"] = json.dumps(level_counts)
+        return resp
+
+    @app.route("/api/linkedin/jobs/<path:key>/status", methods=["PATCH"])
+    def api_linkedin_status(key):
+        data = request.form or request.json or {}
+        new_status = data.get("status", "")
+        store = load_store(linkedin_store_path)
+        if update_job_status(store, key, new_status):
+            save_store(linkedin_store_path, store)
+        job = store.get("jobs", {}).get(key, {})
+        job["_key"] = key
+        return render_template(
+            "_partials/linkedin_row.html",
+            job=job,
+            statuses=LINKEDIN_STATUSES,
+        )
+
+    @app.route("/api/linkedin/refresh", methods=["POST"])
+    def api_linkedin_refresh():
+        try:
+            subprocess.run(
+                ["git", "pull", "--rebase", "origin", "main"],
+                cwd=str(config["_root"]),
+                capture_output=True,
+                timeout=30,
+            )
+            _do_linkedin_merge()
+            return '<span style="color:#5cb85c;">Refreshed!</span>'
+        except Exception as e:
+            return f'<span style="color:#d9534f;">Error: {e}</span>'
+
     return app
 
 
@@ -597,8 +588,14 @@ def _run_scan(config, platforms, hours, new_only):
                 "location": job.location,
                 "url": job.url,
                 "score": filt.score,
+                "score_pct": filt.score_pct,
+                "level": filt.level,
+                "min_exp": filt.min_exp,
+                "max_exp": filt.max_exp,
+                "competition": filt.competition,
                 "variant": filt.resume_variant,
                 "reason": filt.reason,
+                "description_preview": job.description[:200] if job.description else "",
             })
 
         results_path = config["output_dir"] / "scan_results.json"

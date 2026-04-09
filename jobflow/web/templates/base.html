@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}JobFlow{% endblock %}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -21,8 +24,8 @@
             <li><strong>JobFlow</strong></li>
         </ul>
         <ul>
-            <li><a href="/" {% if request.path == '/' %}class="active"{% endif %}>Dashboard</a></li>
-            <li><a href="/applications" {% if request.path.startswith('/application') %}class="active"{% endif %}>Applications</a></li>
+            <li><a href="/linkedin" {% if request.path == '/linkedin' %}class="active"{% endif %}>LinkedIn</a></li>
+            <li><a href="/boards" {% if request.path == '/boards' %}class="active"{% endif %}>Job Boards</a></li>
             <li><a href="/scan" {% if request.path == '/scan' %}class="active"{% endif %}>Scanner</a></li>
             <li><a href="/tailor" {% if request.path == '/tailor' %}class="active"{% endif %}>Tailor</a></li>
         </ul>

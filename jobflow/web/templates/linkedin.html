@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+{% block title %}LinkedIn Feed — JobFlow{% endblock %}
+{% block content %}
+
+<style>
+/* ── Atriveo-inspired LinkedIn page overrides ── */
+.li-page { font-family: "Sora", sans-serif; }
+.li-page * { font-family: inherit; }
+
+.li-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+}
+.li-header hgroup h2 { font-size: 1.4rem; margin: 0; font-weight: 700; }
+.li-header hgroup p { font-size: 0.75rem; color: var(--muted); margin: 0; font-family: "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: 0.08em; }
+.li-meta { display: flex; align-items: center; gap: 10px; }
+.li-live { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(57,217,138,0.35); background: rgba(57,217,138,0.1); color: #9df0c3; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-family: "IBM Plex Mono", monospace; }
+.li-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #72f0b0; animation: li-pulse 1.9s infinite; }
+@keyframes li-pulse { 0% { box-shadow: 0 0 0 0 rgba(114,240,176,0.65); } 100% { box-shadow: 0 0 0 8px rgba(114,240,176,0); } }
+
+/* ── Layout: sidebar + main ── */
+.li-layout { display: grid; grid-template-columns: 200px 1fr; gap: 16px; }
+@media (max-width: 1000px) { .li-layout { grid-template-columns: 1fr; } .li-sidebar { display: none; } }
+
+/* ── Sidebar ── */
+.li-sidebar { display: flex; flex-direction: column; gap: 12px; }
+.li-panel { border: 1px solid rgba(70,96,125,0.3); border-radius: 10px; background: rgba(15,27,42,0.7); padding: 14px; backdrop-filter: blur(8px); }
+.li-panel-title { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: #8fa4be; font-family: "IBM Plex Mono", monospace; font-weight: 600; margin-bottom: 10px; }
+.li-stat-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 0.78rem; }
+.li-stat-label { color: #c8d6e5; white-space: nowrap; }
+.li-stat-bar { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.li-stat-bar-fill { height: 100%; border-radius: 2px; }
+.li-stat-count { color: #8fa4be; font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; font-weight: 500; min-width: 24px; text-align: right; }
+
+/* Bar colors */
+.bar-green { background: #39d98a; }
+.bar-blue { background: #5b9bd5; }
+.bar-yellow { background: #f5c842; }
+.bar-gray { background: #5a6a7e; }
+.bar-purple { background: #a78bfa; }
+.bar-teal { background: #34d3c4; }
+.bar-orange { background: #ffab5e; }
+
+/* ── Main content ── */
+.li-main { min-width: 0; }
+
+/* Filter bar */
+.li-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.li-search-input {
+    all: unset !important;
+    display: inline-block !important; box-sizing: border-box !important;
+    flex: 1 !important; min-width: 180px !important; max-width: 360px !important;
+    padding: 8px 14px !important; font-size: 0.82rem !important;
+    color: #e9f1fb !important; background: rgba(6,13,21,0.55) !important;
+    border: 1px solid rgba(70,96,125,0.35) !important; border-radius: 8px !important;
+    font-family: "Sora", sans-serif !important;
+}
+.li-search-input:focus { border-color: rgba(52,211,196,0.65) !important; box-shadow: 0 0 0 3px rgba(52,211,196,0.12) !important; }
+.li-search-input::placeholder { color: #6b7f96 !important; }
+
+/* Chips */
+.li-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+    border-radius: 999px; font-size: 0.72rem; font-weight: 600; cursor: pointer;
+    border: 1px solid rgba(70,96,125,0.35); background: rgba(11,20,32,0.6);
+    color: #8fa4be; font-family: "IBM Plex Mono", monospace;
+    transition: all 150ms ease;
+}
+.li-chip:hover { color: #e9f1fb; border-color: rgba(52,211,196,0.5); }
+.li-chip.active { color: #02211d; border-color: rgba(52,211,196,0.8); background: linear-gradient(145deg, #62eee1, #35c9bb); }
+.li-chip-count { background: rgba(255,255,255,0.15); border-radius: 999px; padding: 1px 7px; font-size: 0.65rem; }
+.li-chip.active .li-chip-count { background: rgba(0,0,0,0.2); }
+
+/* Recommended chip */
+.li-chip.chip-rec { border-color: rgba(245,200,66,0.4); color: #f5c842; }
+.li-chip.chip-rec:hover { border-color: #f5c842; }
+.li-chip.chip-rec.active { background: linear-gradient(145deg, #f5d862, #d4a832); color: #1a1500; border-color: #f5c842; }
+
+/* Search term select */
+.li-term-select {
+    all: unset !important; display: inline-block !important; box-sizing: border-box !important;
+    padding: 5px 28px 5px 10px !important; font-size: 0.72rem !important;
+    color: #e9f1fb !important; background: rgba(6,13,21,0.55) !important;
+    border: 1px solid rgba(70,96,125,0.35) !important; border-radius: 8px !important;
+    font-family: "IBM Plex Mono", monospace !important; cursor: pointer !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238fa4be' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important; background-position: right 8px center !important;
+    -webkit-appearance: none !important; appearance: none !important;
+}
+.li-term-select option { background: #0c1624; color: #e9f1fb; }
+
+/* Summary line */
+.li-summary { color: #8fa4be; font-size: 0.75rem; font-family: "IBM Plex Mono", monospace; margin-bottom: 10px; letter-spacing: 0.02em; }
+.li-summary b { color: #e9f1fb; }
+
+/* ── Table ── */
+.li-table-wrap { border: 1px solid rgba(36,55,79,0.6); border-radius: 10px; overflow: hidden; }
+.li-table-scroll { overflow-x: auto; max-height: calc(100vh - 220px); min-height: 300px; }
+.li-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+.li-table thead th {
+    position: sticky; top: 0; z-index: 2;
+    background: rgba(10,20,33,0.97); color: #8fa4be;
+    text-align: left; font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase;
+    font-family: "IBM Plex Mono", monospace; font-weight: 600;
+    padding: 10px 12px; white-space: nowrap; user-select: none; cursor: pointer;
+    border-bottom: 1px solid rgba(36,55,79,0.8);
+}
+.li-table thead th:hover { color: #e9f1fb; }
+.li-table thead th .sort-i { margin-left: 3px; opacity: 0.3; font-size: 0.6rem; }
+.li-table thead th.s-asc .sort-i::after { content: "▲"; opacity: 1; }
+.li-table thead th.s-desc .sort-i::after { content: "▼"; opacity: 1; }
+
+.li-table tbody tr {
+    border-bottom: 1px solid rgba(36,55,79,0.5);
+    transition: background 120ms ease;
+}
+.li-table tbody tr:last-child { border-bottom: none; }
+.li-table tbody tr:hover { background: rgba(255,255,255,0.025); }
+.li-table td { padding: 10px 12px; font-size: 0.82rem; vertical-align: middle; }
+
+/* Row number */
+.td-n { color: #5a6a7e; font-size: 0.72rem; font-family: "IBM Plex Mono", monospace; width: 28px; text-align: right; padding-right: 6px; }
+
+/* Company avatar */
+.co-avatar { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.72rem; color: #fff; flex-shrink: 0; }
+
+/* Role cell */
+.role-cell { display: flex; align-items: center; gap: 10px; min-width: 240px; }
+.role-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.role-title { font-size: 0.85rem; font-weight: 600; color: #e9f1fb; line-height: 1.3; }
+.role-title a { color: inherit; text-decoration: none; }
+.role-title a:hover { color: #34d3c4; }
+.role-sub { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #6b7f96; font-family: "IBM Plex Mono", monospace; flex-wrap: wrap; }
+.role-sub .sep { color: #3a4f68; }
+
+/* Badges inline */
+.li-badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 5px; font-size: 0.62rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
+.badge-linkedin { background: rgba(52,211,196,0.12); color: #34d3c4; }
+.badge-h1b { background: rgba(57,217,138,0.12); color: #39d98a; }
+.badge-exp-tag { background: rgba(143,164,190,0.1); color: #8fa4be; }
+.badge-rec-tag { background: rgba(245,200,66,0.12); color: #f5c842; }
+
+/* Match % */
+.match-val { font-size: 0.85rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
+.match-high { color: #5ee8a8; }
+.match-med { color: #ffd066; }
+.match-low { color: #8fa4be; }
+
+/* Score */
+.score-val { font-size: 0.82rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
+.score-val.sv-high { color: #a78bfa; }
+.score-val.sv-med { color: #5b9bd5; }
+.score-val.sv-low { color: #6b7f96; }
+
+/* Level badge */
+.lvl-badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
+.lvl-newgrad { color: #52d98a; background: rgba(57,217,138,0.12); }
+.lvl-entry { color: #a78bfa; background: rgba(167,139,250,0.12); }
+.lvl-mid { color: #f5b85a; background: rgba(255,171,94,0.14); }
+.lvl-unknown { color: #6b7f96; background: rgba(107,127,150,0.1); }
+
+/* Apply button */
+.apply-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 14px; border-radius: 7px; border: none; background: rgba(52,211,196,0.15); color: #34d3c4; font-size: 0.72rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; letter-spacing: 0.03em; text-decoration: none; cursor: pointer; transition: background 140ms, color 140ms; }
+.apply-btn:hover { background: rgba(52,211,196,0.28); color: #7ef5ea; }
+.apply-btn::after { content: " \2197"; font-size: 0.65rem; }
+
+/* Status select (minimal) */
+.li-status-sel {
+    all: unset !important; display: inline-block !important; box-sizing: border-box !important;
+    padding: 3px 22px 3px 8px !important; font-size: 0.7rem !important; cursor: pointer !important;
+    color: #8fa4be !important; background: rgba(11,20,32,0.5) !important;
+    border: 1px solid rgba(70,96,125,0.25) !important; border-radius: 6px !important;
+    font-family: "IBM Plex Mono", monospace !important;
+    -webkit-appearance: none !important; appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%236b7f96' stroke-width='1.2' fill='none'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important; background-position: right 6px center !important;
+}
+.li-status-sel option { background: #0c1624; color: #e9f1fb; }
+
+/* Empty state */
+.li-empty { text-align: center; color: #6b7f96; font-size: 0.85rem; padding: 48px 16px; font-family: "IBM Plex Mono", monospace; }
+
+/* Refresh button */
+.li-refresh { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 7px; border: 1px solid rgba(70,96,125,0.35); background: transparent; color: #8fa4be; font-size: 0.72rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; cursor: pointer; transition: all 150ms; }
+.li-refresh:hover { border-color: var(--pico-primary); color: #e9f1fb; }
+
+/* ── Time Tabs ── */
+.time-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.time-tabs { display: inline-flex; align-items: center; border: 1px solid rgba(70,96,125,0.3); border-radius: 999px; overflow: hidden; background: rgba(8,16,26,0.45); }
+.time-tab { appearance: none; border: 0; background: transparent; color: #8fa4be; font-size: 0.72rem; font-weight: 600; padding: 6px 14px; cursor: pointer; transition: background 160ms, color 160ms; font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
+.time-tab:hover { color: #e9f1fb; background: rgba(255,255,255,0.05); }
+.time-tab.active { color: #fff; background: linear-gradient(145deg, #6c5ce7, #a78bfa); }
+.time-tab .t-count { font-size: 0.62rem; background: rgba(255,255,255,0.2); border-radius: 999px; padding: 1px 6px; margin-left: 4px; }
+
+.sort-tabs { display: inline-flex; align-items: center; border: 1px solid rgba(70,96,125,0.3); border-radius: 8px; overflow: hidden; margin-left: auto; }
+.sort-tab { appearance: none; border: 0; background: transparent; color: #8fa4be; font-size: 0.7rem; font-weight: 600; padding: 5px 12px; cursor: pointer; font-family: "IBM Plex Mono", monospace; transition: all 150ms; }
+.sort-tab:hover { color: #e9f1fb; }
+.sort-tab.active { color: #e9f1fb; background: rgba(255,255,255,0.06); }
+
+/* ── Hourly Cards ── */
+.hourly-strip { position: relative; margin-bottom: 14px; }
+.hourly-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; scrollbar-width: thin; scrollbar-color: rgba(70,96,125,0.3) transparent; }
+.hourly-scroll::-webkit-scrollbar { height: 4px; }
+.hourly-scroll::-webkit-scrollbar-thumb { background: rgba(70,96,125,0.4); border-radius: 2px; }
+.hour-card { flex: 0 0 auto; min-width: 72px; padding: 8px 10px; border: 1px solid rgba(70,96,125,0.3); border-radius: 10px; text-align: center; cursor: pointer; transition: all 150ms; background: rgba(10,20,33,0.5); }
+.hour-card:hover { border-color: rgba(52,211,196,0.5); background: rgba(15,27,42,0.8); }
+.hour-card.active { border-color: rgba(52,211,196,0.8); background: rgba(52,211,196,0.08); }
+.hour-card .h-time { font-size: 0.7rem; font-weight: 700; color: #e9f1fb; font-family: "IBM Plex Mono", monospace; }
+.hour-card .h-count { font-size: 0.62rem; color: #6b7f96; font-family: "IBM Plex Mono", monospace; margin-top: 2px; }
+.hourly-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(70,96,125,0.4); background: rgba(10,20,33,0.9); color: #8fa4be; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.7rem; z-index: 2; }
+.hourly-nav:hover { border-color: var(--pico-primary); color: #e9f1fb; }
+.hourly-nav.nav-left { left: -4px; }
+.hourly-nav.nav-right { right: -4px; }
+</style>
+
+<div class="li-page">
+    <!-- Header -->
+    <div class="li-header">
+        <hgroup>
+            <h2>LinkedIn Feed</h2>
+            <p>Hourly Job Intelligence</p>
+        </hgroup>
+        <div class="li-meta">
+            <span class="li-live"><span class="li-live-dot"></span>Live Feed</span>
+            <small style="color:#6b7f96; font-family:'IBM Plex Mono',monospace; font-size:0.72rem;" id="last-updated">
+                {% if last_updated %}Updated {{ last_updated[:16].replace('T', ' ') }}{% endif %}
+            </small>
+            <button class="li-refresh"
+                    hx-post="/api/linkedin/refresh"
+                    hx-target="#last-updated"
+                    hx-swap="innerHTML"
+                    hx-on::after-request="triggerFilter(); showToast('Refreshed')">
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Time tabs + sort -->
+    <div class="time-bar">
+        <div class="time-tabs">
+            <button class="time-tab" onclick="setTime('hour')" data-time="hour">This Hour <span class="t-count">{{ time_counts.this_hour }}</span></button>
+            <button class="time-tab active" onclick="setTime('today')" data-time="today">Today <span class="t-count">{{ time_counts.today }}</span></button>
+            <button class="time-tab" onclick="setTime('yesterday')" data-time="yesterday">Yesterday <span class="t-count">{{ time_counts.yesterday }}</span></button>
+            <button class="time-tab" onclick="setTime('')" data-time="">All Time</button>
+        </div>
+        <div class="sort-tabs">
+            <button class="sort-tab active" onclick="quickSort('score_pct')" data-qsort="score_pct">★ Score</button>
+            <button class="sort-tab" onclick="quickSort('first_seen')" data-qsort="first_seen">↓ Recent</button>
+        </div>
+    </div>
+
+    <!-- Hourly cards -->
+    <div class="hourly-strip">
+        <div class="hourly-scroll" id="hourly-scroll">
+            {% for h in time_counts.hourly %}
+            {% if h.count > 0 %}
+            <div class="hour-card" onclick="setHour('{{ h.hour }}')" data-hour="{{ h.hour }}">
+                <div class="h-time">{{ h.label }}</div>
+                <div class="h-count">{{ h.count }} jobs</div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        <button class="hourly-nav nav-left" onclick="document.getElementById('hourly-scroll').scrollBy({left:-200,behavior:'smooth'})">&#8249;</button>
+        <button class="hourly-nav nav-right" onclick="document.getElementById('hourly-scroll').scrollBy({left:200,behavior:'smooth'})">&#8250;</button>
+    </div>
+
+    <div class="li-layout">
+        <!-- Sidebar -->
+        <aside class="li-sidebar">
+            <!-- Match Score Distribution -->
+            <div class="li-panel">
+                <div class="li-panel-title">Match Score</div>
+                {% for label, count in sidebar.match_dist.items() %}
+                <div class="li-stat-row">
+                    <span class="li-stat-label">{{ label }}</span>
+                    <div class="li-stat-bar">
+                        <div class="li-stat-bar-fill {% if loop.index == 1 %}bar-green{% elif loop.index == 2 %}bar-blue{% elif loop.index == 3 %}bar-yellow{% else %}bar-gray{% endif %}"
+                             style="width:{{ (count / sidebar.total * 100) if sidebar.total else 0 }}%"></div>
+                    </div>
+                    <span class="li-stat-count">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Level Breakdown -->
+            <div class="li-panel">
+                <div class="li-panel-title">Level Breakdown</div>
+                {% for lvl in ['New Grad', 'Entry', 'Mid'] %}
+                <div class="li-stat-row">
+                    <span class="li-stat-label">{{ lvl }}</span>
+                    <div class="li-stat-bar">
+                        <div class="li-stat-bar-fill {% if lvl == 'New Grad' %}bar-green{% elif lvl == 'Entry' %}bar-blue{% else %}bar-orange{% endif %}"
+                             style="width:{{ (level_counts.get(lvl, 0) / sidebar.total * 100) if sidebar.total else 0 }}%"></div>
+                    </div>
+                    <span class="li-stat-count">{{ level_counts.get(lvl, 0) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Top Companies -->
+            <div class="li-panel">
+                <div class="li-panel-title">Top Companies</div>
+                {% for company, count in sidebar.top_companies %}
+                <div class="li-stat-row">
+                    <span class="li-stat-label" style="max-width:100px; overflow:hidden; text-overflow:ellipsis;" title="{{ company }}">{{ company }}</span>
+                    <div class="li-stat-bar">
+                        <div class="li-stat-bar-fill bar-teal" style="width:{{ (count / sidebar.top_companies[0][1] * 100) if sidebar.top_companies else 0 }}%"></div>
+                    </div>
+                    <span class="li-stat-count">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Experience Required -->
+            <div class="li-panel">
+                <div class="li-panel-title">Experience Required</div>
+                {% for label, count in sidebar.exp_dist.items() %}
+                <div class="li-stat-row">
+                    <span class="li-stat-label">{{ label }}</span>
+                    <div class="li-stat-bar">
+                        <div class="li-stat-bar-fill bar-purple" style="width:{{ (count / sidebar.total * 100) if sidebar.total else 0 }}%"></div>
+                    </div>
+                    <span class="li-stat-count">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="li-main">
+            <!-- Filters -->
+            <div class="li-filters">
+                <input type="text" id="filter-q" placeholder="Search jobs, companies, locations..."
+                       class="li-search-input" oninput="debounceFilter()">
+                <button class="li-chip active" onclick="setFilter('status', '')" data-status="">All <span class="li-chip-count">{{ counts.get('All', 0) }}</span></button>
+                <button class="li-chip chip-rec" onclick="setFilter('status', 'Recommended')" data-status="Recommended">★ Rec <span class="li-chip-count">{{ counts.get('Recommended', 0) }}</span></button>
+                {% for lvl in ['New Grad', 'Entry', 'Mid'] %}
+                <button class="li-chip" onclick="setFilter('level', '{{ lvl }}')" data-level="{{ lvl }}">{{ lvl }} <span class="li-chip-count">{{ level_counts.get(lvl, 0) }}</span></button>
+                {% endfor %}
+                {% for st in statuses %}
+                {% if counts.get(st, 0) > 0 %}
+                <button class="li-chip" onclick="setFilter('status', '{{ st }}')" data-status="{{ st }}">{{ st }} <span class="li-chip-count">{{ counts.get(st, 0) }}</span></button>
+                {% endif %}
+                {% endfor %}
+                {% if search_terms %}
+                <select id="filter-search-term" class="li-term-select" onchange="triggerFilter()">
+                    <option value="">All search terms</option>
+                    {% for t in search_terms %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                </select>
+                {% endif %}
+            </div>
+
+            <!-- Summary -->
+            <div class="li-summary" id="li-summary">
+                <b>{{ counts.get('All', 0) }}</b> jobs
+                {% if counts.get('Recommended', 0) %} · <b>{{ counts.get('Recommended', 0) }}</b> recommended{% endif %}
+                {% if counts.get('Applied', 0) %} · Applied: <b>{{ counts.get('Applied', 0) }}</b>{% endif %}
+            </div>
+
+            <!-- Hidden filter state -->
+            <input type="hidden" id="filter-status" value="">
+            <input type="hidden" id="filter-level" value="">
+            <input type="hidden" id="filter-sort" value="score_pct">
+            <input type="hidden" id="filter-dir" value="desc">
+            <input type="hidden" id="filter-time" value="today">
+            <input type="hidden" id="filter-hour" value="">
+
+            <!-- Table -->
+            <div class="li-table-wrap">
+                <div class="li-table-scroll">
+                    <table class="li-table">
+                        <thead>
+                            <tr>
+                                <th width="28"></th>
+                                <th class="th-sort" onclick="toggleSort('title')">Role <span class="sort-i" data-col="title"></span></th>
+                                <th class="th-sort s-desc" onclick="toggleSort('score_pct')" width="70">Match <span class="sort-i" data-col="score_pct"></span></th>
+                                <th class="th-sort" onclick="toggleSort('score')" width="65">Score <span class="sort-i" data-col="score"></span></th>
+                                <th class="th-sort" onclick="toggleSort('level')" width="80">Level <span class="sort-i" data-col="level"></span></th>
+                                <th width="75">Apply</th>
+                            </tr>
+                        </thead>
+                        <tbody id="linkedin-body">
+                            <tr><td colspan="6"><div class="li-empty">Loading...</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var _debounceTimer = null;
+var AVATAR_COLORS = ['#e06060','#f5b85a','#52d98a','#5b9bd5','#a78bfa','#34d3c4','#ff7eb3','#ff9f43','#6c5ce7','#00b894'];
+
+function setFilter(name, value) {
+    // Reset other filters when switching category
+    if (name === 'status') {
+        document.getElementById('filter-level').value = '';
+    }
+    if (name === 'level') {
+        document.getElementById('filter-status').value = '';
+    }
+    document.getElementById('filter-' + name).value = value;
+
+    // Update chip active states
+    document.querySelectorAll('.li-chip').forEach(function(c) {
+        var isStatus = c.dataset.status !== undefined;
+        var isLevel = c.dataset.level !== undefined;
+        if (name === 'status' && isStatus) {
+            c.classList.toggle('active', c.dataset.status === value);
+        } else if (name === 'level' && isLevel) {
+            c.classList.toggle('active', c.dataset.level === value);
+        }
+        // Clear other category
+        if (name === 'status' && isLevel) c.classList.remove('active');
+        if (name === 'level' && isStatus) c.classList.remove('active');
+    });
+
+    triggerFilter();
+}
+
+function toggleSort(col) {
+    var sortInput = document.getElementById('filter-sort');
+    var dirInput = document.getElementById('filter-dir');
+    if (sortInput.value === col) {
+        dirInput.value = dirInput.value === 'desc' ? 'asc' : 'desc';
+    } else {
+        sortInput.value = col;
+        dirInput.value = 'desc';
+    }
+    document.querySelectorAll('.th-sort').forEach(function(th) { th.classList.remove('s-asc','s-desc'); });
+    var icon = document.querySelector('.sort-i[data-col="' + col + '"]');
+    if (icon) icon.closest('th').classList.add('s-' + dirInput.value);
+    triggerFilter();
+}
+
+function setTime(val) {
+    document.getElementById('filter-time').value = val;
+    document.getElementById('filter-hour').value = '';
+    document.querySelectorAll('.time-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.time === val); });
+    document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.remove('active'); });
+    triggerFilter();
+}
+
+function setHour(h) {
+    document.getElementById('filter-hour').value = h;
+    document.getElementById('filter-time').value = '';
+    document.querySelectorAll('.time-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.toggle('active', c.dataset.hour === h); });
+    triggerFilter();
+}
+
+function quickSort(col) {
+    document.getElementById('filter-sort').value = col;
+    document.getElementById('filter-dir').value = 'desc';
+    document.querySelectorAll('.sort-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.qsort === col); });
+    document.querySelectorAll('.th-sort').forEach(function(th) { th.classList.remove('s-asc','s-desc'); });
+    var icon = document.querySelector('.sort-i[data-col="' + col + '"]');
+    if (icon) icon.closest('th').classList.add('s-desc');
+    triggerFilter();
+}
+
+function debounceFilter() {
+    clearTimeout(_debounceTimer);
+    _debounceTimer = setTimeout(triggerFilter, 250);
+}
+
+function triggerFilter() {
+    var params = new URLSearchParams();
+    params.set('status', document.getElementById('filter-status').value);
+    params.set('level', document.getElementById('filter-level').value);
+    params.set('q', document.getElementById('filter-q').value);
+    params.set('sort', document.getElementById('filter-sort').value);
+    params.set('dir', document.getElementById('filter-dir').value);
+    params.set('time', document.getElementById('filter-time').value);
+    params.set('hour', document.getElementById('filter-hour').value);
+    var termEl = document.getElementById('filter-search-term');
+    if (termEl) params.set('search_term', termEl.value);
+
+    fetch('/api/linkedin/jobs?' + params.toString()).then(function(resp) {
+        var countsStr = resp.headers.get('X-Counts');
+        if (countsStr) {
+            try {
+                var counts = JSON.parse(countsStr);
+                document.querySelectorAll('.li-chip').forEach(function(c) {
+                    if (c.dataset.status === undefined) return;
+                    var key = c.dataset.status === '' ? 'All' : c.dataset.status;
+                    var badge = c.querySelector('.li-chip-count');
+                    if (badge && counts[key] !== undefined) badge.textContent = counts[key];
+                });
+            } catch(e) {}
+        }
+        return resp.text();
+    }).then(function(html) {
+        document.getElementById('linkedin-body').innerHTML = html;
+        htmx.process(document.getElementById('linkedin-body'));
+    });
+}
+
+document.addEventListener('DOMContentLoaded', triggerFilter);
+</script>
+
+{% endblock %}

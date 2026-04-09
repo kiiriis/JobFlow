@@ -1,0 +1,14 @@
+{% if jobs %}
+    {% for job in jobs %}
+    {% include "_partials/linkedin_row.html" %}
+    {% endfor %}
+{% else %}
+    <tr>
+        <td colspan="6">
+            <div class="li-empty">
+                No jobs match this filter.<br>
+                <span style="font-size:0.75rem;">Try adjusting your search or filters.</span>
+            </div>
+        </td>
+    </tr>
+{% endif %}

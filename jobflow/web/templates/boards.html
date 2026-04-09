@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Job Boards — JobFlow{% endblock %}
+{% block content %}
+
+<style>
+.boards-page { font-family: "Sora", sans-serif; text-align: center; padding: 4rem 1rem; }
+.boards-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; }
+.boards-page h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.boards-page p { color: #8fa4be; font-size: 0.9rem; font-family: "IBM Plex Mono", monospace; max-width: 500px; margin: 0 auto 1.5rem; }
+.boards-list { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 600px; margin: 0 auto; }
+.board-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; border: 1px solid rgba(70,96,125,0.35); background: rgba(15,27,42,0.5); color: #8fa4be; }
+</style>
+
+<div class="boards-page">
+    <div class="boards-icon">&#9881;</div>
+    <h2>Job Boards</h2>
+    <p>Multi-source job aggregator — scrapes career pages from top companies via their ATS platforms. Coming soon.</p>
+    <div class="boards-list">
+        <span class="board-tag">Lever</span>
+        <span class="board-tag">Greenhouse</span>
+        <span class="board-tag">Ashby</span>
+        <span class="board-tag">Workday</span>
+        <span class="board-tag">iCIMS</span>
+        <span class="board-tag">Taleo</span>
+        <span class="board-tag">GitHub Repos</span>
+    </div>
+</div>
+
+{% endblock %}

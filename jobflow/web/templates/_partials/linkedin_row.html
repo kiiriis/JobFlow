@@ -1,0 +1,58 @@
+{% set avatar_colors = ['#e06060','#f5b85a','#52d98a','#5b9bd5','#a78bfa','#34d3c4','#ff7eb3','#ff9f43','#6c5ce7','#00b894'] %}
+{% set co_letter = (job.company[:1] | upper) if job.company else '?' %}
+{% set color_idx = (job.company | length) % 10 if job.company else 0 %}
+<tr>
+    <td class="td-n">{{ loop.index if loop is defined else '' }}</td>
+    <td>
+        <div class="role-cell">
+            <div class="co-avatar" style="background:{{ avatar_colors[color_idx] }}">{{ co_letter }}</div>
+            <div class="role-info">
+                <div class="role-title">
+                    {% if job.recommended %}<span style="color:#f5c842">★ </span>{% endif %}
+                    {% if job.url %}<a href="{{ job.url }}" target="_blank" rel="noopener">{{ job.title }}</a>{% else %}{{ job.title }}{% endif %}
+                    <span class="li-badge badge-linkedin">LinkedIn</span>
+                    {% if job.h1b is defined and job.h1b %}<span class="li-badge badge-h1b">H1B ✓</span>{% endif %}
+                </div>
+                <div class="role-sub">
+                    <span>{{ job.company }}</span>
+                    <span class="sep">·</span>
+                    <span>{{ job.location }}</span>
+                    {% if job.min_exp is not none or job.max_exp is not none %}
+                    <span class="sep">·</span>
+                    <span class="li-badge badge-exp-tag">{% set mn = job.min_exp|default(0)|int %}{% set mx = job.max_exp %}{% if mx is not none and mx != mn %}{{ mn }}-{{ mx }} yrs{% else %}{{ mn }}+ yrs{% endif %}</span>
+                    {% endif %}
+                    <span class="sep">·</span>
+                    <span style="color:#6b7f96">{{ job._recency|default('--') }}</span>
+                </div>
+            </div>
+        </div>
+    </td>
+    <td>
+        {% set pct = job.score_pct|default(0)|int %}
+        <span class="match-val {% if pct >= 60 %}match-high{% elif pct >= 30 %}match-med{% else %}match-low{% endif %}">{{ pct }}%</span>
+    </td>
+    <td>
+        {% set s = job.score|default(0)|int %}
+        <span class="score-val {% if s >= 70 %}sv-high{% elif s >= 40 %}sv-med{% else %}sv-low{% endif %}">+{{ s }}</span>
+    </td>
+    <td>
+        {% set lvl = job.level|default('Unknown') %}
+        <span class="lvl-badge lvl-{{ 'newgrad' if lvl == 'New Grad' else 'entry' if lvl == 'Entry' else 'mid' if lvl == 'Mid' else 'unknown' }}">{{ lvl }}</span>
+    </td>
+    <td style="white-space:nowrap;">
+        {% if job.url %}
+        <a href="{{ job.url }}" target="_blank" rel="noopener" class="apply-btn">Apply</a>
+        {% endif %}
+        <select name="status"
+                hx-patch="/api/linkedin/jobs/{{ job._key }}/status"
+                hx-target="closest tr"
+                hx-swap="outerHTML"
+                hx-on::after-request="showToast('Updated'); if(typeof triggerFilter==='function') setTimeout(triggerFilter, 400)"
+                class="li-status-sel">
+            <option value="" {% if not job.status %}selected{% endif %}>--</option>
+            {% for st in statuses %}
+            <option value="{{ st }}" {% if st == job.status %}selected{% endif %}>{{ st }}</option>
+            {% endfor %}
+        </select>
+    </td>
+</tr>

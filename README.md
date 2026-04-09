@@ -1,181 +1,170 @@
 # JobFlow
 
-CLI tool that automatically scans 80+ company job boards for new grad / entry-level software engineering positions, filters by relevance, tailors your LaTeX resume per job, and tracks applications locally.
+Automated job scanner + resume tailoring system for new grad / entry-level software engineering roles. Scans LinkedIn hourly via GitHub Actions, scores jobs against your tech stack, and serves a real-time dashboard.
 
-Built to run from within [Claude Code](https://claude.ai/claude-code) — Claude acts as the agent that does the thinking (filtering, resume tailoring), while the CLI handles orchestration and I/O.
+**Live at:** [jobflow.onrender.com](https://jobflow.onrender.com) (or your Render URL)
 
-## What It Does
-
-```
-jobflow scan
-  |
-  +--> Lever API (11 companies)
-  +--> Greenhouse API (40 companies)
-  +--> Ashby API (31 companies)
-  +--> LinkedIn guest API (4 search queries x 2 pages)
-  +--> GitHub new-grad repos (SimplifyJobs + Jobright.ai)
-  |
-  +--> Filter: new grad? USA? OPT-friendly? SWE role?
-  |
-  +--> Relevant jobs displayed + saved to scan_results.json
-```
+## How It Works
 
 ```
-jobflow apply <url> --paste -t "SDE 1" -c "Stripe" -l "SF"
-  |
-  +--> Parse job description
-  +--> Filter (score 0-100, should_apply true/false)
-  +--> Auto-select resume variant (SE / ML / AppDev)
-  +--> Claude tailors resume using master prompt
-  +--> Merge into full .tex + compile PDF
-  +--> Track in applications.csv
+GitHub Actions (hourly cron)
+    |
+    v
+Scan LinkedIn (6 search terms x 200 results)
+    |
+    v
+Score & filter (multi-signal engine: keywords, synergy, level, experience)
+    |
+    v
+Commit to GitHub --> Render auto-deploys --> Live dashboard
 ```
 
-## Setup
+The dashboard shows jobs ranked by relevance to your profile, with filtering by time, level, and status.
+
+## Features
+
+- **Hourly LinkedIn scanning** via GitHub Actions + python-jobspy
+- **Multi-signal scoring** — keyword matching, synergy combos, level detection, experience fit, recency, H1B bonus
+- **Real-time web dashboard** — Atriveo-inspired dark theme with sidebar stats, hourly cards, sortable table
+- **Resume tailoring** — Claude AI rewrites your LaTeX resume per job description
+- **Application tracking** — CSV-based status management
+- **Auto-deployment** — Render free tier with GitHub Actions keep-alive
+
+## Quick Start
 
 ```bash
-# Clone and install
 git clone https://github.com/kiiriis/JobFlow.git
 cd JobFlow
 pip install -e .
 
-# Initialize
-jobflow init
+# Run locally
+jobflow web
 
-# Place your base resumes in resumes/base/
-# Edit config/config.yaml with your paths
+# Or scan jobs from CLI
+jobflow scan --platform linkedin --hours 4
 ```
 
-**Requirements:**
-- Python 3.11+
-- `pdflatex` for PDF compilation (optional — `brew install --cask mactex`)
+**Requirements:** Python 3.11+ | Optional: pdflatex (for resume PDFs), Claude CLI (for tailoring)
 
-## Usage
-
-### Scan for jobs
+## Scanning
 
 ```bash
-# Scan all sources (Lever + Greenhouse + Ashby + LinkedIn + GitHub repos)
+# Scan all platforms (Lever + Greenhouse + Ashby + LinkedIn + GitHub)
 jobflow scan
 
-# Only jobs posted in the last 24 hours
-jobflow scan --hours 24
+# LinkedIn only, last hour, only new jobs
+jobflow scan --platform linkedin --new --hours 1
 
-# Only show new jobs since last scan (deduplication)
-jobflow scan --new
-
-# Scan a specific platform
-jobflow scan --platform greenhouse
-jobflow scan --platform linkedin
-jobflow scan --platform github
+# Specific platform
+jobflow scan --platform greenhouse --hours 24
 ```
 
-### Apply to a job
+**Sources:**
+- **LinkedIn** — 6 search terms via python-jobspy (new grad, entry level, junior, ML, AI, SDE I)
+- **Lever API** — 11 companies (Spotify, Palantir, Plaid, etc.)
+- **Greenhouse API** — 40 companies (Stripe, Airbnb, Databricks, etc.)
+- **Ashby API** — 31 companies (OpenAI, Ramp, Figma, etc.)
+- **GitHub repos** — SimplifyJobs + Jobright aggregators
+
+## Scoring Engine
+
+Jobs are scored 0-100% match against your personal tech stack:
+
+| Signal | Points | Example |
+|--------|--------|---------|
+| Keyword match | 3-10 each | Python(10), PyTorch(8), AWS(7), FastAPI(7) |
+| Synergy combos | +6 to +10 | Python + FastAPI + AWS = +10 bonus |
+| Level detection | +5 to +20 | "New Grad" = +20, "Entry" = +15 |
+| Experience fit | +0 to +10 | 0-2 years = +10 (sweet spot) |
+| Recency | -5 to +10 | < 6h = +10, > 48h = -5 |
+| H1B mention | +8 | "will sponsor" in JD |
+| US location | +10 | US city/state/remote |
+
+**Hard disqualifiers:** no visa sponsorship, US citizen required, security clearance, non-US location.
+
+See [docs/SCORING.md](docs/SCORING.md) for full details.
+
+## Web Dashboard
+
+The LinkedIn feed at `/linkedin` features:
+
+- **Time filtering** — This Hour / Today / Yesterday / All Time + scrollable hourly cards
+- **Sortable table** — Sort by match %, score, level, recency
+- **Filter chips** — All / Recommended / New Grad / Entry / Mid / Tracking / Applied
+- **Search** — Real-time text search across company, title, location
+- **Sidebar stats** — Match score distribution, level breakdown, top companies, experience required
+- **Status tracking** — Mark jobs as Tracking / Applied / Not Interested
+- **Timezone-aware** — All times shown in your local timezone
+
+## Resume Tailoring
 
 ```bash
-# Paste a job description and process it
-jobflow apply "https://jobs.lever.co/company/123" \
-  --paste \
-  --title "Software Engineer, New Grad" \
-  --company "Stripe" \
-  --location "San Francisco, CA"
-
-# Save tailored resume (after Claude generates the sections)
-jobflow save --dir data/output/Stripe_SWE_2026-03-28
-
-# Process a job from scan results by index
-jobflow process 3
+# Via web dashboard: paste JD at /tailor
+# Via CLI:
+jobflow apply "https://..." --paste -t "SWE" -c "Stripe" -l "SF"
+jobflow save --dir data/output/Stripe_SWE_2026-04-09
 ```
 
-### Track applications
+Claude AI tailors your LaTeX resume:
+1. Auto-selects variant (SE / ML / AppDev) based on JD keywords
+2. Preserves preamble + header + education
+3. Rewrites experience, projects, skills sections
+4. Compiles to PDF, auto-condenses if > 1 page
 
-```bash
-# View all tracked applications
-jobflow list
+## Deployment
+
+Deployed on Render free tier with auto-deploy from GitHub.
+
 ```
+render.yaml     — Render Blueprint (auto-configures service)
+Procfile        — gunicorn -w 1 wsgi:app
+wsgi.py         — WSGI entry point
+```
+
+GitHub Actions hourly cron scans LinkedIn, commits data, pushes to GitHub. Push triggers Render redeploy. Same workflow pings the Render URL to prevent free-tier sleep.
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for setup instructions.
 
 ## Project Structure
 
 ```
 JobFlow/
 ├── config/
-│   ├── config.yaml            # Paths, settings
-│   └── job_boards.json        # 82 API endpoints + 60 career page URLs
-├── resumes/
-│   ├── base/                  # Base LaTeX resumes (SE, ML, AppDev variants)
-│   └── prompt.md              # Master resume tailoring prompt
-├── data/
-│   ├── applications.csv       # Application tracker
-│   └── output/                # Generated resumes + scan results
-│       └── {Company}_{Role}_{Date}/
-│           ├── tailored_resume.tex
-│           ├── tailored_resume.pdf
-│           ├── job_description.txt
-│           └── metadata.json
+│   ├── config.yaml          # Local config
+│   ├── config.ci.yaml       # CI config (GitHub Actions)
+│   └── job_boards.json      # 82 company API endpoints
+├── data/ci/                 # CI scan output (git-tracked)
 ├── jobflow/
-│   ├── cli.py                 # Typer CLI (scan, apply, save, process, list, init)
-│   ├── scanner.py             # Lever/Greenhouse/Ashby/LinkedIn/GitHub scanners
-│   ├── filter.py              # Job relevance scoring + visa/location filters
-│   ├── tailor.py              # Resume section extraction + merging
-│   ├── latex.py               # pdflatex compilation
-│   ├── tracker.py             # CSV operations
-│   ├── scraper.py             # Job posting text parser
-│   ├── config.py              # Config loader
-│   └── models.py              # JobPosting, FilterResult dataclasses
-└── pyproject.toml
+│   ├── cli.py               # CLI commands
+│   ├── config.py            # Config loader
+│   ├── models.py            # JobPosting, FilterResult
+│   ├── filter.py            # Scoring engine
+│   ├── scanner.py           # Job scanners
+│   ├── linkedin_store.py    # LinkedIn job store + dedup
+│   ├── tracker.py           # CSV tracking
+│   ├── tailor.py            # Resume merging
+│   ├── latex.py             # PDF compilation
+│   └── web/                 # Flask dashboard
+├── docs/                    # Documentation
+├── .github/workflows/       # Hourly scan cron
+├── wsgi.py                  # Production WSGI
+├── Procfile                 # Render process
+└── render.yaml              # Render Blueprint
 ```
 
-## Filter Criteria
+## Documentation
 
-Jobs are scored 0-100 and filtered by:
-
-| Criteria | Effect |
-|---|---|
-| Entry-level / new grad / SDE 1 signals | +30 score |
-| Senior / staff / lead / 3+ YOE | -30 score |
-| USA location detected | +10 score |
-| Non-US location (India, UK, etc.) | Disqualified |
-| "No sponsorship" / "US citizen required" | Disqualified |
-| Score < 40 | Skipped |
-
-Resume variant is auto-selected based on JD keywords:
-- **ML/AI** keywords (PyTorch, ML, data science) -> `ml` variant
-- **Full-stack/frontend** keywords (React, frontend) -> `appdev` variant
-- Default -> `se` variant
-
-## Job Board Coverage
-
-### API-scanned automatically (82 companies)
-- **Greenhouse (40):** Stripe, Anthropic, Databricks, Airbnb, Discord, Coinbase, Cloudflare, Waymo, Figma, Vercel, Datadog, Duolingo, Dropbox, Lyft, Pinterest, MongoDB, GitLab, Elastic, Brex, Verkada, Scale AI, Block, and more
-- **Ashby (31):** OpenAI, Cursor, Perplexity, Ramp, Notion, Snowflake, Replit, ElevenLabs, Cohere, Modal, Supabase, Neon, Confluent, Vanta, PostHog, and more
-- **Lever (11):** Spotify, Palantir, Plaid, Mistral, Zoox, and more
-
-### Aggregator sources
-- **LinkedIn** guest API — 4 search queries, new grad + entry level SWE
-- **GitHub repos** — SimplifyJobs/New-Grad-Positions + Jobright.ai 2026 new grad list
-
-### Career pages (60+ companies, Playwright required)
-Big Tech, enterprise, semiconductors, quant/trading firms, fintech/banking, healthcare, and devtools companies stored in `config/job_boards.json` for manual or Playwright-based scraping.
-
-## How Resume Tailoring Works
-
-1. **Base resume** selected (SE, ML, or AppDev variant)
-2. **Preamble + header + education** preserved untouched from base
-3. **Experience, Projects, Skills** rewritten by Claude following the master prompt:
-   - ATS-optimized bullet points
-   - Action Verb + Deliverable + How + Measurable Impact
-   - Tech stack realigned to match JD
-   - Realistic, interview-defensible metrics only
-   - Exactly 3 bullets per role
-4. **Merged** back into full `.tex` and compiled to PDF
-
-## Dependencies
-
-Just two:
-- `typer[all]` — CLI framework with rich output
-- `pyyaml` — Config file parsing
-
-No external API keys. No cloud services. Claude Code itself is the LLM agent.
+| Doc | Content |
+|-----|---------|
+| [Architecture](docs/ARCHITECTURE.md) | System overview, data flow, design decisions |
+| [Scoring](docs/SCORING.md) | Full scoring engine breakdown |
+| [API](docs/API.md) | HTTP endpoints reference |
+| [Data Models](docs/DATA_MODELS.md) | JSON/CSV schemas |
+| [Deployment](docs/DEPLOYMENT.md) | Render setup, GitHub Actions, env vars |
+| [Frontend](docs/FRONTEND.md) | CSS architecture, JS functions, HTMX patterns |
+| [Scanning](docs/SCANNING.md) | Platforms, search terms, dedup, rate limiting |
+| [Tailoring](docs/TAILORING.md) | Resume flow, Claude integration |
+| [CLI](docs/CLI.md) | All commands with examples |
 
 ## License
 

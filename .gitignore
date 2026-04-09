@@ -13,14 +13,20 @@ build/
 *.out
 *.pdf
 
+# OS files
+.DS_Store
+
+# IDE / tools
+.mcp.json
+.playwright-mcp/
+
 # JobFlow data (local only)
 data/output/
 data/applications.csv
-data/output/seen_jobs.json
 
 # Track CI scan results
 !data/ci/
 !data/ci/**
 
-# Resumes and prompts (private)
+# Resumes (private — contain PII)
 resumes/

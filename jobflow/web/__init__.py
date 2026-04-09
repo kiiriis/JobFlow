@@ -99,6 +99,10 @@ def create_app():
     def index():
         return redirect("/linkedin")
 
+    @app.route("/health")
+    def health():
+        return jsonify({"status": "ok"}), 200
+
     @app.route("/scan")
     def scan_page():
         return render_template("scan.html")

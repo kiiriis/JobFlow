@@ -2488,6 +2488,23 @@
     "index": 224
   },
   {
+    "company": "Virtusa",
+    "title": "Java Fullstack developer",
+    "location": "New York, NY",
+    "url": "https://www.linkedin.com/jobs/view/4390558774",
+    "score": 71,
+    "score_pct": 55,
+    "level": "Entry",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "appdev",
+    "reason": "Stack +46; Entry +15; US +10",
+    "description_preview": "We are seeking an accomplished\n **Senior Lead Engineer** \n with deep expertise in\n **Java** \n ,\n **React** \n , and modern cloud\\-native development to join our high\u2011performing engineering organization",
+    "date_posted": "",
+    "index": 225
+  },
+  {
     "company": "AMD",
     "title": "GPU Software Developer",
     "location": "Austin, TX",
@@ -2496,7 +2513,7 @@
     "variant": "se",
     "reason": "Stack match +10; US-based or remote position",
     "description_preview": "**WHAT YOU DO AT AMD CHANGES EVERYTHING**\n At AMD, our mission is to build great products that accelerate next\\-generation computing experiences\u2014from AI and data centers, to PCs, gaming and embedded s",
-    "index": 225
+    "index": 226
   },
   {
     "company": "Booz Allen Hamilton",
@@ -2507,7 +2524,7 @@
     "variant": "se",
     "reason": "Stack match +10; US-based or remote position",
     "description_preview": "**Job Number: R0235632**\n Rust Software Developer\n   \n\n  \n\n**The\u202fOpportunity:**\n At Booz Allen, we believe\u202fin empowering people to change the world. As\u202fa Rust Software Developer, you'll apply\u202fyour tec",
-    "index": 226
+    "index": 227
   },
   {
     "company": "Booz Allen Hamilton",
@@ -2518,7 +2535,7 @@
     "variant": "se",
     "reason": "Stack match +10; US-based or remote position",
     "description_preview": "**Job Number: R0235632**\n Rust Software Developer\n   \n\n  \n\n**The\u202fOpportunity:**\n At Booz Allen, we believe\u202fin empowering people to change the world. As\u202fa Rust Software Developer, you'll apply\u202fyour tec",
-    "index": 227
+    "index": 228
   },
   {
     "company": "Booz Allen Hamilton",
@@ -2529,7 +2546,7 @@
     "variant": "se",
     "reason": "Stack match +10; US-based or remote position",
     "description_preview": "**Job Number: R0235632**\n Rust Software Developer\n   \n\n  \n\n**The\u202fOpportunity:**\n At Booz Allen, we believe\u202fin empowering people to change the world. As\u202fa Rust Software Developer, you'll apply\u202fyour tec",
-    "index": 228
+    "index": 229
   },
   {
     "company": "Chamberlain Advisors",
@@ -2540,7 +2557,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +10; US-based or remote position",
     "description_preview": "**Title:** \n Senior Software Engineer \u2013 Database \\& Systems (AI Platforms)\n   \n\n  \n\n**Location:** \n Deerfield, IL (Must be able to work hybrid onsite 3 days per week \\~4 days/week to convert to FTE)\n ",
-    "index": 229
+    "index": 230
   },
   {
     "company": "Spike Electric Controls",
@@ -2551,7 +2568,7 @@
     "variant": "se",
     "reason": "Stack match +10; US-based or remote position",
     "description_preview": "**Company Description** \n\n\n\n\n  \n\n\n\n\n\n Spike Electric Controls is a rapidly growing electrical manufacturer specializing in the design and production of custom\\-engineered electrical control systems. H",
-    "index": 230
+    "index": 231
   },
   {
     "company": "Amazon Web Services (AWS)",
@@ -2562,7 +2579,7 @@
     "variant": "se",
     "reason": "Stack match +10; US-based or remote position",
     "description_preview": "**Description**\n Join us to drive high\\-impact innovation that secures our cloud by building solutions that enable an ecosystem of services to protect against sophisticated threats. The Informatics te",
-    "index": 231
+    "index": 232
   },
   {
     "company": "Jobs via Dice",
@@ -2573,7 +2590,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +10; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Genesis10, is seeking the following. Apply via Dice today!\n   \n\n  \n\n To apply, please submit a form",
-    "index": 232
+    "index": 233
   },
   {
     "company": "Jobs via Dice",
@@ -2584,7 +2601,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +10; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Genesis10, is seeking the following. Apply via Dice today!\n   \n\n  \n\n To apply, please submit a form",
-    "index": 233
+    "index": 234
   },
   {
     "company": "Jobs via Dice",
@@ -2595,7 +2612,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +10; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Genesis10, is seeking the following. Apply via Dice today!\n   \n\n  \n\n To apply, please submit a form",
-    "index": 234
+    "index": 235
   },
   {
     "company": "Jobs via Dice",
@@ -2606,7 +2623,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +10; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Genesis10, is seeking the following. Apply via Dice today!\n   \n\n  \n\n To apply, please submit a form",
-    "index": 235
+    "index": 236
   },
   {
     "company": "Jobs via Dice",
@@ -2617,7 +2634,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +10; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Genesis10, is seeking the following. Apply via Dice today!\n   \n\n  \n\n To apply, please submit a form",
-    "index": 236
+    "index": 237
   },
   {
     "company": "hackajob",
@@ -2628,7 +2645,7 @@
     "variant": "se",
     "reason": "Entry-level / new grad signals found; Stack match +9; Location may not be in the US",
     "description_preview": "***hackajob** \n is collaborating with\n **mThree** \n to connect them with exceptional professionals for this role.*\n**Locations:** \n United States \\- we are looking for candidates who are flexible to w",
-    "index": 237
+    "index": 238
   },
   {
     "company": "SS&C Technologies",
@@ -2639,7 +2656,7 @@
     "variant": "se",
     "reason": "Stack match +9; US-based or remote position",
     "description_preview": "As a leading financial services and healthcare technology company based on revenue, SS\\&C is headquartered in Windsor, Connecticut, and has 27,000\\+ employees in 35 countries. Some 20,000 financial se",
-    "index": 238
+    "index": 239
   },
   {
     "company": "Capgemini",
@@ -2650,7 +2667,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +9; US-based or remote position",
     "description_preview": "* **Job Title : Full Stack Developer**\n* **Type : FTE ( No C2C or Subcontractor)**\n* **Mode : Hybrid**\n* **Location : Westlake TX**\n* **Visa : No Sponsorship available.**\n\n\n\n  \n\n\n\n\n\n**Job Description ",
-    "index": 239
+    "index": 240
   },
   {
     "company": "SS&C Technologies",
@@ -2661,7 +2678,7 @@
     "variant": "se",
     "reason": "Stack match +9; US-based or remote position",
     "description_preview": "As a leading financial services and healthcare technology company based on revenue, SS\\&C is headquartered in Windsor, Connecticut, and has 27,000\\+ employees in 35 countries. Some 20,000 financial se",
-    "index": 240
+    "index": 241
   },
   {
     "company": "Giftogram",
@@ -2672,7 +2689,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +9; US-based or remote position",
     "description_preview": "Build Real Things. Grow Fast. Make an Impact.\n   \n\n  \n\n Junior Full Stack Developer \u2014 Giftogram\n   \n\n  \n\n We're Giftogram\n   \n\n  \n\n Since 2012, we've been quietly building something people actually lo",
-    "index": 241
+    "index": 242
   },
   {
     "company": "Veeva Systems",
@@ -2683,7 +2700,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +9; US-based or remote position",
     "description_preview": "Veeva Systems is building the industry cloud for Life Sciences to help companies work in a more efficient and connected way. Learn more about our products, vision and values, and status as a public be",
-    "index": 242
+    "index": 243
   },
   {
     "company": "Qualcomm",
@@ -2694,7 +2711,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +9; US-based or remote position",
     "description_preview": "**Company**\n Qualcomm Technologies, Inc.\n   \n\n  \n\n**Job Area**\n Engineering Group, Engineering Group \\> PPT Systems Engineering\n   \n\n  \n\n**General Summary**\n As a leading technology innovator, Qualcom",
-    "index": 243
+    "index": 244
   },
   {
     "company": "The Fountain Group",
@@ -2705,7 +2722,7 @@
     "variant": "se",
     "reason": "Stack match +9; US-based or remote position",
     "description_preview": "**Pay** \n : $30\\-39/hr\n   \n\n  \n\n**Duration:** \n 6 month contract initially (conversion to full\\-time is possible depending on need and performance)\n   \n\n  \n\n**Location** \n : St. Paul, MN (100% onsite;",
-    "index": 244
+    "index": 245
   },
   {
     "company": "Anthropic",
@@ -2716,7 +2733,7 @@
     "variant": "appdev",
     "reason": "Stack match +9; US-based or remote position",
     "description_preview": "**About Anthropic**\n Anthropic\u2019s mission is to create reliable, interpretable, and steerable AI systems. We want AI to be safe and beneficial for our users and for society as a whole. Our team is a qu",
-    "index": 245
+    "index": 246
   },
   {
     "company": "Anthropic",
@@ -2727,7 +2744,7 @@
     "variant": "appdev",
     "reason": "Stack match +9; US-based or remote position",
     "description_preview": "**About Anthropic**\n Anthropic\u2019s mission is to create reliable, interpretable, and steerable AI systems. We want AI to be safe and beneficial for our users and for society as a whole. Our team is a qu",
-    "index": 246
+    "index": 247
   },
   {
     "company": "Goliath Partners",
@@ -2738,7 +2755,7 @@
     "variant": "se",
     "reason": "Stack match +9; US-based or remote position",
     "description_preview": "We have been retained by a NYC based firm bring on a Founding Engineer on a hybrid basis\n \n\n\n\n  \n\n\n\n\n\n**Role** \n : Founding Engineer \\- own and build the core systems behind pricing, execution, and ca",
-    "index": 247
+    "index": 248
   },
   {
     "company": "Caltech",
@@ -2749,7 +2766,7 @@
     "variant": "appdev",
     "reason": "Stack match +9; US-based or remote position",
     "description_preview": "Caltech is a world\\-renowned science and engineering institute that marshals some of the world's brightest minds and most innovative tools to address fundamental scientific questions. We thrive on fin",
-    "index": 248
+    "index": 249
   },
   {
     "company": "Goliath Partners",
@@ -2760,7 +2777,7 @@
     "variant": "se",
     "reason": "Stack match +9; US-based or remote position",
     "description_preview": "Our client is a rapidly growing quantitative trading firm based in New York City who is looking to add a Software Engineer to join their team on a hybrid basis. They have doubled their profits within ",
-    "index": 249
+    "index": 250
   },
   {
     "company": "Monarch Recruiters",
@@ -2771,7 +2788,7 @@
     "variant": "appdev",
     "reason": "Entry-level / new grad signals found; Stack match +8; Location may not be in the US",
     "description_preview": "**Full\\-Stack Software Engineer (New Grad)** \n\n\n\n\n**San Francisco, CA (On\\-Site)** \n\n\n\n\n  \n\n\n\n\n\n**Company Overview** \n\n\n\n\n We\u2019re the modern data infrastructure platform for construction, the world\u2019s t",
-    "index": 250
+    "index": 251
   },
   {
     "company": "Compunnel Inc.",
@@ -2782,7 +2799,7 @@
     "variant": "appdev",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "What are the top three MUST have soft skills and technical skills (experience candidates must have coming in the door)?\n \n\n\n\n 1\\.) Java/ Spring Boot API Development (Will include net new development)\n",
-    "index": 251
+    "index": 252
   },
   {
     "company": "SpaceX",
@@ -2793,7 +2810,7 @@
     "variant": "appdev",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "SpaceX was founded under the belief that a future where humanity is out exploring the stars is fundamentally more exciting than one where we are not. Today SpaceX is actively developing the technologi",
-    "index": 252
+    "index": 253
   },
   {
     "company": "Turing",
@@ -2804,7 +2821,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 253
+    "index": 254
   },
   {
     "company": "Turing",
@@ -2815,7 +2832,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 254
+    "index": 255
   },
   {
     "company": "Turing",
@@ -2826,7 +2843,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 255
+    "index": 256
   },
   {
     "company": "Turing",
@@ -2837,7 +2854,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 256
+    "index": 257
   },
   {
     "company": "Turing",
@@ -2848,7 +2865,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 257
+    "index": 258
   },
   {
     "company": "Turing",
@@ -2859,7 +2876,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 258
+    "index": 259
   },
   {
     "company": "Turing",
@@ -2870,7 +2887,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 259
+    "index": 260
   },
   {
     "company": "Turing",
@@ -2881,7 +2898,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 260
+    "index": 261
   },
   {
     "company": "Turing",
@@ -2892,7 +2909,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 261
+    "index": 262
   },
   {
     "company": "Turing",
@@ -2903,7 +2920,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 262
+    "index": 263
   },
   {
     "company": "Turing",
@@ -2914,7 +2931,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 263
+    "index": 264
   },
   {
     "company": "Turing",
@@ -2925,7 +2942,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 264
+    "index": 265
   },
   {
     "company": "Turing",
@@ -2936,7 +2953,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 265
+    "index": 266
   },
   {
     "company": "Turing",
@@ -2947,7 +2964,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 266
+    "index": 267
   },
   {
     "company": "Turing",
@@ -2958,7 +2975,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 267
+    "index": 268
   },
   {
     "company": "Turing",
@@ -2969,7 +2986,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 268
+    "index": 269
   },
   {
     "company": "Turing",
@@ -2980,7 +2997,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 269
+    "index": 270
   },
   {
     "company": "Turing",
@@ -2991,7 +3008,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 270
+    "index": 271
   },
   {
     "company": "Turing",
@@ -3002,7 +3019,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 271
+    "index": 272
   },
   {
     "company": "Turing",
@@ -3013,7 +3030,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 272
+    "index": 273
   },
   {
     "company": "Jobs via Dice",
@@ -3024,7 +3041,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +8; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, AdientOne LLC, is seeking the following. Apply via Dice today!\n   \n\n  \n\n DUTIES AND RESPONSIBILITES",
-    "index": 273
+    "index": 274
   },
   {
     "company": "Turing",
@@ -3035,7 +3052,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 274
+    "index": 275
   },
   {
     "company": "Turing",
@@ -3046,7 +3063,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 275
+    "index": 276
   },
   {
     "company": "Turing",
@@ -3057,7 +3074,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 276
+    "index": 277
   },
   {
     "company": "Turing",
@@ -3068,7 +3085,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 277
+    "index": 278
   },
   {
     "company": "Turing",
@@ -3079,7 +3096,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 278
+    "index": 279
   },
   {
     "company": "Turing",
@@ -3090,7 +3107,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 279
+    "index": 280
   },
   {
     "company": "Turing",
@@ -3101,7 +3118,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 280
+    "index": 281
   },
   {
     "company": "Turing",
@@ -3112,7 +3129,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 281
+    "index": 282
   },
   {
     "company": "Turing",
@@ -3123,7 +3140,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 282
+    "index": 283
   },
   {
     "company": "Turing",
@@ -3134,7 +3151,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 283
+    "index": 284
   },
   {
     "company": "Turing",
@@ -3145,7 +3162,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 284
+    "index": 285
   },
   {
     "company": "Meraki7",
@@ -3156,7 +3173,7 @@
     "variant": "appdev",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**Job Description:** \n\n\n\n\n Your expertise in JAVA development, user experience and delivery will directly impact our customers of the community.\n \n\n\n\n  \n\n\n\n\n\n**Must have Technical Skills:** \n\n\n\n\n \u2022 Co",
-    "index": 285
+    "index": 286
   },
   {
     "company": "Progress Software",
@@ -3167,7 +3184,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +8; US-based or remote position",
     "description_preview": "We are Progress (Nasdaq: PRGS) \\- the trusted provider of software that enables our customers to develop, deploy and manage responsible, AI\\-powered applications and experiences with agility and ease.",
-    "index": 286
+    "index": 287
   },
   {
     "company": "Barracuda",
@@ -3178,7 +3195,7 @@
     "variant": "appdev",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "Come join our passionate team! Barracuda is a leading cybersecurity company providing complete protection against complex threats. Our platform protects email, data, applications, and networks with in",
-    "index": 287
+    "index": 288
   },
   {
     "company": "Tata Consultancy Services",
@@ -3189,7 +3206,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**Job Description**\n Skill: Workfront Developer\n   \n\n  \n\n**Must Have Technical/Functional Skills**\n* Technical Expertise: Strong proficiency with Workfront Fusion (formerly Workfront Fusion/Make).\n* I",
-    "index": 288
+    "index": 289
   },
   {
     "company": "Tata Consultancy Services",
@@ -3200,7 +3217,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**Job Description**\n Skill: Informatica Developer\n   \n\n  \n\n**Must Have Technical/Functional Skills**\n* Proficiency with Informatica tools (e.g., PowerCenter).\n* Strong knowledge of ETL processes.\n* SQ",
-    "index": 289
+    "index": 290
   },
   {
     "company": "Turing",
@@ -3211,7 +3228,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 290
+    "index": 291
   },
   {
     "company": "Turing",
@@ -3222,7 +3239,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 291
+    "index": 292
   },
   {
     "company": "Turing",
@@ -3233,7 +3250,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 292
+    "index": 293
   },
   {
     "company": "Turing",
@@ -3244,7 +3261,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 293
+    "index": 294
   },
   {
     "company": "Turing",
@@ -3255,7 +3272,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 294
+    "index": 295
   },
   {
     "company": "Turing",
@@ -3266,7 +3283,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 295
+    "index": 296
   },
   {
     "company": "Turing",
@@ -3277,7 +3294,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 296
+    "index": 297
   },
   {
     "company": "Turing",
@@ -3288,7 +3305,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 297
+    "index": 298
   },
   {
     "company": "Turing",
@@ -3299,7 +3316,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 298
+    "index": 299
   },
   {
     "company": "Turing",
@@ -3310,7 +3327,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 299
+    "index": 300
   },
   {
     "company": "Turing",
@@ -3321,7 +3338,7 @@
     "variant": "se",
     "reason": "Stack match +8; US-based or remote position",
     "description_preview": "**About Us:** \n\n\n\n\n Based in San Francisco, California, Turing is the world\u2019s leading research accelerator for frontier AI labs and a trusted partner for global enterprises deploying advanced AI syste",
-    "index": 300
+    "index": 301
   },
   {
     "company": "Red Oak",
@@ -3338,7 +3355,7 @@
     "reason": "Stack +40; Exp fit +6; US +10; H1B +8",
     "description_preview": "Objectives\n   \n\n  \n\n A Full Stack Software Engineer will play a key role in the ongoing evolution of the core Red Oak platform. This is a complex, multi\\-tenant system with deep business logic, Compli",
     "date_posted": "",
-    "index": 301
+    "index": 302
   },
   {
     "company": "Fact Finders Pro",
@@ -3355,7 +3372,7 @@
     "reason": "Stack +64; Synergy +10",
     "description_preview": "Role Overview:\n \n\n\n\n Fact Finders Pro is dedicated to combating misinformation and restoring trust in\n \n\n\n\n the digital age. We are developing a fact\\-checking application powered by\n \n\n\n\n generative ",
     "date_posted": "",
-    "index": 302
+    "index": 303
   },
   {
     "company": "CyberArk",
@@ -3372,7 +3389,7 @@
     "reason": "Stack +54; US +10",
     "description_preview": "**Company Description**\n**About CyberArk**\n CyberArk, a Palo Alto Networks company, is the global leader in identity security, trusted by organizations around the world to secure human and machine ide",
     "date_posted": "",
-    "index": 303
+    "index": 304
   },
   {
     "company": "Google",
@@ -3383,7 +3400,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +7; US-based or remote position",
     "description_preview": "**Minimum qualifications:**\n* Bachelor\u2019s degree or equivalent practical experience.\n* 2 years of experience in general software development.\n* 2 years of experience with back\\-end software development",
-    "index": 304
+    "index": 305
   },
   {
     "company": "Charles Schwab",
@@ -3394,7 +3411,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +7; US-based or remote position",
     "description_preview": "Your opportunity\n   \n\n  \n\n At Schwab, you\u2019re empowered to make an impact on your career. Here, innovative thought meets creative problem solving, helping us \u201cchallenge the status quo\u201d and transform th",
-    "index": 305
+    "index": 306
   },
   {
     "company": "Microsoft",
@@ -3405,7 +3422,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +7; US-based or remote position",
     "description_preview": "**Overview**\n Core AI is at the forefront of Microsoft\u2019s mission to redefine how software is built and experienced. We are responsible for building the foundational platforms, services, programming mo",
-    "index": 306
+    "index": 307
   },
   {
     "company": "VMC Soft Technologies, Inc",
@@ -3416,7 +3433,7 @@
     "variant": "se",
     "reason": "Stack match +7; US-based or remote position",
     "description_preview": "**\\*\\*\\*\\*\\*CONTRACT ROLE\\*\\*\\*\\*\\*** \n\n\n\n\n**\\*\\*\\*\\*\\*CONTRACT ROLE\\*\\*\\*\\*\\*** \n\n\n\n\n**\\*\\*\\*\\*\\*CONTRACT ROLE\\*\\*\\*\\*\\*** \n\n\n\n\n  \n\n\n\n\n\n**Role : AAOS / Projection QA Engineer (Pandora)** \n\n\n\n\n**Locat",
-    "index": 307
+    "index": 308
   },
   {
     "company": "SpaceX",
@@ -3427,7 +3444,7 @@
     "variant": "se",
     "reason": "Stack match +7; US-based or remote position",
     "description_preview": "SpaceX was founded under the belief that a future where humanity is out exploring the stars is fundamentally more exciting than one where we are not. Today SpaceX is actively developing the technologi",
-    "index": 308
+    "index": 309
   },
   {
     "company": "Microsoft",
@@ -3438,7 +3455,7 @@
     "variant": "ml",
     "reason": "Stack match +7; US-based or remote position",
     "description_preview": "**Overview**\n We are developing the\n **Intelligent Conversation and Communications Cloud** \n**(IC3\\)** \n to support Microsoft\u2019s real\\-time conversation products like Teams, serving millions of users w",
-    "index": 309
+    "index": 310
   },
   {
     "company": "Jobs via Dice",
@@ -3449,7 +3466,7 @@
     "variant": "appdev",
     "reason": "Stack match +7; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Byteware Inc., is seeking the following. Apply via Dice today!\n   \n\n  \n\n* Java\n* Angular and/or Rea",
-    "index": 310
+    "index": 311
   },
   {
     "company": "Jobs via Dice",
@@ -3460,7 +3477,7 @@
     "variant": "appdev",
     "reason": "Stack match +7; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Photon, is seeking the following. Apply via Dice today!\n   \n\n  \n\n**Java Full Stack Developer \\- Rea",
-    "index": 311
+    "index": 312
   },
   {
     "company": "Reyes Holdings",
@@ -3471,7 +3488,7 @@
     "variant": "se",
     "reason": "Stack match +7; US-based or remote position",
     "description_preview": "**Position Responsibilities:**\n* Designs, develops and deploys new custom software with a clear understanding of the value the software is to provide\n* Produces clean, efficient, well\\-commented code ",
-    "index": 312
+    "index": 313
   },
   {
     "company": "TEKsystems",
@@ -3482,7 +3499,7 @@
     "variant": "se",
     "reason": "Stack match +6; US-based or remote position",
     "description_preview": "Description\n   \n\n  \n\n TEKsystems is seeking two Golang Engineers to support a growing integration and backend engineering function for one of our large customers.\n   \n\n  \n\n* Candidates must be willing",
-    "index": 313
+    "index": 314
   },
   {
     "company": "Relativity Space",
@@ -3493,7 +3510,7 @@
     "variant": "se",
     "reason": "Stack match +6; US-based or remote position",
     "description_preview": "At Relativity Space, we\u2019re building rockets to serve today\u2019s needs and tomorrow\u2019s breakthroughs. Our Terran R vehicle will deliver customer payloads to orbit, meeting the growing demand for launch cap",
-    "index": 314
+    "index": 315
   },
   {
     "company": "Qualcomm",
@@ -3504,7 +3521,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +6; US-based or remote position",
     "description_preview": "**Company**\n Qualcomm Technologies, Inc.\n   \n\n  \n\n**Job Area**\n Engineering Group, Engineering Group \\> GPU ASICS Engineering\n   \n\n  \n\n**General Summary**\n QCT's Digital ASIC design team delivers cutt",
-    "index": 315
+    "index": 316
   },
   {
     "company": "Google",
@@ -3515,7 +3532,7 @@
     "variant": "appdev",
     "reason": "Stack match +6; US-based or remote position",
     "description_preview": "In accordance with Washington state law, we are highlighting our comprehensive benefits package, which is available to all eligible US based employees. Benefits for this role include:\n   \n\n  \n\n* Healt",
-    "index": 316
+    "index": 317
   },
   {
     "company": "Bio-Rad Laboratories",
@@ -3526,7 +3543,7 @@
     "variant": "se",
     "reason": "Stack match +6; US-based or remote position",
     "description_preview": "The intern will work alongside software engineers to build a web application that brings together data from tools like TFS, Jira, and Jama to help teams understand how their work is progressing. Day t",
-    "index": 317
+    "index": 318
   },
   {
     "company": "Cadence",
@@ -3537,7 +3554,7 @@
     "variant": "se",
     "reason": "Stack match +6; US-based or remote position",
     "description_preview": "**At Cadence, we hire and develop leaders and innovators who want to make an impact on the world of technology.**\n**Cadence** \n is a pivotal leader in electronic design, building upon more than 30 yea",
-    "index": 318
+    "index": 319
   },
   {
     "company": "Walmart",
@@ -3548,7 +3565,7 @@
     "variant": "se",
     "reason": "Stack match +6; US-based or remote position",
     "description_preview": "Position Summary...\n   \n\n  \n\n What you'll do...Role summary:\n   \n\n  \n\n The (USA) Software Engineer III plays a critical role in designing, developing, and delivering scalable software solutions by col",
-    "index": 319
+    "index": 320
   },
   {
     "company": "Truist",
@@ -3559,7 +3576,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +6; US-based or remote position",
     "description_preview": "**The position is described below. If you want to apply, click the Apply Now button at the top or bottom of this page. After you click Apply Now and complete your application, you'll be invited to cre",
-    "index": 320
+    "index": 321
   },
   {
     "company": "Truist",
@@ -3570,7 +3587,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +6; US-based or remote position",
     "description_preview": "**The position is described below. If you want to apply, click the Apply Now button at the top or bottom of this page. After you click Apply Now and complete your application, you'll be invited to cre",
-    "index": 321
+    "index": 322
   },
   {
     "company": "Truist",
@@ -3581,7 +3598,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +6; US-based or remote position",
     "description_preview": "**The position is described below. If you want to apply, click the Apply Now button at the top or bottom of this page. After you click Apply Now and complete your application, you'll be invited to cre",
-    "index": 322
+    "index": 323
   },
   {
     "company": "Los Alamos National Laboratory",
@@ -3592,7 +3609,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +6; US-based or remote position",
     "description_preview": "**What You Will Do** \n\n\n\n\n The Process Maintenance and Decontamination Services (PMDS) group is seeking electrical engineers.\n \n\n\n\n Our mission is to provide Plutonium Science and Manufacturing, and t",
-    "index": 323
+    "index": 324
   },
   {
     "company": "WeInfuse",
@@ -3603,7 +3620,7 @@
     "variant": "se",
     "reason": "Stack match +6; US-based or remote position",
     "description_preview": "We\u2019re not rockstars or ninjas, just a team of developers working to make life a little easier for doctors and their patients. Our platform, built on a Ruby on Rails API with AngularJS and React front\\",
-    "index": 324
+    "index": 325
   },
   {
     "company": "Pi Square Technologies",
@@ -3614,7 +3631,7 @@
     "variant": "se",
     "reason": "Stack match +6; US-based or remote position",
     "description_preview": "Role \\- Validation Engineer with Telematics / Connected Vehicle Test Engineer\n \n\n\n\n Location \\- Columbus, indiana\n \n\n\n\n  \n\n\n\n\n\n Job Summary\n \n\n\n\n  \n\n\n\n\n\n We are looking for a Telematics Validation Eng",
-    "index": 325
+    "index": 326
   },
   {
     "company": "HDR",
@@ -3625,7 +3642,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +6; US-based or remote position",
     "description_preview": "At HDR, our employee\\-owners are fully engaged in creating a welcoming environment where each of us is valued and respected, a place where everyone is empowered to bring their authentic selves and nov",
-    "index": 326
+    "index": 327
   },
   {
     "company": "Walmart",
@@ -3636,7 +3653,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +6; US-based or remote position",
     "description_preview": "Position Summary...\n   \n\n  \n\n What you'll do...\n   \n\n  \n\n As a part of Walmart Global Tech (WGT) you\u2019ll build industry defining reusable customer and partner facing services and products to lead diffe",
-    "index": 327
+    "index": 328
   },
   {
     "company": "Walmart",
@@ -3647,7 +3664,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +6; US-based or remote position",
     "description_preview": "Position Summary...\n   \n\n  \n\n What you'll do...\n   \n\n  \n\n As a part of Walmart Global Tech (WGT) you\u2019ll build industry defining reusable customer and partner facing services and products to lead diffe",
-    "index": 328
+    "index": 329
   },
   {
     "company": "Clay",
@@ -3658,7 +3675,7 @@
     "variant": "se",
     "reason": "Stack match +6; US-based or remote position",
     "description_preview": "**About Clay**\n Our mission is to help organizations turn any growth idea into reality.\n   \n\n  \n\n We see growth as a creative practice, not a formula. Finding and reaching your best\\-fit customers tak",
-    "index": 329
+    "index": 330
   },
   {
     "company": "CYVL",
@@ -3669,7 +3686,7 @@
     "variant": "se",
     "reason": "Stack match +6; US-based or remote position",
     "description_preview": "**About Us**\n Cyvl is a Boston\\-based tech startup revolutionizing how governments map and manage transportation infrastructure. Our enterprise\\-grade hardware and software solutions leverage 3D mappi",
-    "index": 330
+    "index": 331
   },
   {
     "company": "Leadership Triangle",
@@ -3680,7 +3697,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +6; US-based or remote position",
     "description_preview": "Truist\n   \n\n  \n\n Software Engineering\n   \n\n  \n\n Raleigh, NC, USA\n   \n\n  \n\n Posted on Apr 8, 2026\n   \n\n  \n\n Apply now\n   \n\n  \n\n**The position is described below. If you want to apply, click the Apply N",
-    "index": 331
+    "index": 332
   },
   {
     "company": "EagleSight.ai",
@@ -3691,7 +3708,7 @@
     "variant": "se",
     "reason": "Stack match +6; US-based or remote position",
     "description_preview": "**Software Engineer (DevOps \\& Deployment)** \n\n\n\n\n  \n\n\n\n\n\n**Location:** \n \u00a0Las Vegas, NV / Remote (frequent on\\-site deployment)\n \n\n\n\n**Company:** \n EagleSight.ai\n \n\n\n\n**Type:** \n \u00a0Full\\-time\n \n\n\n\n  \n",
-    "index": 332
+    "index": 333
   },
   {
     "company": "IBM",
@@ -3702,7 +3719,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +35; US-based or remote position",
     "description_preview": "**Introduction**\n A career in IBM Consulting is built on long\\-term client relationships and close collaboration worldwide. You\u2019ll work with leading companies across industries, helping them shape the",
-    "index": 333
+    "index": 334
   },
   {
     "company": "IBM",
@@ -3713,7 +3730,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +35; US-based or remote position",
     "description_preview": "**Introduction**\n A career in IBM Consulting is built on long\\-term client relationships and close collaboration worldwide. You\u2019ll work with leading companies across industries, helping them shape the",
-    "index": 334
+    "index": 335
   },
   {
     "company": "Eridu",
@@ -3724,7 +3741,7 @@
     "variant": "se",
     "reason": "Stack match +5; US-based or remote position",
     "description_preview": "**About Eridu**\n Eridu is a Silicon Valley\\-based hardware startup pioneering infrastructure solutions that accelerate AI data centers to deliver\n **Faster AI**\n . Today\u2019s AI performance is frequently",
-    "index": 335
+    "index": 336
   },
   {
     "company": "Octave",
@@ -3735,7 +3752,7 @@
     "variant": "se",
     "reason": "Stack match +5; US-based or remote position",
     "description_preview": "Job Location (Short): Atlanta, Georgia\\-USA \\| Houston, Texas\\-USA \\| Madison, Alabama\\-USA\n   \n\n  \n\n Workplace Type: Remote\n   \n\n  \n\n Req Id: 2786\n   \n\n  \n\n**Responsibilities**\n Design, develop, docu",
-    "index": 336
+    "index": 337
   },
   {
     "company": "Octave",
@@ -3746,7 +3763,7 @@
     "variant": "se",
     "reason": "Stack match +5; US-based or remote position",
     "description_preview": "Job Location (Short): Atlanta, Georgia\\-USA \\| Houston, Texas\\-USA \\| Madison, Alabama\\-USA\n   \n\n  \n\n Workplace Type: Remote\n   \n\n  \n\n Req Id: 2786\n   \n\n  \n\n**Responsibilities**\n Design, develop, docu",
-    "index": 337
+    "index": 338
   },
   {
     "company": "InRhythm",
@@ -3757,7 +3774,7 @@
     "variant": "se",
     "reason": "Stack match +5; US-based or remote position",
     "description_preview": "Instrumental Services, Inc. (New York City, NY) seeks a Software Engineer responsible for requirements analysis, software design, microservices development, extensive testing \\& integration within Agi",
-    "index": 338
+    "index": 339
   },
   {
     "company": "Redolent, Inc",
@@ -3768,7 +3785,7 @@
     "variant": "appdev",
     "reason": "Stack match +5; US-based or remote position",
     "description_preview": "**Job Description:** \n\n\n\n\n We are seeking a highly skilled\n **Front\\-End Full Stack Engineer** \n with strong expertise in\n **React.js, Node.js, GraphQL, and Rust** \n to join our dynamic engineering te",
-    "index": 339
+    "index": 340
   },
   {
     "company": "Smart IT Frame LLC",
@@ -3779,7 +3796,7 @@
     "variant": "se",
     "reason": "Stack match +5; US-based or remote position",
     "description_preview": "**Job Title: kafka Developer** \n\n\n\n\n**Location: Dallas, TX and Louisville, KY\\- Onsite** \n\n\n\n\n**Employment Type: Contract** \n\n\n\n\n\n\n\n\n\n  \n\n\n\n\n\n At Smart IT Frame, we connect top talent with leading org",
-    "index": 340
+    "index": 341
   },
   {
     "company": "Microsoft",
@@ -3790,7 +3807,7 @@
     "variant": "se",
     "reason": "Stack match +5; US-based or remote position",
     "description_preview": "**Overview**\n At Microsoft Quantum, we aim to empower science and scientists to solve the world\u2019s biggest problems by realizing advanced computing platforms at the intersection of high\\-performance co",
-    "index": 341
+    "index": 342
   },
   {
     "company": "Tata Consultancy Services",
@@ -3801,7 +3818,7 @@
     "variant": "se",
     "reason": "Stack match +5; US-based or remote position",
     "description_preview": "**Job Description**\n* Strong Hands on Java coding (JDK 8\\+) experience\n* Experience in building Java/Spring applications\n* Experience in creating/consuming rest services and SOAP services\n* Experience",
-    "index": 342
+    "index": 343
   },
   {
     "company": "Apex Systems",
@@ -3812,7 +3829,7 @@
     "variant": "se",
     "reason": "Stack match +5; US-based or remote position",
     "description_preview": "**Job\\#: 3029457**\n**Job Description:**\n Software Developer I\n   \n\n  \n\n**Location:** \n Newport Beach, California (Hybrid)\n   \n\n  \n\n**Employment Type:** \n Contract\n   \n\n  \n\n Role Overview\n   \n\n  \n\n We ",
-    "index": 343
+    "index": 344
   },
   {
     "company": "Joinrs",
@@ -3823,7 +3840,7 @@
     "variant": "se",
     "reason": "Entry-level / new grad signals found; Stack match +4; Location may not be in the US",
     "description_preview": "Are you a\n **student** \n or a\n **recent university graduate** \n looking to launch your career in\n **development** \n ?\n \n\n\n\n  \n\n\n\n\n\n Top startups, tech hubs, and Fortune 500 companies across the US are",
-    "index": 344
+    "index": 345
   },
   {
     "company": "Evolve Group",
@@ -3834,7 +3851,7 @@
     "variant": "se",
     "reason": "Stack match +4; US-based or remote position",
     "description_preview": "**Quantitative Developer/Software Engineer** \n\n\n\n\n**Leading Systematic Hedge Fund** \n\n\n\n\n**New York \u2013 On\\-site** \n\n\n\n\n**$400k \\- $750k\\+ Total Comp** \n\n\n\n\n  \n\n\n\n\n\n We are representing one of the world",
-    "index": 345
+    "index": 346
   },
   {
     "company": "PTR Global",
@@ -3845,7 +3862,7 @@
     "variant": "se",
     "reason": "Stack match +4; US-based or remote position",
     "description_preview": "**Position:** \n Infrastructure Developer \\- Intermediate\n   \n\n**Location:** \n Columbus, Ohio\n   \n\n**Duration:** \n Contract\n   \n\n**Job ID:** \n 174200\n   \n\n  \n\n**Job Overview:**\n  \n\n We are seeking an e",
-    "index": 346
+    "index": 347
   },
   {
     "company": "DEKA Research & Development",
@@ -3856,7 +3873,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +4; US-based or remote position",
     "description_preview": "DEKA is looking for a highly motivated Junior Software Engineer to join a product team developing a new medical device. This is your opportunity to make a substantial impact on a project that is creat",
-    "index": 347
+    "index": 348
   },
   {
     "company": "Jobs via Dice",
@@ -3867,7 +3884,7 @@
     "variant": "se",
     "reason": "Stack match +4; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Tror, is seeking the following. Apply via Dice today!\n   \n\n  \n\n**Job Role: Web method Developer**\n*",
-    "index": 348
+    "index": 349
   },
   {
     "company": "Jobs via Dice",
@@ -3878,7 +3895,7 @@
     "variant": "se",
     "reason": "Stack match +4; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, ERPA, is seeking the following. Apply via Dice today!\n   \n\n  \n\n**Role: C\\# Developer** \n**Location:",
-    "index": 349
+    "index": 350
   },
   {
     "company": "Etsy",
@@ -3889,7 +3906,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +4; US-based or remote position",
     "description_preview": "**Company Description**\n Etsy is the global marketplace for unique and creative goods. We build, power, and evolve the tools and technologies that connect millions of entrepreneurs with millions of bu",
-    "index": 350
+    "index": 351
   },
   {
     "company": "Tira",
@@ -3900,7 +3917,7 @@
     "variant": "se",
     "reason": "Entry-level / new grad signals found; Stack match +3; Location may not be in the US",
     "description_preview": "**Role Description** \n\n This role is for an Entry\\-Level Quality Assurance Engineer responsible for supporting the testing and quality validation of software applications and systems to ensure product",
-    "index": 351
+    "index": 352
   },
   {
     "company": "Inspira Financial",
@@ -3911,7 +3928,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +3; US-based or remote position",
     "description_preview": "**Join Us!**\n Take the next step in your journey at Inspira Financial. You will help businesses and individuals thrive today, tomorrow, and into retirement. Become part of a company that is people cen",
-    "index": 352
+    "index": 353
   },
   {
     "company": "EA SPORTS",
@@ -3922,7 +3939,7 @@
     "variant": "se",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "**Description \\& Requirements**\n Electronic Arts creates next\\-level entertainment experiences that inspire players and fans around the world. Here, everyone is part of the story. Part of a community ",
-    "index": 353
+    "index": 354
   },
   {
     "company": "ClearBridge Technology Group",
@@ -3933,7 +3950,7 @@
     "variant": "se",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "Our client, a technology solutions provider company located in San Francisco, CA, needs a Sr. Snowflake Developer for permanent employment. The Sr. Snowflake Developer will work 4 days a week onsite i",
-    "index": 354
+    "index": 355
   },
   {
     "company": "Tira",
@@ -3944,7 +3961,7 @@
     "variant": "se",
     "reason": "Entry-level / new grad signals found; Stack match +3; Location may not be in the US",
     "description_preview": "**Role Description** \n\n This role is for an Entry\\-Level Quality Assurance Engineer responsible for supporting the testing and quality validation of software applications and systems to ensure product",
-    "index": 355
+    "index": 356
   },
   {
     "company": "VIR Properties",
@@ -3955,7 +3972,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +3; US-based or remote position",
     "description_preview": "We are looking for a driven and ambitious\n **Junior Business Developer** \n to join our growing marketing team. This is an exciting opportunity for someone at the early stages of their career who is ea",
-    "index": 356
+    "index": 357
   },
   {
     "company": "Giga",
@@ -3966,7 +3983,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +3; US-based or remote position",
     "description_preview": "**About Giga**\n Giga has recently raised a $61M Series A and has several paying customers, including DoorDash. We\u2019re building the next generation of customer experience \u2014 real\\-time AI agents that can",
-    "index": 357
+    "index": 358
   },
   {
     "company": "The Walt Disney Company",
@@ -3977,7 +3994,7 @@
     "variant": "se",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "At Walt Disney Animation Studios we have a deep commitment to the philosophy that creativity inspires technology, and technology inspires creativity. Engineers on our Production Technology team develo",
-    "index": 358
+    "index": 359
   },
   {
     "company": "Harbinger",
@@ -3988,7 +4005,7 @@
     "variant": "se",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "**About Harbinger**\n Harbinger is an American commercial electric vehicle (EV) company on a mission to transform an industry starving for innovation. Harbinger\u2019s best\\-in\\-class team of EV, battery, a",
-    "index": 359
+    "index": 360
   },
   {
     "company": "Tira",
@@ -3999,7 +4016,7 @@
     "variant": "se",
     "reason": "Entry-level / new grad signals found; Stack match +3; Location may not be in the US",
     "description_preview": "**Role Description** \n\n This role is for an Entry\\-Level Quality Assurance Engineer responsible for supporting the testing and quality validation of software applications and systems to ensure product",
-    "index": 360
+    "index": 361
   },
   {
     "company": "Twitch",
@@ -4010,7 +4027,7 @@
     "variant": "se",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "**About Us**\n Twitch is the world\u2019s biggest live streaming service, with global communities built around gaming, entertainment, music, sports, cooking, and more. It is where thousands of communities c",
-    "index": 361
+    "index": 362
   },
   {
     "company": "Microsoft",
@@ -4021,7 +4038,7 @@
     "variant": "se",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "**Overview**\n Microsoft Quantum has assembled a talented and diverse international team to create the world\u2019s first scalable quantum computing system. Our full\\-stack approach involves exciting innova",
-    "index": 362
+    "index": 363
   },
   {
     "company": "Tira",
@@ -4032,7 +4049,7 @@
     "variant": "se",
     "reason": "Entry-level / new grad signals found; Stack match +3; Location may not be in the US",
     "description_preview": "**Role Description** \n\n This role is for an Entry\\-Level Quality Assurance Engineer responsible for supporting the testing and quality validation of software applications and systems to ensure product",
-    "index": 363
+    "index": 364
   },
   {
     "company": "Commercial Development Resources",
@@ -4043,7 +4060,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +3; US-based or remote position",
     "description_preview": "**Position Summary** \n\n\n\n\n Picture this: You\u2019re a stormwater expert. You know California jurisdictions inside and out. You\u2019re experienced, driven, and looking to grow as a water quality professional.\n",
-    "index": 364
+    "index": 365
   },
   {
     "company": "NuAxis Innovations",
@@ -4054,7 +4071,7 @@
     "variant": "appdev",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "**We are a federal IT company on a mission to make customer experience (CX) the center of every government solution.**\n**Technology is our Passion. People are our Purpose.**\n We know tech, but we love",
-    "index": 365
+    "index": 366
   },
   {
     "company": "CSIS Wadhwani AI Center",
@@ -4065,7 +4082,7 @@
     "variant": "se",
     "reason": "Entry-level / new grad signals found; Stack match +3; Location may not be in the US",
     "description_preview": "**Role Description** \n\n This role is for an Entry\\-Level Quality Assurance Engineer responsible for supporting the testing and quality validation of software applications and systems to ensure product",
-    "index": 366
+    "index": 367
   },
   {
     "company": "Paul Mueller Company",
@@ -4076,7 +4093,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +3; US-based or remote position",
     "description_preview": "The Electrical Engineer I is an entry level engineer who is responsible for multiple lower\\-level projects or a single large project that support the business through designing, developing, and testin",
-    "index": 367
+    "index": 368
   },
   {
     "company": "Profound",
@@ -4087,7 +4104,7 @@
     "variant": "appdev",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "Profound is on a mission to help companies understand and control their AI presence. As a Frontend Engineer, you will play a key role in shaping high\\-performance, visually stunning React applications",
-    "index": 368
+    "index": 369
   },
   {
     "company": "Profound",
@@ -4098,7 +4115,7 @@
     "variant": "appdev",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "Profound is on a mission to help companies understand and control their AI presence. As a Full Stack Engineer, you will architect and build high\\-performance applications that power AI\\-driven insight",
-    "index": 369
+    "index": 370
   },
   {
     "company": "U.S. Bank",
@@ -4109,7 +4126,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +3; US-based or remote position",
     "description_preview": "At U.S. Bank, we\u2019re on a journey to do our best. Helping the customers and businesses we serve to make better and smarter financial decisions and enabling the communities we support to grow and succee",
-    "index": 370
+    "index": 371
   },
   {
     "company": "Bentley Systems",
@@ -4120,7 +4137,7 @@
     "variant": "se",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "Bentley Systems\n   \n\n  \n\n**Location:** \n Home\\-based or hybrid, United States\n   \n\n  \n\n**Position Summary**\n Are you a tech\\-savvy problem\\-solver ready to connect the world's leading organizations wi",
-    "index": 371
+    "index": 372
   },
   {
     "company": "Knight Office Solutions",
@@ -4131,7 +4148,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +3; US-based or remote position",
     "description_preview": "**About the Role** \n\n\n\n\n Knight Managed IT is a well\\-established Managed Service Provider (MSP) delivering reliable, standard\\-driven technology solutions across multiple industries. We are seeking a",
-    "index": 372
+    "index": 373
   },
   {
     "company": "Profound",
@@ -4142,7 +4159,7 @@
     "variant": "appdev",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "Profound is on a mission to help companies understand and control their AI presence. As a Full Stack Engineer, you will architect and build high\\-performance applications that power AI\\-driven insight",
-    "index": 373
+    "index": 374
   },
   {
     "company": "Profound",
@@ -4153,7 +4170,7 @@
     "variant": "appdev",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "Profound is on a mission to help companies understand and control their AI presence. As AI\\-generated experiences increasingly shape how brands are discovered, trusted, and chosen, the quality of thos",
-    "index": 374
+    "index": 375
   },
   {
     "company": "Daimler Truck North America",
@@ -4164,7 +4181,7 @@
     "variant": "se",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "**Inside the Role**\n As a Vehicle \\& Systems Integration Engineer in Driver Experience at Daimler Truck North America, you'll develop features that enhance driver experience and productivity, providin",
-    "index": 375
+    "index": 376
   },
   {
     "company": "CSIS Wadhwani AI Center",
@@ -4175,7 +4192,7 @@
     "variant": "se",
     "reason": "Entry-level / new grad signals found; Stack match +3; Location may not be in the US",
     "description_preview": "**Role Description** \n\n This role is for an Entry\\-Level Quality Assurance Engineer responsible for supporting the testing and quality validation of software applications and systems to ensure product",
-    "index": 376
+    "index": 377
   },
   {
     "company": "Playsaurus Inc.",
@@ -4186,7 +4203,7 @@
     "variant": "se",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "Thank you for your interest in the game developer role.\n   \n\n  \n\n**Some Things To Note**\n* This role is specifically for individuals located in LATAM (Spanish America and Brazil).\n* This is a contract",
-    "index": 377
+    "index": 378
   },
   {
     "company": "Swift",
@@ -4197,7 +4214,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +3; US-based or remote position",
     "description_preview": "**About Us**\n We\u2019re the world\u2019s leading provider of secure financial messaging services, headquartered in Belgium. We are the way the world moves value \u2013 across borders, through cities and overseas. N",
-    "index": 378
+    "index": 379
   },
   {
     "company": "Swift",
@@ -4208,7 +4225,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +3; US-based or remote position",
     "description_preview": "**About Us**\n We\u2019re the world\u2019s leading provider of secure financial messaging services, headquartered in Belgium. We are the way the world moves value \u2013 across borders, through cities and overseas. N",
-    "index": 379
+    "index": 380
   },
   {
     "company": "Jobs via Dice",
@@ -4219,7 +4236,7 @@
     "variant": "se",
     "reason": "Stack match +3; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Robert Half, is seeking the following. Apply via Dice today!\n   \n\n  \n\n**Description**\n We are looki",
-    "index": 380
+    "index": 381
   },
   {
     "company": "Relativity",
@@ -4230,7 +4247,7 @@
     "variant": "se",
     "reason": "Stack match +2; US-based or remote position",
     "description_preview": "***Posting Type***\n Hybrid\n   \n\n  \n\n**Job Overview**\n As a Software Engineer Intern, your primary mission will be to help design, write, test, deploy, and support new implementations for the tools tha",
-    "index": 381
+    "index": 382
   },
   {
     "company": "Garmin",
@@ -4241,7 +4258,7 @@
     "variant": "se",
     "reason": "Stack match +2; US-based or remote position",
     "description_preview": "**Overview**\n We are seeking a full\\-time\n **Software Engineer 1** \n at our office in Yarmouth, ME. In this role, you will be responsible for building upon existing software solutions to develop basic",
-    "index": 382
+    "index": 383
   },
   {
     "company": "Scopely",
@@ -4252,7 +4269,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +2; US-based or remote position",
     "description_preview": "Scopely is a global gaming company whose mission is to inspire play every day. Niantic (a division of Scopely)\u2019s mission is to inspire people to explore the world, together. We build products that ins",
-    "index": 383
+    "index": 384
   },
   {
     "company": "Athena",
@@ -4263,7 +4280,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +32; US-based or remote position",
     "description_preview": "At Athena, we empower possibility through transformative delegation. Our mission is to build the world\u2019s premier delegation platform, combining the strengths of exceptional Executive Assistants with a",
-    "index": 384
+    "index": 385
   },
   {
     "company": "Jobs via Dice",
@@ -4274,7 +4291,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +2; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, IT\\-SCIENT, is seeking the following. Apply via Dice today!\n   \n\n  \n\n**Job title: Software Developm",
-    "index": 385
+    "index": 386
   },
   {
     "company": "Jobs via Dice",
@@ -4285,7 +4302,7 @@
     "variant": "se",
     "reason": "Stack match +2; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Bridge Flair LLC, is seeking the following. Apply via Dice today!\n   \n\n  \n\n**Job Title:** \n AS400 D",
-    "index": 386
+    "index": 387
   },
   {
     "company": "neteffects",
@@ -4296,7 +4313,7 @@
     "variant": "se",
     "reason": "Stack match +2; US-based or remote position",
     "description_preview": "**W2 Candidates Only Please......We can not use Corp to Corp (C2C)** \n\n\n\n\n  \n\n\n\n\n\n**Candidates Local to the St. Louis, Missouri area Only Please.** \n\n\n\n\n**Hybrid On\\-Site position (4 days/week on\\-sit",
-    "index": 387
+    "index": 388
   },
   {
     "company": "Jobs via Dice",
@@ -4307,7 +4324,7 @@
     "variant": "appdev",
     "reason": "Stack match +2; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Robert Half, is seeking the following. Apply via Dice today!\n   \n\n  \n\n**Description**\n We are looki",
-    "index": 388
+    "index": 389
   },
   {
     "company": "Stealth Startup",
@@ -4324,7 +4341,7 @@
     "reason": "Stack +48; US +10",
     "description_preview": "**Senior Software Engineer (Full\\-Stack / Backend\\-Leaning)** \n\n\n\n\n  \n\n\n\n\n\n \ud83d\udccd\n **San Francisco Bay Area** \n (Hybrid \u2013 3\\+ days onsite)\n \n\n\n\n This is a hybrid role based in the San Francisco Bay Area (",
     "date_posted": "",
-    "index": 389
+    "index": 390
   },
   {
     "company": "The Walt Disney Company",
@@ -4335,7 +4352,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +31; US-based or remote position",
     "description_preview": "**This is not a remote role. You must be in the local area or willing to relocate.**\n**Department/Group Overview**\n The cross\\-media measurement and advanced analytics organization is responsible for ",
-    "index": 390
+    "index": 391
   },
   {
     "company": "Microsoft",
@@ -4346,7 +4363,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +31; US-based or remote position",
     "description_preview": "**Overview**\n As Microsoft continues to push the boundaries of AI, we are on the lookout for passionate individuals to work with us on the most interesting and challenging AI questions of our time. Ou",
-    "index": 391
+    "index": 392
   },
   {
     "company": "ArrowCore Group",
@@ -4357,7 +4374,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +31; US-based or remote position",
     "description_preview": "**Job Title** \n : Sr .Net Engineer (Backend)\n   \n\n  \n\n**Location** \n :Fremont, California (Onsite Interviews)\n   \n\n  \n\n**Duration** \n :12\\+ Months\n   \n\n  \n\n**Local Candidates only**\n We are seeking a ",
-    "index": 392
+    "index": 393
   },
   {
     "company": "Uber",
@@ -4368,7 +4385,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +31; US-based or remote position",
     "description_preview": "**About The Role**\n We are looking for an experienced Senior Staff Machine Learning Engineer to join the Account Integrity team within Trusted Identity engineering org at Uber.\n   \n\n  \n\n The Trusted I",
-    "index": 393
+    "index": 394
   },
   {
     "company": "Jobs via Dice",
@@ -4379,7 +4396,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +31; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, ARROWCORE GROUP, is seeking the following. Apply via Dice today!\n   \n\n  \n\n**Job Title** \n : Sr .Net",
-    "index": 394
+    "index": 395
   },
   {
     "company": "Allstate",
@@ -4390,7 +4407,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +30; US-based or remote position",
     "description_preview": "At Allstate, great things happen when our people work together to protect families and their belongings from life\u2019s uncertainties. And for more than 90 years, our innovative drive has kept us a step a",
-    "index": 395
+    "index": 396
   },
   {
     "company": "Ford Motor Company",
@@ -4401,7 +4418,7 @@
     "variant": "se",
     "reason": "US-based or remote position",
     "description_preview": "**Job Description**\n**Platform Software Engineer**\n We made history and now we work to transform the future \u2013 for our customers, our communities and our families. You'll see your work on the road ever",
-    "index": 396
+    "index": 397
   },
   {
     "company": "Astrion",
@@ -4412,7 +4429,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "**Overview**\n**DCO Cyber Instructor/Developer**\n**Location:** \n Hurlburt Field, FL, JBSA, TX, and Keesler AFB, MS\n   \n\n  \n\n**Job Status:** \n Full time\n   \n\n  \n\n**Clearance:** \n TS SAP\n   \n\n  \n\n Astrio",
-    "index": 397
+    "index": 398
   },
   {
     "company": "Astrion",
@@ -4423,7 +4440,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "**Overview**\n**DCO Cyber Instructor/Developer**\n**Location:** \n Hurlburt Field, FL, JBSA, TX, and Keesler AFB, MS\n   \n\n  \n\n**Job Status:** \n Full time\n   \n\n  \n\n**Clearance:** \n TS SAP\n   \n\n  \n\n Astrio",
-    "index": 398
+    "index": 399
   },
   {
     "company": "Astrion",
@@ -4434,7 +4451,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "**Overview**\n**DODIN Ops Cyber Instructor/Developer**\n**Location:** \n Hurlburt Field, FL, JBSA, TX, and Keesler AFB, MS\n   \n\n  \n\n**Job Status:** \n Full time\n   \n\n  \n\n**Clearance:** \n Top Secret cleara",
-    "index": 399
+    "index": 400
   },
   {
     "company": "Astrion",
@@ -4445,7 +4462,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "**Overview**\n**OCO Cyber Instructor/Developer**\n**Location:** \n Hurlburt Field, FL, JBSA, TX, and Keesler AFB, MS\n   \n\n  \n\n**Job Status:** \n Full time\n   \n\n  \n\n**Clearance:** \n Top Secret/SCI\n   \n\n  \n",
-    "index": 400
+    "index": 401
   },
   {
     "company": "Astrion",
@@ -4456,7 +4473,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "**Overview**\n**DODIN Ops Cyber Instructor/Developer**\n**Location:** \n Hurlburt Field, FL, JBSA, TX, and Keesler AFB, MS\n   \n\n  \n\n**Job Status:** \n Full time\n   \n\n  \n\n**Clearance:** \n Top Secret cleara",
-    "index": 401
+    "index": 402
   },
   {
     "company": "Astrion",
@@ -4467,7 +4484,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "**Overview**\n**DODIN Ops Cyber Instructor/Developer**\n**Location:** \n Hurlburt Field, FL, JBSA, TX, and Keesler AFB, MS\n   \n\n  \n\n**Job Status:** \n Full time\n   \n\n  \n\n**Clearance:** \n Top Secret cleara",
-    "index": 402
+    "index": 403
   },
   {
     "company": "General Motors",
@@ -4478,7 +4495,7 @@
     "variant": "se",
     "reason": "US-based or remote position",
     "description_preview": "**Job Description**\n Global Manufacturing Electrical \\& SDV is looking for innovators who thrive in tough challenges and are passionate about tackling meaningful work that will shape the future of the",
-    "index": 403
+    "index": 404
   },
   {
     "company": "PT. Gardenia Makmur Selaras (Indomaret Group)",
@@ -4489,7 +4506,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "**Junior Software Engineer \u2013 Role Description \\& Qualifications** \n\n**Role Overview** \n\n\n\n\n The Junior Software Engineer supports the design, development, and maintenance of software applications whil",
-    "index": 404
+    "index": 405
   },
   {
     "company": "Crossing Hurdles",
@@ -4500,7 +4517,7 @@
     "variant": "se",
     "reason": "US-based or remote position",
     "description_preview": "**Position:** \n Software Engineer III \\- OpenXR Developer\n   \n\n  \n\n**Type:** \n Hourly contract\n   \n\n  \n\n**Compensation:** \n $75\u2013$105/hour\n   \n\n  \n\n**Location:** \n Remote\n   \n\n  \n\n**Commitment:** \n Ful",
-    "index": 405
+    "index": 406
   },
   {
     "company": "Agilant Solutions, Inc.",
@@ -4511,7 +4528,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "Location: Plainview, NY\n \n\n\n\n  \n\n\n\n\n\n Job Type: Full\\-Time\n \n\n\n\n  \n\n\n\n\n\n Comp: $65\\-70K/Annually\n \n\n\n\n  \n\n\n\n\n\n Reports To: Associate Director, Managed Services\n \n\n\n\n  \n\n\n\n\n\n \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_",
-    "index": 406
+    "index": 407
   },
   {
     "company": "Prerana Energy Professional's Co-Op. Society",
@@ -4522,7 +4539,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "**Junior Software Engineer \u2013 Role Description \\& Qualifications** \n\n**Role Overview** \n\n\n\n\n The Junior Software Engineer supports the design, development, and maintenance of software applications whil",
-    "index": 407
+    "index": 408
   },
   {
     "company": "DataAnnotation",
@@ -4533,7 +4550,7 @@
     "variant": "appdev",
     "reason": "US-based or remote position",
     "description_preview": "We are looking for a Web Developer/Designer to help train and improve cutting\\-edge AI models. You\u2019ll assess and enhance how AI systems understand, generate, and evaluate design work \u2014 including inter",
-    "index": 408
+    "index": 409
   },
   {
     "company": "Ahrefs",
@@ -4544,7 +4561,7 @@
     "variant": "se",
     "reason": "US-based or remote position",
     "description_preview": "**About The Role**\n*To ensure someone can be effectively supported throughout the intern we cn only look to hire an intern in either Singapore or in Europe.*\n You'll work remotely within our Middle\\-e",
-    "index": 409
+    "index": 410
   },
   {
     "company": "V2 Infra Tech",
@@ -4555,7 +4572,7 @@
     "variant": "se",
     "reason": "US-based or remote position",
     "description_preview": "Position :\u00a0Windows Developer\n \n\n\n\n\n\n Location: Redmond, WA (Onsite)\n \n\n\n\n\n Duration: 12\\+ Months\n \n\n\n\n  \n\n\n\n\n\n**Project Duration:** \n\n \u00a0Through the end of June 2026, with the possibility of extension.",
-    "index": 410
+    "index": 411
   },
   {
     "company": "E-Solutions",
@@ -4566,7 +4583,7 @@
     "variant": "se",
     "reason": "US-based or remote position",
     "description_preview": "**Position:** \n Embedded Tester\n *(No Development / Engineer Profiles)* \n\n\n\n\n**Location:** \n Frisco, TX\n *(Onsite)* \n\n\n\n\n**\ud83d\udcc5 F2F Drive:** \n 11th April \u2013 2401 Frisco, TX\n \n\n\n\n**\ud83d\udcbc Contract:** \n C2C \\& W",
-    "index": 411
+    "index": 412
   },
   {
     "company": "RETTEW",
@@ -4577,7 +4594,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "Job Type\n   \n\n  \n\n Full\\-time\n   \n\n  \n\n**Description**\n RETTEW is seeking a Transportation Engineer 3 to join our growing Transportation Team. In this role, you will take on increasingly complex roadw",
-    "index": 412
+    "index": 413
   },
   {
     "company": "RETTEW",
@@ -4588,7 +4605,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "Job Type\n   \n\n  \n\n Full\\-time\n   \n\n  \n\n**Description**\n RETTEW is seeking a Transportation Engineer 3 to join our growing Transportation Team. In this role, you will take on increasingly complex roadw",
-    "index": 413
+    "index": 414
   },
   {
     "company": "COLSA",
@@ -4599,7 +4616,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "COLSA Corporation is currently seeking a Junior Full Stack Developer to assist in the design, development, troubleshooting and analysis of core and enhanced features for multiple Military Equipment Kn",
-    "index": 414
+    "index": 415
   },
   {
     "company": "PT. Gunungmas Sukses Makmur",
@@ -4610,7 +4627,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "**Junior Software Engineer \u2013 Role Description \\& Qualifications** \n\n**Role Overview** \n\n\n\n\n The Junior Software Engineer supports the design, development, and maintenance of software applications whil",
-    "index": 415
+    "index": 416
   },
   {
     "company": "Clevanoo LLC",
@@ -4621,7 +4638,7 @@
     "variant": "se",
     "reason": "Entry-level / new grad signals found; Location may not be in the US",
     "description_preview": "Fast Formula Developer \\- REMOTE (EST preference)\n \n\n\n\n**Why is it open?** \n Behind on Oracle HCM Cloud implementation\n \n\n\n\n**How long has it been open?** \n 1 week\n \n\n\n\n**Who's doing the work now?** \n",
-    "index": 416
+    "index": 417
   },
   {
     "company": "Pentangle Tech Services | P5 Group",
@@ -4632,7 +4649,7 @@
     "variant": "se",
     "reason": "US-based or remote position",
     "description_preview": "**Job Description:** \n\n\n\n\n\n\n\n\n We are seeking an onsite 3DEXPERIENCE Developer based out of the Newark, CA office, with strong hands\u2011on customization and development expertise in the following areas:\n",
-    "index": 417
+    "index": 418
   },
   {
     "company": "Yochana",
@@ -4643,7 +4660,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "Job Title: Guidewire Senior Developer\n \n\n\n\n Location: San Antonio, TX \\-\n **Open for remote** \n\n\n\n\n**Certification: Guidewire Associate certification is a must.** \n\n\n\n\n  \n\n\n\n\n\n 1\\. Proficiency in guid",
-    "index": 418
+    "index": 419
   },
   {
     "company": "TALENT Software Services",
@@ -4654,7 +4671,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; US-based or remote position",
     "description_preview": "**Are you an experienced Associate QA Engineer with a desire to excel? If so, then Talent Software Services may have the job for you! Our client is seeking an experienced Associate QA Engineer to work",
-    "index": 419
+    "index": 420
   },
   {
     "company": "Scott AI (YC F25)",
@@ -4665,7 +4682,7 @@
     "variant": "se",
     "reason": "US-based or remote position",
     "description_preview": "Coding agents are getting absurdly good at writing code. Engineering teams are not getting absurdly good at coordinating around them. The result: agents write 10x more code, but teams are still review",
-    "index": 420
+    "index": 421
   },
   {
     "company": "Scott AI (YC F25)",
@@ -4676,7 +4693,7 @@
     "variant": "se",
     "reason": "US-based or remote position",
     "description_preview": "Coding agents are getting absurdly good at writing code. Engineering teams are not getting absurdly good at coordinating around them. The result: agents write 10x more code, but teams are still review",
-    "index": 421
+    "index": 422
   },
   {
     "company": "Jobs via Dice",
@@ -4687,7 +4704,7 @@
     "variant": "se",
     "reason": "US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Tranzeal, Inc., is seeking the following. Apply via Dice today!\n   \n\n  \n\n \\< data\\-start\\=\"191\" dat",
-    "index": 422
+    "index": 423
   },
   {
     "company": "Walmart",
@@ -4704,7 +4721,7 @@
     "reason": "Stack +38; US +10; H1B +8",
     "description_preview": "Position Summary...\n   \n\n  \n\n What you'll do...We are unable to provide visa sponsorship for this position. Position: Software Engineer III Job Location: 1375 Crossman Ave, Sunnyvale, CA 94086 Duties:",
     "date_posted": "",
-    "index": 423
+    "index": 424
   },
   {
     "company": "Uber Freight",
@@ -4715,7 +4732,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +29; US-based or remote position",
     "description_preview": "**Schedule: Full Time Employment**\n**Job Type: Hybrid**\n**Salary Type: Salary**\n**Req \\#: 2536**\n**About The Team**\n The Uber Freight team is building a better future for shipping. We believe that whe",
-    "index": 424
+    "index": 425
   },
   {
     "company": "Knit",
@@ -4726,7 +4743,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +29; US-based or remote position",
     "description_preview": "Who we\u2019re looking for\u2026\n   \n\n  \n\n Role: Staff Full Stack Engineer\n   \n\n  \n\n Reports To: Head of Engineering\n   \n\n  \n\n Location: Knit\u2019s NYC office (Hybrid)\n   \n\n  \n\n**A Little About Us\u2026**\n Knit is build",
-    "index": 425
+    "index": 426
   },
   {
     "company": "X, The Moonshot Factory",
@@ -4737,7 +4754,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +29; US-based or remote position",
     "description_preview": "**About The Company**\n X is Alphabet\u2019s moonshot factory. We are a diverse group of inventors and entrepreneurs who build and launch technologies that aim to improve the lives of millions, even billion",
-    "index": 426
+    "index": 427
   },
   {
     "company": "Capgemini",
@@ -4748,7 +4765,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +29; US-based or remote position",
     "description_preview": "The Full Stack Developer will be responsible for collaborating with Data Scientists, Machine Learning Engineers, Domain Experts and Product Owners to build the end\\-to\\-end Data and DevOps pipelines i",
-    "index": 427
+    "index": 428
   },
   {
     "company": "Lobel Financial",
@@ -4759,7 +4776,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +27; US-based or remote position",
     "description_preview": "Lobel Financial is a leading auto finance company with over 40 years of experience specializing in subprime lending solutions. We are committed to leveraging technology, data and AI\\-driven innovation",
-    "index": 428
+    "index": 429
   },
   {
     "company": "Cisco",
@@ -4770,7 +4787,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +26; US-based or remote position",
     "description_preview": "Please note this posting is to advertise potential job opportunities. This exact role may not be open today but could open in the near future. When you apply, a Cisco representative may contact you di",
-    "index": 429
+    "index": 430
   },
   {
     "company": "Adobe",
@@ -4781,7 +4798,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +26; US-based or remote position",
     "description_preview": "**The Opportunity**\n Adobe is looking for Software Engineers to help build the platform that powers Adobe Experience Platform\u2019s Generative AI capabilities. Partnering with other business units, you wi",
-    "index": 430
+    "index": 431
   },
   {
     "company": "Clearwater Analytics",
@@ -4792,7 +4809,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +26; US-based or remote position",
     "description_preview": "Clearwater Analytics\u2019 mission is to become the world\u2019s most trusted and comprehensive technology platform for investment reporting, accounting, and analytics. With our team, you will partner with the ",
-    "index": 431
+    "index": 432
   },
   {
     "company": "Legend Biotech",
@@ -4803,7 +4820,41 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +26; US-based or remote position",
     "description_preview": "Legend Biotech is a global biotechnology company dedicated to treating, and one day curing, life\\-threatening diseases. Headquartered in Somerset, New Jersey, we are developing advanced cell therapies",
-    "index": 432
+    "index": 433
+  },
+  {
+    "company": "Braven",
+    "title": "Software Engineer",
+    "location": "Chicago, IL",
+    "url": "https://www.linkedin.com/jobs/view/4375244868",
+    "score": 56,
+    "score_pct": 43,
+    "level": "Entry",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "appdev",
+    "reason": "Stack +31; Entry +15; US +10",
+    "description_preview": "**Job Title** \n : Software Engineer\n   \n\n  \n\n**Team** \n : Systems\n   \n\n  \n\n**Location** \n : Hybrid in Chicago (IL)\n   \n\n  \n\n**Employment Type** \n : Full\\-time\n   \n\n  \n\n**FLSA Classification** \n : Exem",
+    "date_posted": "",
+    "index": 434
+  },
+  {
+    "company": "Locusview",
+    "title": "Full Stack Engineer",
+    "location": "Chicago, IL",
+    "url": "https://www.linkedin.com/jobs/view/4399853775",
+    "score": 56,
+    "score_pct": 43,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "appdev",
+    "reason": "Stack +42; US +10",
+    "description_preview": "Duties and Responsibilities\n \n\n\n* Build and evolve full stack reporting features that are customer centric and aligned to Utilities \\& Energy workflows, balancing usability, performance, and reliabili",
+    "date_posted": "",
+    "index": 435
   },
   {
     "company": "FetchJobs.co",
@@ -4814,7 +4865,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +25; Location may not be in the US",
     "description_preview": "**Senior Integrations Software Developer Job DescriptionAbout The Company**\n Pella Corporation is a leading manufacturer of premium windows and doors, committed to delivering innovative and sustainabl",
-    "index": 433
+    "index": 436
   },
   {
     "company": "AgileGrid Solutions",
@@ -4825,7 +4876,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +25; Location may not be in the US",
     "description_preview": "**About The Company**\n Metrikflow is a Berlin\\-based, remote\\-first technology company dedicated to advancing sustainability initiatives through innovative climate\\-tech solutions. Our mission is to s",
-    "index": 434
+    "index": 437
   },
   {
     "company": "JPMorganChase",
@@ -4836,7 +4887,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +25; US-based or remote position",
     "description_preview": "**Description**\n**JOB DESCRIPTION**\n Duties: Design, develop and implement software solutions. Solve business problems through innovation and engineering practices. Involved in all aspects of the Soft",
-    "index": 435
+    "index": 438
   },
   {
     "company": "Adobe",
@@ -4847,7 +4898,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +24; US-based or remote position",
     "description_preview": "**The Opportunity**\n At Adobe\u2019s Experience Platform, we are looking for a Senior Machine Learning Engineer to compose, build, and operate scalable intelligent AI systems that power end\\-user AI produc",
-    "index": 436
+    "index": 439
   },
   {
     "company": "PowerSchool",
@@ -4858,7 +4909,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +24; US-based or remote position",
     "description_preview": "**Overview**\n At PowerSchool, we are a dedicated team of innovators guided by our shared purpose of powering personalized education for students around the world. From the central office to the classr",
-    "index": 437
+    "index": 440
   },
   {
     "company": "Sundayy",
@@ -4869,7 +4920,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +24; Location may not be in the US",
     "description_preview": "**About The Company**\n Findhelp is a mission\\-driven organization dedicated to creating a more connected and compassionate society by linking individuals in need with the programs and resources that c",
-    "index": 438
+    "index": 441
   },
   {
     "company": "Docusign",
@@ -4880,7 +4931,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +24; US-based or remote position",
     "description_preview": "**Company Overview**\n Docusign brings agreements to life. Over 1\\.5 million customers and more than a billion people in over 180 countries use Docusign solutions to accelerate the process of doing bus",
-    "index": 439
+    "index": 442
   },
   {
     "company": "Adobe",
@@ -4891,7 +4942,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +24; US-based or remote position",
     "description_preview": "The Opportunity\n   \n\n  \n\n Join Adobe's world\\-class team as a Software Development Engineer in Lehi and become part of a company that is defining the future of digital experiences. This is an outstand",
-    "index": 440
+    "index": 443
   },
   {
     "company": "Capital One",
@@ -4902,7 +4953,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +24; US-based or remote position",
     "description_preview": "As a Distinguished Engineer at Capital One, you will be a part of a community of technical experts working to define the future of banking in the cloud.\n   \n\n  \n\n You will work alongside our talented ",
-    "index": 441
+    "index": 444
   },
   {
     "company": "Jobs via Dice",
@@ -4913,7 +4964,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +24; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Tymon Global, is seeking the following. Apply via Dice today!\n   \n\n  \n\n We are seeking a\n **Senior ",
-    "index": 442
+    "index": 445
   },
   {
     "company": "General Motors",
@@ -4924,7 +4975,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +23; US-based or remote position",
     "description_preview": "**Job Description**\n**About Us** \n :\n   \n\n  \n\n The AV Infrastructure org provides developer environments, cloud infrastructure, and ML/AI GPU platforms for AV research and development teams to build, ",
-    "index": 443
+    "index": 446
   },
   {
     "company": "SeatGeek",
@@ -4935,7 +4986,7 @@
     "variant": "se",
     "reason": "Stack match +23; Location may not be in the US",
     "description_preview": "**SeatGeek believes live events are powerful experiences that unite humans. With our technological savvy and fan\\-first attitude we\u2019re simplifying and modernizing the ticketing industry.**\n The Platfo",
-    "index": 444
+    "index": 447
   },
   {
     "company": "JPMorganChase",
@@ -4946,7 +4997,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +23; US-based or remote position",
     "description_preview": "**Job Description**\n As a Senior Software Engineer at JPMorganChase within the Commercial and Investment Banking team, you serve as a seasoned member of an agile team to design and deliver trusted mar",
-    "index": 445
+    "index": 448
   },
   {
     "company": "Qualcomm",
@@ -4957,7 +5008,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +23; US-based or remote position",
     "description_preview": "****Company:****\n Qualcomm Technologies, Inc.\n   \n\n  \n\n****Job Area:****\n Engineering Group, Engineering Group \\> Machine Learning Engineering\n   \n\n  \n\n****General Summary:****\n* THIS IS ONSITE ROLE A",
-    "index": 446
+    "index": 449
   },
   {
     "company": "Feathr",
@@ -4968,7 +5019,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +23; US-based or remote position",
     "description_preview": "**Your Company:**\n As the Nonprofit Marketing Platform trusted by over 1,300 nonprofits, Feathr is purpose\\-built to help our customers unlock more results, time, and confidence.\n   \n\n  \n\n Feathr's so",
-    "index": 447
+    "index": 450
   },
   {
     "company": "Prime Video & Amazon MGM Studios",
@@ -4979,7 +5030,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +22; US-based or remote position",
     "description_preview": "**Description**\n Prime Video is a first\\-stop entertainment destination offering customers a vast collection of premium programming in one app available across thousands of devices. Prime members can ",
-    "index": 448
+    "index": 451
   },
   {
     "company": "CoffeeSpace",
@@ -4990,7 +5041,7 @@
     "variant": "appdev",
     "reason": "Stack match +22; Location may not be in the US",
     "description_preview": "**About the job** \n\n\n\n\n**Job Title:** \n\n Fullstack Engineer\n \n\n\n\n\n**Salary:** \n\n $185K \u2013 $250K \\+ 0\\.1% \u2013 0\\.3% equity\n \n\n\n\n\n**Company Description:** \n\n Founders Fund\\-backed applied AI startup, SF, m",
-    "index": 449
+    "index": 452
   },
   {
     "company": "Jobright.ai",
@@ -5001,7 +5052,7 @@
     "variant": "se",
     "reason": "Stack match +22; Location may not be in the US",
     "description_preview": "This role is part of the\n **Jobright TNT** \n \\- the private hiring network connecting top talent with top AI startups like\n **Perplexity, Mercor, Cresta, Suno and 150 more.** \n\n\n\n\n  \n\n\n\n\n\n This is\n **",
-    "index": 450
+    "index": 453
   },
   {
     "company": "Airlock Digital",
@@ -5012,7 +5063,7 @@
     "variant": "appdev",
     "reason": "Stack match +21; Location may not be in the US",
     "description_preview": "Location: California, Texas, Colorado, Atlanta \\- Remote\n   \n\n  \n\n Who Are We?\n   \n\n  \n\n**About Airlock Digital**\n Airlock Digital is a global leader in application control and allowlisting. We seek t",
-    "index": 451
+    "index": 454
   },
   {
     "company": "Higher Institute of Technological Studies of Mahdia ( ISET Mahdia )",
@@ -5023,7 +5074,7 @@
     "variant": "appdev",
     "reason": "Stack match +21; Location may not be in the US",
     "description_preview": "\ud83d\udcbc\n **Full Stack Developer** \n\n\n\n\n \ud83d\udccd\n **Location:** \n United States \ud83c\uddfa\ud83c\uddf8\n \n\n\n\n \ud83d\udd52\n **Employment Type:** \n Full\\-time / Part\\-time\n \n\n\n\n \ud83c\udf1f\n **About the Role** \n\n\n\n\n We\u2019re looking for a talented and motivat",
-    "index": 452
+    "index": 455
   },
   {
     "company": "Jobright.ai",
@@ -5034,7 +5085,7 @@
     "variant": "appdev",
     "reason": "Stack match +21; Location may not be in the US",
     "description_preview": "This role is part of the Jobright Direct Hiring Network, where top companies like Cresta AI, Plaud, Mercor, OpenArt, and 1,500\\+ others hire top talent directly through our platform.\n \n\n\n\n  \n\n\n\n\n\n Thi",
-    "index": 453
+    "index": 456
   },
   {
     "company": "Liberty Personnel Services, Inc.",
@@ -5045,7 +5096,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +21; US-based or remote position",
     "description_preview": "Job Details:\n   \n\n  \n\n Machine Learning Research Scientist\n   \n\n  \n\n We are seeking multiple Machine Learning Research Scientists to join our team immediately. This role is ideal for candidates with s",
-    "index": 454
+    "index": 457
   },
   {
     "company": "Jobright.ai",
@@ -5056,7 +5107,7 @@
     "variant": "appdev",
     "reason": "Stack match +21; Location may not be in the US",
     "description_preview": "This role is part of the Jobright Direct Hiring Network, where top companies like Cresta AI, Plaud, Mercor, OpenArt, and 1,500\\+ others hire top talent directly through our platform.\n \n\n\n\n  \n\n\n\n\n\n Thi",
-    "index": 455
+    "index": 458
   },
   {
     "company": "AMD",
@@ -5067,7 +5118,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +21; US-based or remote position",
     "description_preview": "**WHAT YOU DO AT AMD CHANGES EVERYTHING**\n At AMD, our mission is to build great products that accelerate next\\-generation computing experiences\u2014from AI and data centers, to PCs, gaming and embedded s",
-    "index": 456
+    "index": 459
   },
   {
     "company": "Helic & Co.",
@@ -5078,7 +5129,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +20; Location may not be in the US",
     "description_preview": "**Job Summary** \n\n\n\n\n We are seeking a motivated and detail\\-oriented Junior Software Engineer to join our development team. In this role, you will assist in designing, developing, testing, and mainta",
-    "index": 457
+    "index": 460
   },
   {
     "company": "hackajob",
@@ -5089,7 +5140,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +20; US-based or remote position",
     "description_preview": "***hackajob** \n is collaborating with\n **J.P. Morgan** \n to connect them with exceptional professionals for this role.*\n**Description**\n**JOB DESCRIPTION**\n Duties: Serve as part of a team of software",
-    "index": 458
+    "index": 461
   },
   {
     "company": "McDermott Will & Schulte",
@@ -5100,7 +5151,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +20; US-based or remote position",
     "description_preview": "Build your big career with the firm that does\n **Big Law, Better** \n . McDermott Will \\& Schulte is a leading global law firm that brings together more than 1,750 lawyers and 1,400 business profession",
-    "index": 459
+    "index": 462
   },
   {
     "company": "Overland AI",
@@ -5111,7 +5162,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +20; US-based or remote position",
     "description_preview": "**About Overland AI:** \n  \n\n  \n\n Founded in 2022 and headquartered in Seattle, Washington, Overland AI is transforming land operations for modern defense. The company leverages over a decade of advanc",
-    "index": 460
+    "index": 463
   },
   {
     "company": "Helic & Co.",
@@ -5122,7 +5173,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +20; Location may not be in the US",
     "description_preview": "**Job Summary** \n\n\n\n\n We are seeking a motivated and detail\\-oriented Junior Software Engineer to join our development team. In this role, you will assist in designing, developing, testing, and mainta",
-    "index": 461
+    "index": 464
   },
   {
     "company": "DrawScale",
@@ -5133,7 +5184,7 @@
     "variant": "ml",
     "reason": "Stack match +20; Location may not be in the US",
     "description_preview": "**Company Description** \n\n\n\n\n  \n\n\n\n\n\n DrawScale develops AI software for construction takeoff and estimating workflows. The company is building systems that work directly from construction drawings, s",
-    "index": 462
+    "index": 465
   },
   {
     "company": "Uber",
@@ -5144,7 +5195,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +20; US-based or remote position",
     "description_preview": "**About The Role**\n The mission of the Surge team is to maintain overall marketplace reliability by balancing supply/demand in real\\-time through dynamic pricing. We build scalable real\\-time systems ",
-    "index": 463
+    "index": 466
   },
   {
     "company": "Jobs via Dice",
@@ -5155,7 +5206,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +20; US-based or remote position",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Strategic Staffing Solutions, is seeking the following. Apply via Dice today!\n   \n\n  \n\n**STRATEGIC ",
-    "index": 464
+    "index": 467
   },
   {
     "company": "Uber",
@@ -5172,7 +5223,7 @@
     "reason": "Stack +25; Entry +15; US +10",
     "description_preview": "**About The Role**\n Core Security Engineering's mission is to make the Uber production environment secure by default and provide industry leading products and services to all Uber's production service",
     "date_posted": "",
-    "index": 465
+    "index": 468
   },
   {
     "company": "Capgemini",
@@ -5183,7 +5234,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +19; US-based or remote position",
     "description_preview": "Choosing Capgemini means choosing a company where you will be empowered to shape your career in the way you\u2019d like, where you\u2019ll be supported and inspired by\u202fa collaborative community of colleagues ar",
-    "index": 466
+    "index": 469
   },
   {
     "company": "Adobe",
@@ -5194,7 +5245,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +19; US-based or remote position",
     "description_preview": "The Opportunity\n   \n\n  \n\n Adobe seeks a Machine Learning Engineer to enhance customer experiences through AI and generative technologies. This is an exciting internship opportunity inside Adobe Firefl",
-    "index": 467
+    "index": 470
   },
   {
     "company": "Adobe",
@@ -5205,7 +5256,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +19; US-based or remote position",
     "description_preview": "The Opportunity\n   \n\n  \n\n Adobe is looking for a Machine Learning intern who will apply AI and machine learning techniques to big\\-data problems to help Adobe better understand, lead and optimize the ",
-    "index": 468
+    "index": 471
   },
   {
     "company": "Veeam Software",
@@ -5216,7 +5267,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +19; US-based or remote position",
     "description_preview": "Veeam is the Data and AI Trust Company, specializing in helping organizations ensure their data and AI are fully understood, secured, and resilient to enable the acceleration of safe AI at scale. As t",
-    "index": 469
+    "index": 472
   },
   {
     "company": "ByteDance",
@@ -5227,7 +5278,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +19; US-based or remote position",
     "description_preview": "**Responsibilities**\n About the Team\n   \n\n Our team works to build out the development services that enable engineers to deliver high\\-quality features and systems to our users. We aim to provide syst",
-    "index": 470
+    "index": 473
   },
   {
     "company": "Microsoft",
@@ -5238,7 +5289,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +19; US-based or remote position",
     "description_preview": "**Overview**\n As a Member of Technical Staff \\- Software Engineer \\& Machine Learning, you will work building AI Insights, a Copilot analytics product that enables our internal stakeholders to move fr",
-    "index": 471
+    "index": 474
   },
   {
     "company": "Microsoft AI",
@@ -5249,7 +5300,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +19; US-based or remote position",
     "description_preview": "**Overview**\n As a Member of Technical Staff \\- Software Engineer \\& Machine Learning, you will work building AI Insights, a Copilot analytics product that enables our internal stakeholders to move fr",
-    "index": 472
+    "index": 475
   },
   {
     "company": "Microsoft AI",
@@ -5260,7 +5311,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +19; US-based or remote position",
     "description_preview": "**Overview**\n As a Member of Technical Staff \\- Software Engineer \\& Machine Learning, you will work building AI Insights, a Copilot analytics product that enables our internal stakeholders to move fr",
-    "index": 473
+    "index": 476
   },
   {
     "company": "FetchJobs.co",
@@ -5271,7 +5322,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Entry-level / new grad signals found; Stack match +19; Location may not be in the US",
     "description_preview": "**Senior Software Engineer Job Description**\n About the Company\n   \n\n  \n\n Robert Half is a globally recognized leader in specialized staffing and consulting services, dedicated to connecting highly sk",
-    "index": 474
+    "index": 477
   },
   {
     "company": "Microsoft",
@@ -5282,7 +5333,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +19; US-based or remote position",
     "description_preview": "**Overview**\n As a Member of Technical Staff \\- Machine Learning (AI Team), you will work to create LLM models for general purpose capabilities and for products. You may be responsible for developing ",
-    "index": 475
+    "index": 478
   },
   {
     "company": "KMM Technologies, Inc.",
@@ -5293,7 +5344,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +19; US-based or remote position",
     "description_preview": "**Position: RQ00069, Senior Software Engineer.** \n BIG DATA ECOSYSTEM AND AI EXPERIENCE REQUIRED\\*\\*\\*\n \n\n\n\n**Location: Rockville, MD or Tysons, VA. Must be able to come on\\-site for an interview.** \n",
-    "index": 476
+    "index": 479
   },
   {
     "company": "Uber",
@@ -5304,7 +5355,24 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +19; US-based or remote position",
     "description_preview": "**About The Role**\n Uber AI Solutions is one of Uber's biggest bets with the ambition to build one of the world's largest data foundries for AI applications and evolve into a platform of choice for a ",
-    "index": 477
+    "index": 480
+  },
+  {
+    "company": "Fiserv",
+    "title": "Full Stack .NET Developer",
+    "location": "Omaha, NE",
+    "url": "https://www.linkedin.com/jobs/view/4328098917",
+    "score": 49,
+    "score_pct": 38,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "appdev",
+    "reason": "Stack +35; US +10",
+    "description_preview": "**Calling all innovators \u2013 find your future at Fiserv.**\n We\u2019re Fiserv, a global leader in Fintech and payments, and we move money and information in a way that moves the world. We connect financial i",
+    "date_posted": "",
+    "index": 481
   },
   {
     "company": "Expedia Group",
@@ -5315,7 +5383,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +18; US-based or remote position",
     "description_preview": "Expedia Group brands power global travel for everyone, everywhere. We design cutting\\-edge tech to make travel smoother and more memorable, and we create groundbreaking solutions for our partners. Our",
-    "index": 478
+    "index": 482
   },
   {
     "company": "Rilla",
@@ -5326,7 +5394,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +18; US-based or remote position",
     "description_preview": "**A Foundational Company**\n Rilla builds the world\u2019s leading conversation intelligence software for offline commerce.\n   \n\n  \n\n By recording, analyzing, and indexing conversations, our platform suppli",
-    "index": 479
+    "index": 483
   },
   {
     "company": "Diligent",
@@ -5337,7 +5405,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +18; US-based or remote position",
     "description_preview": "**Here\u2019s a summary of the role:**\n We are looking for a rare hybrid talent \u2014 someone who can\n **hack together end\\-to\\-end prototypes** \n at speed while also standing confidently in front of a custome",
-    "index": 480
+    "index": 484
   },
   {
     "company": "SSC Space",
@@ -5348,7 +5416,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +18; US-based or remote position",
     "description_preview": "**Description**\n Welcome to SSC \u2013 Swedish Space Corporation, the perfect workplace for those passionate about technology in general and space in particular.\n   \n\n  \n\n With space organizations, researc",
-    "index": 481
+    "index": 485
   },
   {
     "company": "Concord",
@@ -5359,7 +5427,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +18; US-based or remote position",
     "description_preview": "Concord is the world\u2019s leading independent music company. The Company supports more than 125,000 artists and songwriters whose works are licensed, marketed, and performed globally. Concord's growing c",
-    "index": 482
+    "index": 486
   },
   {
     "company": "Walmart",
@@ -5376,7 +5444,7 @@
     "reason": "Stack +23; Entry +15; US +10",
     "description_preview": "Position Summary...\n   \n\n  \n\n What you'll do...\n   \n\n  \n\n* Immigration Sponsorship is not available in this role\n\n\n**About Team**\n The Walmart Emerging\\-Tech group is a group charted to drive the crea",
     "date_posted": "",
-    "index": 483
+    "index": 487
   },
   {
     "company": "Opentensor Foundation",
@@ -5387,7 +5455,7 @@
     "variant": "ml",
     "reason": "Stack match +17; Location may not be in the US",
     "description_preview": "The\n **Opentensor Foundation** \n , creators of the\n **Bittensor** \n and the\n **TAO cryptocurrency** \n , is building the infrastructure for decentralized AI at internet scale. We support not only the c",
-    "index": 484
+    "index": 488
   },
   {
     "company": "TalentAlly",
@@ -5398,7 +5466,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +17; US-based or remote position",
     "description_preview": "**Job Title: Lead Observability Engineer**\n**Location: Charlotte, NC\\-Irving, TX \\- Iselin, NJ**\n**Employment Type:** \n Full\\-Time\n   \n\n  \n\n**About This Role**\n An observability engineer designs, impl",
-    "index": 485
+    "index": 489
   },
   {
     "company": "ModMed",
@@ -5409,7 +5477,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +17; US-based or remote position",
     "description_preview": "**Join the Team Modernizing Medicine**\n At\n **ModMed** \n , we\u2019re not just building software\u2014we\u2019re reimagining the healthcare experience. Founded in 2010 by a practicing physician and a successful tech",
-    "index": 486
+    "index": 490
   },
   {
     "company": "TikTok",
@@ -5420,7 +5488,7 @@
     "variant": "ml",
     "reason": "Mentions senior-level experience requirements; Stack match +17; US-based or remote position",
     "description_preview": "**Responsibilities**\n About the team\n   \n\n  \n\n The ads system at TikTok operates on a massive scale and serves millions of advertisers, clients and influencers across the world. The quality of the ads",
-    "index": 487
+    "index": 491
   },
   {
     "company": "TEKsystems",
@@ -5431,7 +5499,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +17; US-based or remote position",
     "description_preview": "Description\n   \n\n  \n\n Looking for an experienced Software Engineer with infrastructure experience to become a senior member of the Cloud Foundations Automation team. We build and manage the automation",
-    "index": 488
+    "index": 492
   },
   {
     "company": "Tundra Technical Solutions",
@@ -5442,7 +5510,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +17; US-based or remote position",
     "description_preview": "We\u2019re hiring a Senior Full Stack Engineer to support the development of next\\-generation digital asset platforms within a leading financial services organization.\n \n\n\n\n This role combines strong backe",
-    "index": 489
+    "index": 493
   },
   {
     "company": "hackajob",
@@ -5453,7 +5521,7 @@
     "variant": "ml",
     "reason": "Stack match +17; Location may not be in the US",
     "description_preview": "***hackajob** \n is collaborating with\n **Mercor** \n to connect them with exceptional professionals for this role.*\n At Mercor, we\u2019re building the talent engine that helps leading labs and research org",
-    "index": 490
+    "index": 494
   },
   {
     "company": "JPMorganChase",
@@ -5464,7 +5532,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +17; US-based or remote position",
     "description_preview": "**Description**\n**JOB DESCRIPTION**\n Duties: Design, develop and implement software solutions. Solve business problems through innovation and engineering practices. Involved in all aspects of the Soft",
-    "index": 491
+    "index": 495
   },
   {
     "company": "Jobs via Dice",
@@ -5475,7 +5543,7 @@
     "variant": "appdev",
     "reason": "Stack match +17; Location may not be in the US",
     "description_preview": "Dice is the leading career destination for tech experts at every stage of their careers. Our client, Trebecon LLC, is seeking the following. Apply via Dice today!\n   \n\n  \n\n**Job Title: .NET Full Stack",
-    "index": 492
+    "index": 496
   },
   {
     "company": "Panasonic Avionics Corporation",
@@ -5492,7 +5560,7 @@
     "reason": "Stack +33; US +10",
     "description_preview": "**Overview**\n Our new global headquarters is conveniently located in Irvine, CA near John Wayne Airport in the Park Place development. For our onsite and hybrid employees you will be able to enjoy ame",
     "date_posted": "",
-    "index": 493
+    "index": 497
   },
   {
     "company": "Prime Therapeutics",
@@ -5503,7 +5571,7 @@
     "variant": "appdev",
     "reason": "Mentions senior-level experience requirements; Stack match +16; US-based or remote position",
     "description_preview": "At Prime Therapeutics (Prime), we are a different kind of PBM, with a purpose beyond profits and a unique ability to connect care for those we serve. Looking for a purpose\\-driven career? Come build t",
-    "index": 494
+    "index": 498
   },
   {
     "company": "VIZIO",
@@ -5514,7 +5582,7 @@
     "variant": "se",
     "reason": "Mentions senior-level experience requirements; Stack match +16; US-based or remote position",
     "description_preview": "Position Summary...\n   \n\n  \n\n What you'll do...Role summary: As a Software Engineer III, you will lead the design, development, and delivery of scalable software solutions that align with business and",
-    "index": 495
+    "index": 499
   },
   {
     "company": "Microsoft",
@@ -5525,50 +5593,6 @@
     "variant": "se",
     "reason": "Stack match +16; Location may not be in the US",
     "description_preview": "**Overview**\n Azure Storage is at the core of Azure, providing over 100 exabytes (100 million terabytes) of raw capacity distributed over 3000\\+ storage clusters in 200\\+ datacenters worldwide. Azure ",
-    "index": 496
-  },
-  {
-    "company": "FTI Consulting",
-    "title": "Director, Full Stack Engineer - Digital & Insights",
-    "location": "Washington, DC",
-    "url": "https://www.linkedin.com/jobs/view/4387261139",
-    "score": 46,
-    "variant": "appdev",
-    "reason": "Mentions senior-level experience requirements; Stack match +16; US-based or remote position",
-    "description_preview": "**Who We Are**\n FTI Consulting is the world's leading expert\\-driven consulting firm. Over the last 40 years, FTI Consulting experts have served as the trusted advisor to Fortune 500 companies and the",
-    "index": 497
-  },
-  {
-    "company": "PCI Services, LLC",
-    "title": "Software Developer",
-    "location": "Norman, OK",
-    "url": "https://www.linkedin.com/jobs/view/4399446141",
-    "score": 46,
-    "variant": "se",
-    "reason": "Mentions senior-level experience requirements; Stack match +16; US-based or remote position",
-    "description_preview": "**Job Title:** \n Software Developer\n   \n\n  \n\n**Job Location:** \n Norman, OK 73072\n   \n\n  \n\n**Job Duties**\n* Design, Architect, and Code enterprise level software programs and integrations according to",
-    "index": 498
-  },
-  {
-    "company": "Fubo",
-    "title": "Software Engineer, Backend",
-    "location": "New York, NY",
-    "url": "https://www.linkedin.com/jobs/view/4396339639",
-    "score": 46,
-    "variant": "appdev",
-    "reason": "Mentions senior-level experience requirements; Stack match +16; US-based or remote position",
-    "description_preview": "**About Fubo:**\n FuboTV Inc. is a consumer\\-first live TV streaming company that is defining the future of TV.\n   \n\n  \n\n Ranked among Fast Company\u2019s Most Innovative Companies (2026\\) and the Financial",
-    "index": 499
-  },
-  {
-    "company": "Neighborbrite",
-    "title": "Founding Engineer",
-    "location": "",
-    "url": "https://www.linkedin.com/jobs/view/4396352924",
-    "score": 46,
-    "variant": "appdev",
-    "reason": "Stack match +16; Location may not be in the US",
-    "description_preview": "Neighborbrite is building the AI\\-native design platform for the $150B\\+ U.S. landscaping industry, a massive, fragmented market where technology adoption has historically been low.\n \n\n\n\n  \n\n\n\n\n\n Toda",
     "index": 500
   }
 ]

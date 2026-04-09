@@ -47,3 +47,11 @@ jobs:
             git pull --rebase origin main
             git push
           fi
+
+      - name: Keep Render alive
+        run: |
+          # Ping the deployed site to prevent Render free tier from sleeping
+          # TODO: Replace with your actual Render URL after first deploy
+          curl -sf "$RENDER_URL/linkedin" > /dev/null 2>&1 || true
+        env:
+          RENDER_URL: https://jobflow.onrender.com

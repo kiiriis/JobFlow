@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: jobflow
+    runtime: python
+    buildCommand: pip install -e .
+    startCommand: gunicorn -w 1 -b 0.0.0.0:$PORT wsgi:app
+    envVars:
+      - key: JOBFLOW_CONFIG
+        value: config/config.yaml
+      - key: PYTHON_VERSION
+        value: "3.12"
+    plan: free
+    autoDeploy: true

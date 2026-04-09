@@ -1,6 +1,7 @@
 """JobFlow Web Dashboard — Flask app factory and routes."""
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -463,8 +464,10 @@ def create_app():
             except Exception:
                 pass
 
-    pull_thread = threading.Thread(target=_auto_pull_loop, daemon=True)
-    pull_thread.start()
+    # Only run auto-pull locally (not on Render — data updates via redeploy)
+    if not os.environ.get("RENDER"):
+        pull_thread = threading.Thread(target=_auto_pull_loop, daemon=True)
+        pull_thread.start()
 
     @app.route("/boards")
     def boards_page():

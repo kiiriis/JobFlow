@@ -121,17 +121,18 @@ def _rescore_entry(entry: dict) -> dict:
     score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
 
     entry["score"] = max(0, min(100, raw))
-    entry["score_pct"] = score_pct
     entry["level"] = level
     entry["min_exp"] = min_exp
     entry["max_exp"] = max_exp
     entry["competition"] = comp
     entry["keyword_hits"] = hits
-    # Recommended: AI-driven if ai_score exists, else fall back to algo threshold
+    # Match %: AI score (0-10 → 0-100%) takes priority, algo is fallback
     ai_score = entry.get("ai_score")
     if ai_score is not None:
+        entry["score_pct"] = int(ai_score) * 10
         entry["recommended"] = int(ai_score) >= 7
     else:
+        entry["score_pct"] = score_pct
         entry["recommended"] = score_pct >= RECOMMENDED_THRESHOLD
     entry.pop("reject_reason", None)
     return entry

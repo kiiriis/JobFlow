@@ -1,6 +1,8 @@
 {% set avatar_colors = ['#e06060','#f5b85a','#52d98a','#5b9bd5','#a78bfa','#34d3c4','#ff7eb3','#ff9f43','#6c5ce7','#00b894'] %}
 {% set co_letter = (job.company[:1] | upper) if job.company else '?' %}
 {% set color_idx = (job.company | length) % 10 if job.company else 0 %}
+{% set ai = job.ai_score|default(none) %}
+{% set match_pct = (ai * 10)|int if ai is not none else job.score_pct|default(0)|int %}
 <tr>
     <td class="td-n">{{ loop.index if loop is defined else '' }}</td>
     <td>
@@ -11,7 +13,6 @@
                     {% if job.recommended %}<span style="color:#f5c842" {% if job.ai_reason %}title="AI: {{ job.ai_reason }}"{% endif %}>★ </span>{% endif %}
                     {% if job.url %}<a href="{{ job.url }}" target="_blank" rel="noopener">{{ job.title }}</a>{% else %}{{ job.title }}{% endif %}
                     <span class="li-badge badge-linkedin">LinkedIn</span>
-                    {% if job.ai_score %}<span class="li-badge badge-rec-tag" title="{{ job.ai_reason|default('') }}">AI {{ job.ai_score }}/10</span>{% endif %}
                     {% if job.h1b is defined and job.h1b %}<span class="li-badge badge-h1b">H1B ✓</span>{% endif %}
                 </div>
                 <div class="role-sub">
@@ -29,12 +30,7 @@
         </div>
     </td>
     <td>
-        {% set pct = job.score_pct|default(0)|int %}
-        <span class="match-val {% if pct >= 60 %}match-high{% elif pct >= 30 %}match-med{% else %}match-low{% endif %}">{{ pct }}%</span>
-    </td>
-    <td>
-        {% set s = job.score|default(0)|int %}
-        <span class="score-val {% if s >= 70 %}sv-high{% elif s >= 40 %}sv-med{% else %}sv-low{% endif %}">+{{ s }}</span>
+        <span class="match-val {% if match_pct >= 70 %}match-high{% elif match_pct >= 40 %}match-med{% else %}match-low{% endif %}" {% if job.ai_reason %}title="{{ job.ai_reason }}"{% endif %}>{{ match_pct }}%</span>
     </td>
     <td>
         {% set lvl = job.level|default('Unknown') %}

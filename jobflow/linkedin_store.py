@@ -133,7 +133,7 @@ def _rescore_entry(entry: dict) -> dict:
         entry["recommended"] = int(ai_score) >= 7
     else:
         entry["score_pct"] = score_pct
-        entry["recommended"] = score_pct >= RECOMMENDED_THRESHOLD
+        entry["recommended"] = False  # only AI can recommend
     entry.pop("reject_reason", None)
     return entry
 

@@ -184,6 +184,9 @@ tr.dismissing { opacity:0.3; transition:opacity 300ms; }
 /* Refresh button */
 .li-refresh { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 7px; border: 1px solid rgba(70,96,125,0.35); background: transparent; color: #8fa4be; font-size: 0.72rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; cursor: pointer; transition: all 150ms; }
 .li-refresh:hover { border-color: var(--pico-primary); color: #e9f1fb; }
+.li-scan-btn { border-color: rgba(52,211,196,0.4); color: #34d3c4; }
+.li-scan-btn:hover { border-color: #34d3c4; color: #7ef5ea; }
+.li-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Time Tabs ── */
 .time-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -230,6 +233,9 @@ tr.dismissing { opacity:0.3; transition:opacity 300ms; }
                     hx-swap="innerHTML"
                     hx-on::after-request="triggerFilter(); showToast('Refreshed')">
                 Refresh
+            </button>
+            <button class="li-refresh li-scan-btn" onclick="scanNow(this)">
+                Scan Now
             </button>
         </div>
     </div>
@@ -375,6 +381,27 @@ function setTime(val) {
     triggerFilter();
 }
 
+function scanNow(btn) {
+    btn.disabled = true;
+    btn.textContent = 'Scanning...';
+    fetch('/api/scan/trigger', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'platform=linkedin&hours=1&new_only=true'
+    }).then(function() {
+        var poll = setInterval(function() {
+            fetch('/api/scan/status').then(function(r) { return r.text(); }).then(function(html) {
+                if (html.indexOf('aria-busy') === -1) {
+                    clearInterval(poll);
+                    btn.disabled = false;
+                    btn.textContent = 'Scan Now';
+                    triggerFilter();
+                    showToast('Scan complete — new jobs loaded');
+                }
+            });
+        }, 3000);
+    });
+}
 function dismissJob(btn, key) {
     var row = btn.closest('tr');
     row.classList.add('dismissing');

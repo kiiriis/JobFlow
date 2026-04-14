@@ -621,7 +621,7 @@ def _run_scan(config, platforms, hours, new_only):
                 "competition": filt.competition,
                 "variant": filt.resume_variant,
                 "reason": filt.reason,
-                "description_preview": job.description[:200] if job.description else "",
+                "description_preview": job.description[:2000] if job.description else "",
                 "date_posted": getattr(job, "date_posted", ""),
             })
 
@@ -629,6 +629,19 @@ def _run_scan(config, platforms, hours, new_only):
         config["output_dir"].mkdir(parents=True, exist_ok=True)
         results_path.write_text(json.dumps(output, indent=2))
         scan_state["results"] = output
+
+        # Merge into linkedin_jobs.json so new jobs appear in the feed
+        try:
+            store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
+            store = load_store(store_path)
+            store = merge_scan_results(store, output)
+            store = prune_old_jobs(store)
+            for key in store.get("jobs", {}):
+                store["jobs"][key] = backfill_job(store["jobs"][key])
+            save_store(store_path, store)
+            scan_state["new_jobs"] = len(output)
+        except Exception:
+            pass
 
     except Exception as e:
         scan_state["error"] = str(e)

@@ -5,12 +5,17 @@ import os
 from pathlib import Path
 
 
-SCORE_PROMPT = """You are a job relevance scorer. Given a candidate profile and a job posting, rate how relevant this job is to the candidate on a scale of 1-10.
+SCORE_PROMPT = """You are a job relevance scorer. Given a candidate profile and a job posting, rate how relevant this job is to the candidate on a scale of 0-10.
 
 ## Candidate Profile
 {profile}
 
-## Scoring Guide
+## Hard Reject — score MUST be 0
+Give a score of 0 if ANY of these apply:
+- The job does NOT sponsor visas (e.g., "no sponsorship", "must be authorized to work without sponsorship", "US citizen only", "clearance required")
+- The job requires more than 2 years of experience (e.g., "3+ years", "4-6 years", "senior level")
+
+## Scoring Guide (only if no hard reject)
 - 10: Perfect match — role, skills, level, and visa all align
 - 7-9: Strong match — most criteria met, minor gaps
 - 4-6: Partial match — some relevant skills but role/level mismatch
@@ -24,7 +29,7 @@ Description: {description}
 
 ## Instructions
 Return ONLY valid JSON, nothing else:
-{{"score": <1-10>, "reason": "<one sentence explaining why>"}}"""
+{{"score": <0-10>, "reason": "<one sentence explaining why>"}}"""
 
 
 def _load_profile(config_root: Path | None = None) -> str:
@@ -74,7 +79,7 @@ def score_single_job(client, profile: str, job: dict) -> dict | None:
                 text = text[4:]
             text = text.strip()
         result = json.loads(text)
-        score = max(1, min(10, int(result.get("score", 5))))
+        score = max(0, min(10, int(result.get("score", 5))))
         reason = str(result.get("reason", ""))[:200]
         return {"ai_score": score, "ai_reason": reason}
     except Exception:

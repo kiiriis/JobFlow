@@ -55,5 +55,8 @@
             <option value="{{ st }}" {% if st == job.status %}selected{% endif %}>{{ st }}</option>
             {% endfor %}
         </select>
+        {% if job.status != 'Not Interested' %}
+        <button class="dismiss-btn" title="Not Interested" onclick="dismissJob(this, '{{ job._key }}')">✕</button>
+        {% endif %}
     </td>
 </tr>

@@ -163,6 +163,9 @@
 .apply-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 14px; border-radius: 7px; border: none; background: rgba(52,211,196,0.15); color: #34d3c4; font-size: 0.72rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; letter-spacing: 0.03em; text-decoration: none; cursor: pointer; transition: background 140ms, color 140ms; }
 .apply-btn:hover { background: rgba(52,211,196,0.28); color: #7ef5ea; }
 .apply-btn::after { content: " \2197"; font-size: 0.65rem; }
+.dismiss-btn { display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;border:none;background:rgba(224,96,96,0.15);color:#e06060;font-size:0.75rem;font-weight:700;cursor:pointer;margin-left:4px;transition:background 140ms,color 140ms; }
+.dismiss-btn:hover { background:rgba(224,96,96,0.35);color:#ff8a8a; }
+tr.dismissing { opacity:0.3; transition:opacity 300ms; }
 
 /* Status select (minimal) */
 .li-status-sel {
@@ -437,6 +440,18 @@ function setTime(val) {
     triggerFilter();
 }
 
+function dismissJob(btn, key) {
+    var row = btn.closest('tr');
+    row.classList.add('dismissing');
+    fetch('/api/linkedin/jobs/' + encodeURIComponent(key) + '/status', {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'status=Not+Interested'
+    }).then(function() {
+        showToast('Dismissed');
+        triggerFilter();
+    });
+}
 function setBucket(key) {
     document.getElementById('filter-bucket').value = key;
     document.getElementById('filter-time').value = '';

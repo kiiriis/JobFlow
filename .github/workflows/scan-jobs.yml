@@ -40,6 +40,33 @@ jobs:
           jobflow scan --platform linkedin --new --save --hours 1 2>&1 || true
           echo "Scan finished at $(date -u)"
 
+      - name: Merge into linkedin_jobs.json
+        env:
+          JOBFLOW_CONFIG: config/config.ci.yaml
+        run: |
+          python -c "
+          from pathlib import Path
+          from jobflow.linkedin_store import load_store, save_store, merge_scan_results, prune_old_jobs, backfill_job
+          import json
+
+          root = Path('.')
+          store_path = root / 'data' / 'ci' / 'linkedin_jobs.json'
+          scan_path = root / 'data' / 'ci' / 'scan_results.json'
+
+          if not scan_path.exists():
+              print('No scan_results.json found, skipping merge')
+              exit(0)
+
+          scan_data = json.loads(scan_path.read_text())
+          store = load_store(store_path)
+          store = merge_scan_results(store, scan_data)
+          store = prune_old_jobs(store)
+          for key in store.get('jobs', {}):
+              store['jobs'][key] = backfill_job(store['jobs'][key])
+          save_store(store_path, store)
+          print(f'Merged: {len(store.get(\"jobs\", {}))} total jobs in store')
+          "
+
       - name: Commit results
         run: |
           git config user.name "github-actions[bot]"
@@ -48,7 +75,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No new jobs found"
           else
-            COUNT=$(python -c "import json; d=json.load(open('data/ci/scan_results.json')); print(len(d))" 2>/dev/null || echo "?")
+            COUNT=$(python -c "import json; d=json.load(open('data/ci/linkedin_jobs.json')); print(len(d.get('jobs', d)))" 2>/dev/null || echo "?")
             git commit -m "scan: LinkedIn $(date -u +%Y-%m-%dT%H:%M) — ${COUNT} jobs total"
             git pull --rebase origin main
             git push

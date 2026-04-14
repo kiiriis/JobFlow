@@ -39,19 +39,70 @@ def _dedup_key(entry: dict) -> str:
 
 
 def _rescore_entry(entry: dict) -> dict:
-    """Re-score a job entry using the current filter logic."""
+    """Re-score a job entry using the current filter logic, including hard-reject."""
     from .filter import (
         keyword_score, synergy_bonus, level_tag, extract_experience,
         competition_estimate, experience_score, recency_score,
-        has_match, DISQUALIFYING_PHRASES, H1B_PREFER, SCORE_MAX_RAW,
+        has_match, _has_phrase, count_matches,
+        DISQUALIFYING_PHRASES, OVERQUALIFIED_PATTERNS,
+        TITLE_REJECT_PATTERNS, COMPANY_BLOCKLIST, SENIOR_SALARY_PATTERN,
+        ENTRY_LEVEL_SIGNALS, SENIOR_DESC_SIGNALS,
+        H1B_PREFER, SCORE_MAX_RAW,
     )
-    text = f"{entry.get('title', '')} {entry.get('description_preview', '')}"
+    import re
+
+    title = entry.get("title", "")
+    title_lower = title.lower()
+    company_lower = entry.get("company", "").lower().strip()
+    text = f"{title} {entry.get('description_preview', '')}"
     text_lower = text.lower()
 
+    level = level_tag(title, entry.get("description_preview", ""))
+    min_exp, max_exp = extract_experience(text_lower)
+
+    def _hard_reject(reason: str) -> dict:
+        entry["score"] = 0
+        entry["score_pct"] = 0
+        entry["level"] = level
+        entry["min_exp"] = min_exp
+        entry["max_exp"] = max_exp
+        entry["competition"] = 0
+        entry["keyword_hits"] = 0
+        entry["recommended"] = False
+        entry["reject_reason"] = reason
+        return entry
+
+    # ── Hard-reject pipeline (same order as evaluate_job) ──
+
+    # 1. Company blocklist
+    if company_lower in COMPANY_BLOCKLIST:
+        return _hard_reject(f"Blocked company: {entry.get('company', '')}")
+
+    # 2. Title-level reject (senior, QA, architect, VP)
+    for pattern in TITLE_REJECT_PATTERNS:
+        if re.search(pattern, title_lower):
+            return _hard_reject(f"Title disqualified: {title}")
+
+    # 3. Sponsorship / citizenship / clearance
+    if _has_phrase(text_lower, DISQUALIFYING_PHRASES):
+        return _hard_reject("No visa sponsorship or requires citizenship/clearance")
+
+    # 4. Overqualified experience
+    if min_exp is not None and min_exp >= 4:
+        return _hard_reject(f"Requires {min_exp}+ years experience")
+    for pattern in OVERQUALIFIED_PATTERNS:
+        if re.search(pattern, text_lower):
+            return _hard_reject("Overqualified: high experience requirement")
+
+    # 5. Senior salary with no entry signals
+    has_senior_salary = bool(re.search(SENIOR_SALARY_PATTERN, text))
+    has_entry_signals = has_match(text_lower, ENTRY_LEVEL_SIGNALS)
+    if has_senior_salary and not has_entry_signals:
+        return _hard_reject("Senior-level salary with no entry-level signals")
+
+    # ── Passed hard filters — compute score ──
     ks, hits = keyword_score(text)
     sb = synergy_bonus(text)
-    level = level_tag(entry.get("title", ""), entry.get("description_preview", ""))
-    min_exp, max_exp = extract_experience(text_lower)
     es = experience_score(min_exp, max_exp)
     rs = recency_score(entry.get("first_seen"))
     loc_score = 10  # assume US (LinkedIn US search)
@@ -61,7 +112,12 @@ def _rescore_entry(entry: dict) -> dict:
     # Level points
     lp = {"New Grad": 20, "Entry": 15, "Mid": 5}.get(level, 4)
 
-    raw = ks + sb + lp + es + rs + loc_score + h1b
+    # Senior description penalty
+    senior_count = count_matches(text_lower, SENIOR_DESC_SIGNALS)
+    entry_count = count_matches(text_lower, ENTRY_LEVEL_SIGNALS)
+    senior_penalty = -30 if senior_count >= 3 and entry_count == 0 else 0
+
+    raw = ks + sb + lp + es + rs + loc_score + h1b + senior_penalty
     score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
 
     entry["score"] = max(0, min(100, raw))
@@ -72,6 +128,7 @@ def _rescore_entry(entry: dict) -> dict:
     entry["competition"] = comp
     entry["keyword_hits"] = hits
     entry["recommended"] = score_pct >= RECOMMENDED_THRESHOLD
+    entry.pop("reject_reason", None)
     return entry
 
 

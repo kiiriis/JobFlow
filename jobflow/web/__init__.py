@@ -30,7 +30,8 @@ from ..tracker import list_jobs, append_job, STATUSES
 from ..linkedin_store import (
     load_store, save_store, merge_scan_results, prune_old_jobs,
     update_job_status, get_filtered_jobs, get_status_counts,
-    get_level_counts, get_search_terms, get_sidebar_stats, get_time_counts,
+    get_level_counts, get_filtered_counts, get_search_terms,
+    get_sidebar_stats, get_time_counts,
     backfill_job,
     LINKEDIN_STATUSES,
 )
@@ -521,8 +522,17 @@ def create_app():
             sort_dir=sort_dir,
             tz_offset=tz_offset,
         )
-        counts = get_status_counts(store)
-        level_counts = get_level_counts(store)
+        # Filtered counts: respect active time/search filters so chips stay consistent
+        fc = get_filtered_counts(
+            store,
+            time_range=time_range,
+            hour_filter=hour_filter,
+            tz_offset=tz_offset,
+            query=query,
+            search_term=search_term,
+        )
+        counts = fc["status"]
+        level_counts = fc["level"]
         time_counts = get_time_counts(store, tz_offset=tz_offset)
         resp = make_response(render_template(
             "_partials/linkedin_tbody.html",
@@ -537,6 +547,7 @@ def create_app():
             "today": time_counts["today"],
             "yesterday": time_counts["yesterday"],
         })
+        resp.headers["X-Total"] = str(len(jobs))
         return resp
 
     @app.route("/api/linkedin/jobs/<path:key>/status", methods=["PATCH"])

@@ -474,17 +474,42 @@ function triggerFilter() {
     if (termEl) params.set('search_term', termEl.value);
 
     fetch('/api/linkedin/jobs?' + params.toString()).then(function(resp) {
+        // Update status chip counts
         var countsStr = resp.headers.get('X-Counts');
+        var parsedCounts = null;
         if (countsStr) {
             try {
-                var counts = JSON.parse(countsStr);
+                parsedCounts = JSON.parse(countsStr);
                 document.querySelectorAll('.li-chip').forEach(function(c) {
                     if (c.dataset.status === undefined) return;
                     var key = c.dataset.status === '' ? 'All' : c.dataset.status;
                     var badge = c.querySelector('.li-chip-count');
-                    if (badge && counts[key] !== undefined) badge.textContent = counts[key];
+                    if (badge && parsedCounts[key] !== undefined) badge.textContent = parsedCounts[key];
                 });
             } catch(e) {}
+        }
+        // Update level chip counts
+        var levelStr = resp.headers.get('X-Level-Counts');
+        if (levelStr) {
+            try {
+                var lc = JSON.parse(levelStr);
+                document.querySelectorAll('.li-chip').forEach(function(c) {
+                    if (c.dataset.level === undefined) return;
+                    var badge = c.querySelector('.li-chip-count');
+                    if (badge && lc[c.dataset.level] !== undefined) badge.textContent = lc[c.dataset.level];
+                });
+            } catch(e) {}
+        }
+        // Update summary line with filtered count
+        var totalStr = resp.headers.get('X-Total');
+        var summaryEl = document.getElementById('li-summary');
+        if (summaryEl && totalStr !== null) {
+            var rec = (parsedCounts && parsedCounts.Recommended) || 0;
+            var applied = (parsedCounts && parsedCounts.Applied) || 0;
+            var html_parts = '<b>' + totalStr + '</b> jobs';
+            if (rec > 0) html_parts += ' &middot; <b>' + rec + '</b> recommended';
+            if (applied > 0) html_parts += ' &middot; Applied: <b>' + applied + '</b>';
+            summaryEl.innerHTML = html_parts;
         }
         // Update time tab counts
         var timeStr = resp.headers.get('X-Time-Counts');

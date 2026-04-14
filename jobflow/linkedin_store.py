@@ -340,6 +340,97 @@ def get_level_counts(store: dict) -> dict[str, int]:
     return counts
 
 
+def get_filtered_counts(
+    store: dict,
+    time_range: str = "",
+    hour_filter: str = "",
+    tz_offset: int = 0,
+    query: str = "",
+    search_term: str = "",
+) -> dict:
+    """Compute status + level counts respecting time/search filters.
+
+    Returns {"status": {All, Recommended, Tracking, ...}, "level": {All, New Grad, ...}}.
+    Uses the same time boundary logic as get_filtered_jobs().
+    """
+    jobs = store.get("jobs", {})
+    q_lower = query.lower().strip() if query else ""
+    now_utc = datetime.now(tz=timezone.utc)
+    user_tz = timezone(timedelta(minutes=-tz_offset))
+    now_local = now_utc.astimezone(user_tz)
+
+    # Compute time boundaries (same logic as get_filtered_jobs)
+    time_cutoff = None
+    time_end = None
+    if time_range == "hour":
+        time_cutoff = now_utc - timedelta(hours=1)
+    elif time_range == "today":
+        local_midnight = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+        time_cutoff = local_midnight.astimezone(timezone.utc)
+    elif time_range == "yesterday":
+        local_midnight = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+        time_cutoff = (local_midnight - timedelta(days=1)).astimezone(timezone.utc)
+        time_end = local_midnight.astimezone(timezone.utc)
+
+    hour_start = None
+    hour_end = None
+    if hour_filter:
+        try:
+            h = int(hour_filter)
+            local_hour = now_local.replace(hour=h, minute=0, second=0, microsecond=0)
+            if h > now_local.hour:
+                local_hour -= timedelta(days=1)
+            hour_start = local_hour.astimezone(timezone.utc)
+            hour_end = hour_start + timedelta(hours=1)
+        except (ValueError, TypeError):
+            pass
+
+    status_counts = {s: 0 for s in LINKEDIN_STATUSES}
+    status_counts["Recommended"] = 0
+    level_counts = {"New Grad": 0, "Entry": 0, "Mid": 0, "Unknown": 0}
+    total = 0
+
+    for job in jobs.values():
+        # Apply time filter
+        if time_cutoff or hour_start:
+            fs = _parse_iso(job.get("first_seen", ""))
+            if not fs:
+                continue
+            if time_cutoff and fs < time_cutoff:
+                continue
+            if time_end and fs >= time_end:
+                continue
+            if hour_start and (fs < hour_start or fs >= hour_end):
+                continue
+
+        # Apply text search
+        if q_lower:
+            searchable = f"{job.get('company', '')} {job.get('title', '')} {job.get('location', '')}".lower()
+            if q_lower not in searchable:
+                continue
+
+        # Apply search term filter
+        if search_term and job.get("search_term", "") != search_term:
+            continue
+
+        # Job passed time/search filters — count it
+        total += 1
+        s = job.get("status", "")
+        if s in status_counts:
+            status_counts[s] += 1
+        if job.get("recommended"):
+            status_counts["Recommended"] += 1
+        level = job.get("level", "Unknown")
+        if level in level_counts:
+            level_counts[level] += 1
+        else:
+            level_counts["Unknown"] += 1
+
+    status_counts["All"] = total
+    level_counts["All"] = total
+    return {"status": status_counts, "level": level_counts}
+
+
 def get_search_terms(store: dict) -> list[str]:
     """Return sorted list of distinct search_term values."""
     terms = set()

@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from jobflow.linkedin_store import (
     load_store, save_store, merge_scan_results, prune_old_jobs,
     update_job_status, get_filtered_jobs, get_status_counts,
-    get_level_counts, get_search_terms, format_recency,
+    get_level_counts, get_filtered_counts, get_search_terms, format_recency,
     backfill_job, LINKEDIN_STATUSES, RECOMMENDED_THRESHOLD,
     RETENTION_DAYS, KEEP_STATUSES,
 )
@@ -214,3 +214,56 @@ class TestFormatRecency:
 
     def test_invalid(self):
         assert format_recency("not-a-date") == "--"
+
+
+class TestFilteredCounts:
+    """Test get_filtered_counts — counts that respect time/search filters."""
+
+    def _make_store(self):
+        now = datetime.now(tz=timezone.utc)
+        return {"jobs": {
+            "a": {"title": "SWE", "company": "Stripe", "location": "SF",
+                   "level": "New Grad", "status": "", "recommended": True,
+                   "score_pct": 50, "search_term": "python",
+                   "first_seen": now.isoformat()},
+            "b": {"title": "ML Eng", "company": "Google", "location": "NYC",
+                   "level": "Entry", "status": "Tracking", "recommended": True,
+                   "score_pct": 40, "search_term": "ml",
+                   "first_seen": now.isoformat()},
+            "c": {"title": "Backend", "company": "Meta", "location": "LA",
+                   "level": "Mid", "status": "", "recommended": False,
+                   "score_pct": 15, "search_term": "python",
+                   "first_seen": (now - timedelta(days=2)).isoformat()},
+        }}
+
+    def test_no_filter_returns_all(self):
+        store = self._make_store()
+        fc = get_filtered_counts(store)
+        assert fc["status"]["All"] == 3
+        assert fc["level"]["New Grad"] == 1
+        assert fc["level"]["Entry"] == 1
+        assert fc["level"]["Mid"] == 1
+
+    def test_today_filter_excludes_old(self):
+        store = self._make_store()
+        fc = get_filtered_counts(store, time_range="today", tz_offset=0)
+        assert fc["status"]["All"] == 2  # only a and b (c is 2 days old)
+        assert fc["level"]["Mid"] == 0
+        assert fc["level"]["New Grad"] == 1
+
+    def test_search_term_filter(self):
+        store = self._make_store()
+        fc = get_filtered_counts(store, search_term="python")
+        assert fc["status"]["All"] == 2  # a and c
+        assert fc["level"]["Entry"] == 0  # b is ml, not python
+
+    def test_query_filter(self):
+        store = self._make_store()
+        fc = get_filtered_counts(store, query="stripe")
+        assert fc["status"]["All"] == 1
+        assert fc["level"]["New Grad"] == 1
+
+    def test_combined_time_and_search(self):
+        store = self._make_store()
+        fc = get_filtered_counts(store, time_range="today", search_term="python", tz_offset=0)
+        assert fc["status"]["All"] == 1  # only a (python + today)

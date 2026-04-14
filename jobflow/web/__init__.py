@@ -31,7 +31,7 @@ from ..linkedin_store import (
     load_store, save_store, merge_scan_results, prune_old_jobs,
     update_job_status, get_filtered_jobs, get_status_counts,
     get_level_counts, get_filtered_counts, get_search_terms,
-    get_sidebar_stats, get_time_counts,
+    get_time_counts,
     backfill_job,
     LINKEDIN_STATUSES,
 )
@@ -485,7 +485,6 @@ def create_app():
         counts = get_status_counts(store)
         level_counts = get_level_counts(store)
         search_terms = get_search_terms(store)
-        sidebar = get_sidebar_stats(store)
         time_counts = get_time_counts(store)
         return render_template(
             "linkedin.html",
@@ -493,7 +492,6 @@ def create_app():
             counts=counts,
             level_counts=level_counts,
             search_terms=search_terms,
-            sidebar=sidebar,
             time_counts=time_counts,
             last_updated=store.get("last_updated", ""),
         )

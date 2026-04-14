@@ -18,12 +18,10 @@
 .li-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #72f0b0; animation: li-pulse 1.9s infinite; }
 @keyframes li-pulse { 0% { box-shadow: 0 0 0 0 rgba(114,240,176,0.65); } 100% { box-shadow: 0 0 0 8px rgba(114,240,176,0); } }
 
-/* ── Layout: sidebar + main ── */
-.li-layout { display: grid; grid-template-columns: 200px 1fr; gap: 16px; }
-@media (max-width: 1000px) { .li-layout { grid-template-columns: 1fr; } .li-sidebar { display: none; } }
+/* ── Layout ── */
+.li-layout { display: grid; grid-template-columns: 1fr; }
 
 /* ── Sidebar ── */
-.li-sidebar { display: flex; flex-direction: column; gap: 12px; }
 .li-panel { border: 1px solid rgba(70,96,125,0.3); border-radius: 10px; background: rgba(15,27,42,0.7); padding: 14px; backdrop-filter: blur(8px); }
 .li-panel-title { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: #8fa4be; font-family: "IBM Plex Mono", monospace; font-weight: 600; margin-bottom: 10px; }
 .li-stat-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 0.78rem; }
@@ -262,68 +260,6 @@ tr.dismissing { opacity:0.3; transition:opacity 300ms; }
     </script>
 
     <div class="li-layout">
-        <!-- Sidebar -->
-        <aside class="li-sidebar">
-            <!-- Match Score Distribution -->
-            <div class="li-panel">
-                <div class="li-panel-title">Match Score</div>
-                {% for label, count in sidebar.match_dist.items() %}
-                <div class="li-stat-row">
-                    <span class="li-stat-label">{{ label }}</span>
-                    <div class="li-stat-bar">
-                        <div class="li-stat-bar-fill {% if loop.index == 1 %}bar-green{% elif loop.index == 2 %}bar-blue{% elif loop.index == 3 %}bar-yellow{% else %}bar-gray{% endif %}"
-                             style="width:{{ (count / sidebar.total * 100) if sidebar.total else 0 }}%"></div>
-                    </div>
-                    <span class="li-stat-count">{{ count }}</span>
-                </div>
-                {% endfor %}
-            </div>
-
-            <!-- Level Breakdown -->
-            <div class="li-panel">
-                <div class="li-panel-title">Level Breakdown</div>
-                {% for lvl in ['New Grad', 'Entry', 'Mid'] %}
-                <div class="li-stat-row">
-                    <span class="li-stat-label">{{ lvl }}</span>
-                    <div class="li-stat-bar">
-                        <div class="li-stat-bar-fill {% if lvl == 'New Grad' %}bar-green{% elif lvl == 'Entry' %}bar-blue{% else %}bar-orange{% endif %}"
-                             style="width:{{ (level_counts.get(lvl, 0) / sidebar.total * 100) if sidebar.total else 0 }}%"></div>
-                    </div>
-                    <span class="li-stat-count">{{ level_counts.get(lvl, 0) }}</span>
-                </div>
-                {% endfor %}
-            </div>
-
-            <!-- Top Companies -->
-            <div class="li-panel">
-                <div class="li-panel-title">Top Companies</div>
-                {% for company, count in sidebar.top_companies %}
-                <div class="li-stat-row">
-                    <span class="li-stat-label" style="max-width:100px; overflow:hidden; text-overflow:ellipsis;" title="{{ company }}">{{ company }}</span>
-                    <div class="li-stat-bar">
-                        <div class="li-stat-bar-fill bar-teal" style="width:{{ (count / sidebar.top_companies[0][1] * 100) if sidebar.top_companies else 0 }}%"></div>
-                    </div>
-                    <span class="li-stat-count">{{ count }}</span>
-                </div>
-                {% endfor %}
-            </div>
-
-            <!-- Experience Required -->
-            <div class="li-panel">
-                <div class="li-panel-title">Experience Required</div>
-                {% for label, count in sidebar.exp_dist.items() %}
-                <div class="li-stat-row">
-                    <span class="li-stat-label">{{ label }}</span>
-                    <div class="li-stat-bar">
-                        <div class="li-stat-bar-fill bar-purple" style="width:{{ (count / sidebar.total * 100) if sidebar.total else 0 }}%"></div>
-                    </div>
-                    <span class="li-stat-count">{{ count }}</span>
-                </div>
-                {% endfor %}
-            </div>
-        </aside>
-
-        <!-- Main Content -->
         <div class="li-main">
             <!-- Filters -->
             <div class="li-filters">

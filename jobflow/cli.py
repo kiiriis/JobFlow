@@ -264,7 +264,7 @@ def scan(
                 "competition": filt.competition,
                 "variant": filt.resume_variant,
                 "reason": filt.reason,
-                "description_preview": job.description[:200],
+                "description_preview": job.description[:2000],
                 "date_posted": getattr(job, "date_posted", ""),
             })
 

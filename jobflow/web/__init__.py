@@ -505,7 +505,7 @@ def create_app():
         query = request.args.get("q", "")
         search_term = request.args.get("search_term", "")
         time_range = request.args.get("time", "")
-        hour_filter = request.args.get("hour", "")
+        bucket_filter = request.args.get("bucket", "")
         sort_col = request.args.get("sort", "last_seen")
         sort_dir = request.args.get("dir", "desc")
         tz_offset = int(request.args.get("tz", "0") or "0")  # minutes from UTC
@@ -517,7 +517,7 @@ def create_app():
             query=query,
             search_term=search_term,
             time_range=time_range,
-            hour_filter=hour_filter,
+            bucket_filter=bucket_filter,
             sort_col=sort_col,
             sort_dir=sort_dir,
             tz_offset=tz_offset,
@@ -526,7 +526,7 @@ def create_app():
         fc = get_filtered_counts(
             store,
             time_range=time_range,
-            hour_filter=hour_filter,
+            bucket_filter=bucket_filter,
             tz_offset=tz_offset,
             query=query,
             search_term=search_term,
@@ -547,6 +547,7 @@ def create_app():
             "today": time_counts["today"],
             "yesterday": time_counts["yesterday"],
         })
+        resp.headers["X-Buckets"] = json.dumps(time_counts.get("buckets", []))
         resp.headers["X-Total"] = str(len(jobs))
         return resp
 

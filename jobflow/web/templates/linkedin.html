@@ -254,8 +254,8 @@
         <button class="hourly-nav" onclick="document.getElementById('hourly-scroll').scrollBy({left:200,behavior:'smooth'})">&#8250;</button>
     </div>
     <script>
-    // Raw UTC hourly data from server
-    var HOURLY_DATA_UTC = {{ time_counts.hourly | tojson }};
+    // Bucket data populated by first API call (needs tz_offset from browser)
+    var BUCKET_DATA = [];
     </script>
 
     <div class="li-layout">
@@ -357,7 +357,7 @@
             <input type="hidden" id="filter-sort" value="first_seen">
             <input type="hidden" id="filter-dir" value="desc">
             <input type="hidden" id="filter-time" value="">
-            <input type="hidden" id="filter-hour" value="">
+            <input type="hidden" id="filter-bucket" value="">
 
             <!-- Table -->
             <div class="li-table-wrap">
@@ -431,17 +431,17 @@ function toggleSort(col) {
 
 function setTime(val) {
     document.getElementById('filter-time').value = val;
-    document.getElementById('filter-hour').value = '';
+    document.getElementById('filter-bucket').value = '';
     document.querySelectorAll('.time-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.time === val); });
     document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.remove('active'); });
     triggerFilter();
 }
 
-function setHour(h) {
-    document.getElementById('filter-hour').value = h;
+function setBucket(key) {
+    document.getElementById('filter-bucket').value = key;
     document.getElementById('filter-time').value = '';
     document.querySelectorAll('.time-tab').forEach(function(t) { t.classList.remove('active'); });
-    document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.toggle('active', c.dataset.hour === h); });
+    document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.toggle('active', c.dataset.bucket === key); });
     triggerFilter();
 }
 
@@ -468,7 +468,7 @@ function triggerFilter() {
     params.set('sort', document.getElementById('filter-sort').value);
     params.set('dir', document.getElementById('filter-dir').value);
     params.set('time', document.getElementById('filter-time').value);
-    params.set('hour', document.getElementById('filter-hour').value);
+    params.set('bucket', document.getElementById('filter-bucket').value);
     params.set('tz', getUserTzOffset().toString());
     var termEl = document.getElementById('filter-search-term');
     if (termEl) params.set('search_term', termEl.value);
@@ -522,6 +522,14 @@ function triggerFilter() {
                 el = document.getElementById('tc-yesterday'); if (el) el.textContent = tc.yesterday || 0;
             } catch(e) {}
         }
+        // Update dynamic bucket cards
+        var bucketStr = resp.headers.get('X-Buckets');
+        if (bucketStr) {
+            try {
+                BUCKET_DATA = JSON.parse(bucketStr);
+                renderBucketCards();
+            } catch(e) {}
+        }
         return resp.text();
     }).then(function(html) {
         document.getElementById('linkedin-body').innerHTML = html;
@@ -558,36 +566,19 @@ function renderUtcTimes() {
     });
 }
 
-function renderHourlyCards() {
-    var now = new Date();
+function renderBucketCards() {
     var container = document.getElementById('hourly-scroll');
     if (!container) return;
-    // Group UTC hourly data into local hours
-    var localBuckets = {};
-    (HOURLY_DATA_UTC || []).forEach(function(h) {
-        // Build a UTC date for this hour
-        var utcDate = new Date();
-        utcDate.setUTCHours(h.hour, 0, 0, 0);
-        if (h.hour > now.getUTCHours()) utcDate.setUTCDate(utcDate.getUTCDate() - 1);
-        var localHour = utcDate.getHours();
-        var label = utcDate.toLocaleString(undefined, {hour:'numeric'});
-        if (!localBuckets[localHour]) localBuckets[localHour] = {hour: localHour, label: label, count: 0, utcDate: utcDate};
-        localBuckets[localHour].count += h.count;
-    });
-    // Sort by time descending (most recent first)
-    var cards = Object.values(localBuckets).filter(function(b){ return b.count > 0; });
-    cards.sort(function(a,b){ return b.utcDate - a.utcDate; });
+    var cards = (BUCKET_DATA || []).filter(function(b){ return b.count > 0; });
+    // Already sorted most recent first from server
+    var activeBucket = document.getElementById('filter-bucket').value;
     container.innerHTML = cards.map(function(c) {
-        return '<div class="hour-card" onclick="setHour(\'' + c.hour + '\')" data-hour="' + c.hour + '">' +
+        var active = c.key === activeBucket ? ' active' : '';
+        var sizeLabel = c.minutes <= 30 ? '' : c.minutes <= 60 ? '' : ' (' + (c.minutes/60) + 'h)';
+        return '<div class="hour-card' + active + '" onclick="setBucket(\'' + c.key + '\')" data-bucket="' + c.key + '">' +
                '<div class="h-time">' + c.label + '</div>' +
                '<div class="h-count">' + c.count + ' jobs</div></div>';
     }).join('');
-}
-
-function renderTimeCounts() {
-    // Compute This Hour / Today / Yesterday based on local time
-    // We'll use a simple fetch with tz offset and read counts from response
-    // For now just update after first filter response
 }
 
 function getUserTzOffset() {
@@ -596,8 +587,7 @@ function getUserTzOffset() {
 
 document.addEventListener('DOMContentLoaded', function() {
     renderUtcTimes();
-    renderHourlyCards();
-    triggerFilter();
+    triggerFilter(); // First API call populates bucket cards via X-Buckets header
 });
 </script>
 

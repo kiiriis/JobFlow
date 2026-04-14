@@ -274,7 +274,7 @@ def get_filtered_jobs(
     query: str = "",
     search_term: str = "",
     time_range: str = "",
-    hour_filter: str = "",
+    bucket_filter: str = "",
     sort_col: str = "last_seen",
     sort_dir: str = "desc",
     tz_offset: int = 0,
@@ -282,7 +282,7 @@ def get_filtered_jobs(
     """Return jobs as a sorted list with filtering.
 
     time_range: "hour" (last 1h), "today" (since user's midnight), "yesterday"
-    hour_filter: specific local hour like "22" to show jobs from that hour
+    bucket_filter: bucket key like "2026-04-14_13:30" to show jobs from that bucket
     tz_offset: user's timezone offset in minutes from UTC (e.g. 240 = UTC-4 EDT)
     """
     jobs = store.get("jobs", {})
@@ -305,17 +305,16 @@ def get_filtered_jobs(
         time_cutoff = (local_midnight - timedelta(days=1)).astimezone(timezone.utc)
         time_end = local_midnight.astimezone(timezone.utc)
 
-    # Hour filter: specific local hour
-    hour_start = None
-    hour_end = None
-    if hour_filter:
+    # Bucket filter: dynamic-size bucket by key (e.g. "2026-04-14_13:30")
+    bucket_start_utc = None
+    bucket_end_utc = None
+    if bucket_filter:
         try:
-            h = int(hour_filter)
-            local_hour = now_local.replace(hour=h, minute=0, second=0, microsecond=0)
-            if h > now_local.hour:
-                local_hour -= timedelta(days=1)
-            hour_start = local_hour.astimezone(timezone.utc)
-            hour_end = hour_start + timedelta(hours=1)
+            # Parse "YYYY-MM-DD_HH:MM" as local time
+            local_start = datetime.strptime(bucket_filter, "%Y-%m-%d_%H:%M").replace(tzinfo=user_tz)
+            bm = _bucket_minutes(local_start)
+            bucket_start_utc = local_start.astimezone(timezone.utc)
+            bucket_end_utc = bucket_start_utc + timedelta(minutes=bm)
         except (ValueError, TypeError):
             pass
 
@@ -323,7 +322,7 @@ def get_filtered_jobs(
         entry = {"_key": key, **job}
 
         # Time range filter
-        if time_cutoff or hour_start:
+        if time_cutoff or bucket_start_utc:
             fs = _parse_iso(entry.get("first_seen", ""))
             if not fs:
                 continue
@@ -331,7 +330,7 @@ def get_filtered_jobs(
                 continue
             if time_end and fs >= time_end:
                 continue
-            if hour_start and (fs < hour_start or fs >= hour_end):
+            if bucket_start_utc and (fs < bucket_start_utc or fs >= bucket_end_utc):
                 continue
 
         # Status filter (special case: "Recommended" is not a real status)
@@ -414,7 +413,7 @@ def get_level_counts(store: dict) -> dict[str, int]:
 def get_filtered_counts(
     store: dict,
     time_range: str = "",
-    hour_filter: str = "",
+    bucket_filter: str = "",
     tz_offset: int = 0,
     query: str = "",
     search_term: str = "",
@@ -443,16 +442,14 @@ def get_filtered_counts(
         time_cutoff = (local_midnight - timedelta(days=1)).astimezone(timezone.utc)
         time_end = local_midnight.astimezone(timezone.utc)
 
-    hour_start = None
-    hour_end = None
-    if hour_filter:
+    bucket_start_utc = None
+    bucket_end_utc = None
+    if bucket_filter:
         try:
-            h = int(hour_filter)
-            local_hour = now_local.replace(hour=h, minute=0, second=0, microsecond=0)
-            if h > now_local.hour:
-                local_hour -= timedelta(days=1)
-            hour_start = local_hour.astimezone(timezone.utc)
-            hour_end = hour_start + timedelta(hours=1)
+            local_start = datetime.strptime(bucket_filter, "%Y-%m-%d_%H:%M").replace(tzinfo=user_tz)
+            bm = _bucket_minutes(local_start)
+            bucket_start_utc = local_start.astimezone(timezone.utc)
+            bucket_end_utc = bucket_start_utc + timedelta(minutes=bm)
         except (ValueError, TypeError):
             pass
 
@@ -463,7 +460,7 @@ def get_filtered_counts(
 
     for job in jobs.values():
         # Apply time filter
-        if time_cutoff or hour_start:
+        if time_cutoff or bucket_start_utc:
             fs = _parse_iso(job.get("first_seen", ""))
             if not fs:
                 continue
@@ -471,7 +468,7 @@ def get_filtered_counts(
                 continue
             if time_end and fs >= time_end:
                 continue
-            if hour_start and (fs < hour_start or fs >= hour_end):
+            if bucket_start_utc and (fs < bucket_start_utc or fs >= bucket_end_utc):
                 continue
 
         # Apply text search
@@ -538,12 +535,61 @@ def format_recency(iso_timestamp: str) -> str:
         return "--"
 
 
+def _bucket_minutes(local_dt: datetime) -> int:
+    """Return bucket size in minutes based on local day/hour.
+
+    Weekday 9AM-9PM: 30 min (peak hours, scans every 30 min)
+    Weekday 9PM-9AM: 60 min (off-peak, scans every 60 min)
+    Weekend: 240 min / 4 hours (scans every 4 hours)
+    """
+    dow = local_dt.weekday()  # 0=Mon, 5=Sat, 6=Sun
+    if dow >= 5:  # Weekend
+        return 240
+    hour = local_dt.hour
+    if 9 <= hour < 21:  # Weekday 9AM-9PM
+        return 30
+    return 60  # Weekday off-peak
+
+
+def _bucket_start(local_dt: datetime) -> datetime:
+    """Snap a local datetime to its bucket start."""
+    bm = _bucket_minutes(local_dt)
+    if bm == 240:
+        # 4-hour buckets: 0, 4, 8, 12, 16, 20
+        block = (local_dt.hour // 4) * 4
+        return local_dt.replace(hour=block, minute=0, second=0, microsecond=0)
+    elif bm == 60:
+        return local_dt.replace(minute=0, second=0, microsecond=0)
+    else:
+        # 30-min: snap to :00 or :30
+        m = 0 if local_dt.minute < 30 else 30
+        return local_dt.replace(minute=m, second=0, microsecond=0)
+
+
+def _bucket_label(local_dt: datetime, bm: int) -> str:
+    """Human-readable label for a bucket."""
+    if bm == 240:
+        end = local_dt + timedelta(hours=4)
+        return f"{local_dt.strftime('%I %p').lstrip('0')}-{end.strftime('%I %p').lstrip('0')}"
+    elif bm == 30:
+        return local_dt.strftime("%I:%M %p").lstrip("0")
+    else:
+        return local_dt.strftime("%I %p").lstrip("0")
+
+
+def _bucket_key(local_dt: datetime) -> str:
+    """Unique key for a bucket: 'YYYY-MM-DD_HH:MM'."""
+    return local_dt.strftime("%Y-%m-%d_%H:%M")
+
+
 def get_time_counts(store: dict, tz_offset: int = 0) -> dict:
-    """Return counts for time range tabs and hourly breakdown.
+    """Return counts for time range tabs and dynamic bucket breakdown.
 
     tz_offset: user's timezone offset in minutes from UTC (e.g. 240 = UTC-4).
-    All "today"/"yesterday" boundaries use the user's local midnight.
-    Hourly labels use UTC hours (converted to local in the browser).
+    Buckets are computed in user's local time with dynamic sizing:
+    - Weekday 9AM-9PM: 30 min buckets
+    - Weekday 9PM-9AM: 60 min buckets
+    - Weekend: 4-hour buckets
     """
     now_utc = datetime.now(tz=timezone.utc)
     user_tz = timezone(timedelta(minutes=-tz_offset))
@@ -558,11 +604,8 @@ def get_time_counts(store: dict, tz_offset: int = 0) -> dict:
     today_count = 0
     yesterday_count = 0
 
-    # Hourly breakdown: last 24 hours in UTC (browser converts to local)
-    hourly_buckets = {}
-    for h in range(24):
-        dt = now_utc.replace(minute=0, second=0, microsecond=0) - timedelta(hours=h)
-        hourly_buckets[dt.hour] = {"hour": dt.hour, "count": 0, "label": dt.strftime("%I %p").lstrip("0")}
+    # Dynamic buckets for last 24 hours (keyed by local bucket start)
+    buckets = {}  # key -> {key, label, count, minutes, start_iso}
 
     for job in store.get("jobs", {}).values():
         fs = _parse_iso(job.get("first_seen", ""))
@@ -577,22 +620,28 @@ def get_time_counts(store: dict, tz_offset: int = 0) -> dict:
 
         diff_hours = (now_utc - fs).total_seconds() / 3600
         if diff_hours < 24:
-            bucket_hour = fs.replace(minute=0, second=0, microsecond=0).hour
-            if bucket_hour in hourly_buckets:
-                hourly_buckets[bucket_hour]["count"] += 1
+            fs_local = fs.astimezone(user_tz)
+            bs = _bucket_start(fs_local)
+            bk = _bucket_key(bs)
+            if bk not in buckets:
+                bm = _bucket_minutes(bs)
+                buckets[bk] = {
+                    "key": bk,
+                    "label": _bucket_label(bs, bm),
+                    "count": 0,
+                    "minutes": bm,
+                    "start_iso": bs.isoformat(),
+                }
+            buckets[bk]["count"] += 1
 
     # Sorted list, most recent first
-    hourly_list = []
-    for h in range(24):
-        dt = now_utc.replace(minute=0, second=0, microsecond=0) - timedelta(hours=h)
-        if dt.hour in hourly_buckets:
-            hourly_list.append(hourly_buckets[dt.hour])
+    bucket_list = sorted(buckets.values(), key=lambda b: b["start_iso"], reverse=True)
 
     return {
         "this_hour": hour_count,
         "today": today_count,
         "yesterday": yesterday_count,
-        "hourly": hourly_list,
+        "buckets": bucket_list,
     }
 
 

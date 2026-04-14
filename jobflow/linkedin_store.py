@@ -127,7 +127,12 @@ def _rescore_entry(entry: dict) -> dict:
     entry["max_exp"] = max_exp
     entry["competition"] = comp
     entry["keyword_hits"] = hits
-    entry["recommended"] = score_pct >= RECOMMENDED_THRESHOLD
+    # Recommended: AI-driven if ai_score exists, else fall back to algo threshold
+    ai_score = entry.get("ai_score")
+    if ai_score is not None:
+        entry["recommended"] = int(ai_score) >= 7
+    else:
+        entry["recommended"] = score_pct >= RECOMMENDED_THRESHOLD
     entry.pop("reject_reason", None)
     return entry
 
@@ -172,7 +177,11 @@ def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
             # Migrate old statuses
             if jobs[key].get("status") in ("Should Apply", "New"):
                 jobs[key]["status"] = ""
-            # Re-score with latest logic
+            # Carry AI scores from new scan if not already present
+            if entry.get("ai_score") and not jobs[key].get("ai_score"):
+                jobs[key]["ai_score"] = entry["ai_score"]
+                jobs[key]["ai_reason"] = entry.get("ai_reason", "")
+            # Re-score with latest logic (preserves ai_score/ai_reason)
             jobs[key] = _rescore_entry(jobs[key])
         else:
             # Use date_posted from source if available, else merge time
@@ -190,6 +199,9 @@ def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
                 "last_seen": now,
                 "date_posted": entry.get("date_posted", ""),
                 "search_term": entry.get("search_term", ""),
+                # AI scores from scan (if available)
+                "ai_score": entry.get("ai_score"),
+                "ai_reason": entry.get("ai_reason", ""),
                 # Placeholders — _rescore_entry fills these
                 "score": 0, "score_pct": 0, "level": "Unknown",
                 "min_exp": None, "max_exp": None, "competition": 0,
@@ -348,15 +360,17 @@ def get_filtered_jobs(
 
         result.append(entry)
 
-    # Sort with secondary key: when primary is equal, sort by score_pct desc
+    # Sort with secondary key: when primary is equal, sort by ai_score desc (then score_pct)
     def sort_key(j):
         val = j.get(sort_col, "")
-        if sort_col in ("score", "score_pct", "competition", "min_exp"):
+        if sort_col in ("score", "score_pct", "competition", "min_exp", "ai_score"):
             primary = int(val) if val is not None and val != "" else -1
         else:
             primary = str(val or "")
-        secondary = int(j.get("score_pct", 0) or 0)
-        return (primary, secondary)
+        # Tiebreaker: AI score first, then algo score
+        ai = int(j.get("ai_score") or 0)
+        algo = int(j.get("score_pct", 0) or 0)
+        return (primary, ai, algo)
 
     reverse = sort_dir == "desc"
 

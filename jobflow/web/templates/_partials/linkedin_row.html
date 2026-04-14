@@ -8,9 +8,10 @@
             <div class="co-avatar" style="background:{{ avatar_colors[color_idx] }}">{{ co_letter }}</div>
             <div class="role-info">
                 <div class="role-title">
-                    {% if job.recommended %}<span style="color:#f5c842">★ </span>{% endif %}
+                    {% if job.recommended %}<span style="color:#f5c842" {% if job.ai_reason %}title="AI: {{ job.ai_reason }}"{% endif %}>★ </span>{% endif %}
                     {% if job.url %}<a href="{{ job.url }}" target="_blank" rel="noopener">{{ job.title }}</a>{% else %}{{ job.title }}{% endif %}
                     <span class="li-badge badge-linkedin">LinkedIn</span>
+                    {% if job.ai_score %}<span class="li-badge badge-rec-tag" title="{{ job.ai_reason|default('') }}">AI {{ job.ai_score }}/10</span>{% endif %}
                     {% if job.h1b is defined and job.h1b %}<span class="li-badge badge-h1b">H1B ✓</span>{% endif %}
                 </div>
                 <div class="role-sub">

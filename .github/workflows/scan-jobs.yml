@@ -29,6 +29,7 @@ jobs:
       - name: Run LinkedIn scan
         env:
           JOBFLOW_CONFIG: config/config.ci.yaml
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           echo "Starting scan at $(date -u)"
           jobflow scan --platform linkedin --new --save --hours 1 2>&1 || true

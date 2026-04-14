@@ -1,3 +1,4 @@
+import os
 from datetime import date
 from pathlib import Path
 from typing import Optional
@@ -294,6 +295,25 @@ def scan(
 
         results_path.write_text(json.dumps(existing, indent=2))
         console.print(f"\n[green]Results saved to:[/green] {results_path} ({len(existing)} total jobs)")
+
+        # AI scoring with GPT-4o-mini (only if OPENAI_API_KEY is set)
+        if os.environ.get("OPENAI_API_KEY"):
+            from .ai_scorer import ai_score_jobs
+            console.print("\n[bold cyan]Running AI relevance scoring (GPT-4o-mini)...[/bold cyan]")
+            ai_score_jobs(new_entries, config.get("_root"))
+            # Update the entries in the saved results
+            url_to_ai = {e["url"]: e for e in new_entries if e.get("ai_score")}
+            for entry in existing:
+                ai = url_to_ai.get(entry.get("url"))
+                if ai:
+                    entry["ai_score"] = ai["ai_score"]
+                    entry["ai_reason"] = ai["ai_reason"]
+            results_path.write_text(json.dumps(existing, indent=2))
+            scored_count = len(url_to_ai)
+            console.print(f"[green]AI scored {scored_count} new jobs[/green]")
+        else:
+            console.print("\n[dim]AI scoring skipped (OPENAI_API_KEY not set)[/dim]")
+
         console.print(
             "\n[yellow]Next steps:[/yellow]\n"
             "  1. Review the results above\n"

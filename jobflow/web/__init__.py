@@ -626,9 +626,9 @@ def _run_scan(config, platforms, hours, new_only):
     Called when the user clicks "Start Scan" on the /scan page. Runs the full
     scan pipeline: fetch jobs → score → dedup → save → merge into linkedin store.
 
-    Only jobs passing evaluate_job() (should_apply=True) are saved to
-    scan_results.json and merged into linkedin_jobs.json. Rejected jobs are
-    counted in scan_state for the UI summary but not persisted.
+    All jobs passing hard rejects (company blocklist, senior titles, non-US)
+    are saved to scan_results.json and merged into linkedin_jobs.json.
+    AI scoring is the real quality gate — algo score is informational only.
     """
     from ..scanner import scan_all_api_boards, load_seen_jobs, save_seen_jobs, deduplicate_results
 

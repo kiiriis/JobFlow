@@ -28,7 +28,7 @@ Phase 2 — Scoring (if all hard filters pass):
     - senior_penalty:   3+ senior signals with 0 entry signals = -30
 
     Raw score (max ~130) is normalized: score_pct = raw / 130 * 100
-    should_apply = score_pct >= 30
+    should_apply = True (all jobs passing hard rejects are kept for AI scoring)
 
 Variant Selection:
     select_variant() picks which base resume to use:
@@ -565,11 +565,9 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     raw = ks + sb + lp + es + rs + loc_score + h1b_bonus + senior_penalty
     score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
     score = max(0, min(100, raw))
-    # 30% threshold: below this, the job is too weak a match to be worth applying
-    should_apply = score_pct >= 30
+    # All jobs that pass hard rejects are kept — AI scoring is the real quality gate
+    should_apply = True
     reason = "; ".join(reasons) if reasons else "Meets basic criteria"
-    if not should_apply:
-        reason = f"Low match ({score_pct}%): {reason}"
 
     return FilterResult(
         score=score, score_pct=score_pct, should_apply=should_apply,

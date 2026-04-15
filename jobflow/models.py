@@ -29,7 +29,7 @@ class FilterResult:
 
     score:          Raw points (0-130 scale, clamped to 0-100 for storage)
     score_pct:      Normalized percentage (0-100), used for display and threshold checks
-    should_apply:   True if score_pct >= 30 (the apply threshold)
+    should_apply:   True for all jobs passing hard rejects (AI is the real quality gate)
     reason:         Human-readable explanation of score components or rejection reason
     resume_variant: Which base resume to use — "se" (default), "ml", or "appdev"
     level:          Detected seniority — "New Grad", "Entry", "Mid", or "Unknown"

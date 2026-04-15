@@ -25,21 +25,62 @@ import os
 from pathlib import Path
 
 
-SCORE_PROMPT = """You are a job relevance scorer. Given a candidate profile and a job posting, rate how relevant this job is to the candidate on a scale of 0-10.
+SCORE_PROMPT = """You are a job relevance scorer for a new grad / entry-level software engineer on F1 OPT visa looking for their first full-time role in the US.
 
 ## Candidate Profile
 {profile}
 
-## Hard Reject — score MUST be 0
-Give a score of 0 if ANY of these apply:
-- The job does NOT sponsor visas (e.g., "no sponsorship", "must be authorized to work without sponsorship", "US citizen only", "clearance required")
-- The job requires more than 2 years of experience (e.g., "3+ years", "4-6 years", "senior level")
+## HARD REJECT — score MUST be 0
+Give a score of 0 if ANY of these are true. Check carefully:
 
-## Scoring Guide (only if no hard reject)
-- 10: Perfect match — role, skills, level, and visa all align
-- 7-9: Strong match — most criteria met, minor gaps
-- 4-6: Partial match — some relevant skills but role/level mismatch
-- 1-3: Poor match — wrong field, wrong level, or missing key requirements
+1. **No visa sponsorship**: The posting says "no sponsorship", "will not sponsor", "cannot sponsor", "must be authorized to work without sponsorship", "US citizen only", "citizens only", "permanent resident only", "green card required", or any phrasing that means they won't sponsor a work visa. Also score 0 if it requires a security clearance (TS/SCI, Secret, DoD clearance, etc.) since those require citizenship.
+
+2. **Too much experience required**: The posting requires 3 or more years of professional experience (e.g., "3+ years", "4-6 years", "5+ years of experience", "minimum 3 years"). Be precise — "1-2 years" or "0-2 years" is fine. "2+ years" is fine. "3+ years" is NOT fine. Look at the actual minimum, not the preferred/nice-to-have.
+
+3. **Senior/Staff/Lead role**: The role is clearly senior-level, staff-level, principal, architect, VP, director, or management — even if the title doesn't say "Senior" explicitly, if the JD consistently describes 5+ years, team leadership, mentoring, or principal-level scope, score 0.
+
+4. **Not a software engineering role**: The role is primarily QA/testing, technical writing, product management, sales engineering, IT support, or DevOps/SRE-only with no software development. Data Science with heavy statistics and no coding is also a reject.
+
+5. **Not US-based**: The job is located outside the United States with no remote-US option.
+
+## SCORING GUIDE (only if no hard reject applies)
+Score 1-10 based on how well this job fits the candidate:
+
+**9-10 — Perfect fit, apply immediately:**
+- Entry-level / new grad SWE, ML Engineer, Backend Engineer, or Data Engineer
+- Mentions Python, ML/AI, distributed systems, or backend technologies the candidate knows
+- Explicitly sponsors visas or mentions H1B/OPT
+- US-based at a reputable tech company or well-funded startup
+
+**7-8 — Strong fit, definitely apply:**
+- SWE / backend / ML role at appropriate level (junior, entry, SDE-1, L3/L4)
+- Good tech stack overlap (Python, AWS, Docker, Kubernetes, etc.)
+- US-based, doesn't explicitly deny sponsorship
+- May have minor gaps (e.g., some unfamiliar technologies, or experience listed as "1-3 years")
+
+**5-6 — Decent fit, worth considering:**
+- Relevant SWE role but weaker stack match (e.g., Java-heavy, .NET, frontend-focused)
+- Level is ambiguous — could be entry or mid, JD is unclear
+- US-based, no sponsorship info either way
+- Roles like Full-Stack, Platform Engineer, or Data Engineer with partial overlap
+
+**3-4 — Weak fit, probably skip:**
+- Role exists in SWE space but poor overlap (e.g., iOS developer, Salesforce admin, embedded C)
+- Experience requirement is borderline (says "2-4 years" — technically the min is 2 but the JD tone suggests mid-level)
+- Non-tech company with limited engineering culture
+- Heavy on technologies the candidate doesn't know at all
+
+**1-2 — Very poor fit:**
+- Barely related to candidate's skills
+- Ambiguous sponsorship situation at a company known not to sponsor
+- Combination of multiple weak signals
+
+## IMPORTANT NOTES
+- When the JD doesn't mention sponsorship at all, do NOT assume the worst. Many companies sponsor but don't advertise it. Only score 0 if there's explicit denial.
+- "Must be authorized to work in the US" alone is ambiguous — OPT holders ARE authorized. Only reject if it adds "without sponsorship" or "without company assistance".
+- New grad roles at big tech (Google, Amazon, Meta, Apple, Microsoft, etc.) should score high even if the JD is generic, because these companies reliably sponsor.
+- If the description is very short or missing, score based on title + company. Don't penalize for lack of info.
+- Focus on the MINIMUM experience, not the preferred/desired. "1+ years required, 3+ preferred" = fine.
 
 ## Job Posting
 Title: {title}
@@ -82,7 +123,7 @@ def score_single_job(client, profile: str, job: dict) -> dict | None:
         title=job.get("title", ""),
         company=job.get("company", ""),
         location=job.get("location", ""),
-        description=job.get("description_preview", "")[:1500],
+        description=job.get("description_preview", "")[:2000],
     )
     try:
         response = client.chat.completions.create(

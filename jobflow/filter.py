@@ -1,9 +1,52 @@
+"""Multi-signal job scoring engine with a hard-reject pipeline.
+
+This is the core evaluation logic that decides whether a job is worth applying
+to. Every scanned job passes through evaluate_job(), which works in two phases:
+
+Phase 1 — Hard Reject (instant score=0, should_apply=False):
+    Six ordered checks that disqualify a job immediately:
+    1. Company blocklist    — spam aggregators (Dice, Turing, Jobot, etc.)
+    2. Title patterns       — senior/staff/principal/lead/QA/architect/VP
+    3. Sponsorship phrases  — 47 patterns catching "no sponsorship", citizenship, clearance
+    4. Non-US location      — regex matching international cities/countries
+    5. Overqualified exp    — min_exp >= 4 years or "5-8 years" patterns
+    6. Senior salary        — $130K+ with zero entry-level signals in the JD
+
+    Hard rejects are ordered by cheapest-to-check first. Sponsorship phrases
+    use plain string matching (_has_phrase) instead of regex for speed since
+    this runs on every job.
+
+Phase 2 — Scoring (if all hard filters pass):
+    Additive scoring across multiple signals, normalized to 0-100%:
+    - keyword_score:    Tech stack matches (Python=10, PyTorch=8, AWS=7, etc.)
+    - synergy_bonus:    Extra points for common stack combos (Python+FastAPI+AWS = +10)
+    - level_points:     New Grad=+20, Entry=+15, Mid=+5, Unknown=+4
+    - experience_score: Sweet spot is 0-2 years (+10), penalty for 3+ years
+    - recency_score:    Freshly posted jobs get +10, >48h old gets -5
+    - loc_score:        US location = +10, non-US = -10
+    - h1b_bonus:        Mentions visa sponsorship = +8
+    - senior_penalty:   3+ senior signals with 0 entry signals = -30
+
+    Raw score (max ~130) is normalized: score_pct = raw / 130 * 100
+    should_apply = score_pct >= 30
+
+Variant Selection:
+    select_variant() picks which base resume to use:
+    - "ml"     if 2+ ML keywords (pytorch, tensorflow, llm, etc.)
+    - "appdev" if 2+ frontend keywords (react, angular, full-stack, etc.)
+    - "se"     default (backend/infra/general SWE)
+"""
+
 import re
 from datetime import datetime, timezone
 
 from .models import FilterResult, JobPosting
 
 # ── Sponsorship / Citizenship / Clearance — hard reject (case-insensitive) ──
+# These are plain strings (not regex) checked via `phrase in text` for speed.
+# Covers three categories: sponsorship denial, citizenship requirements, and
+# security clearance requirements. Any match = immediate disqualification
+# because the user needs visa sponsorship (F1/OPT).
 DISQUALIFYING_PHRASES = [
     # Sponsorship rejection
     "no sponsorship", "no visa sponsorship", "no need for visa sponsorship",
@@ -47,6 +90,9 @@ DISQUALIFYING_PHRASES = [
 ]
 
 # ── Overqualified experience patterns — hard reject ─────────────────────────
+# Regex patterns that catch "4+ years", "5-8 years", "minimum 4 years", etc.
+# These fire BEFORE the numeric extract_experience() check as a safety net
+# for unusual phrasing that the parser might miss.
 OVERQUALIFIED_PATTERNS = [
     r"\b[4-9]\+?\s*(?:years?|yrs?)\s+(?:\w+\s+){0,5}experience",
     r"\b1[0-9]\+?\s*(?:years?|yrs?)",
@@ -57,6 +103,8 @@ OVERQUALIFIED_PATTERNS = [
 ]
 
 # ── Title-level hard reject patterns ────────────────────────────────────────
+# Matched against the job TITLE only (not description) to avoid false positives
+# from phrases like "work with senior engineers" in JD body text.
 TITLE_REJECT_PATTERNS = [
     r"\bsenior\b", r"\bsr\.?\s", r"\bstaff\b", r"\bprincipal\b",
     r"\blead\s+(?:engineer|developer|software)\b",
@@ -69,6 +117,8 @@ TITLE_REJECT_PATTERNS = [
 ]
 
 # ── Company blocklist (job aggregators / spam) ──────────────────────────────
+# These companies are staffing agencies or aggregators that repost jobs
+# from other companies. Applying through them adds no value.
 COMPANY_BLOCKLIST = {
     "dice", "remotehunter", "jobs via dice", "jobot", "cybercoders",
     "lancesoft", "haystack", "turing", "micro1", "hackajob",
@@ -76,9 +126,15 @@ COMPANY_BLOCKLIST = {
 }
 
 # ── Senior salary pattern (>= $130K suggests non-entry) ────────────────────
+# A salary floor of $130K+ without any entry-level signals strongly indicates
+# a mid/senior role, even if the title doesn't say "Senior". This catches
+# roles like "Software Engineer" that pay $150K-$200K (clearly not new grad).
 SENIOR_SALARY_PATTERN = r"\$1[3-9]\d[,.]?\d{3}|\$[2-9]\d\d[,.]?\d{3}"
 
 # ── Entry-level signals ─────────────────────────────────────────────────────
+# Used as a counterbalance: if a job has senior salary BUT also has these
+# entry signals, it's not hard-rejected (could be a well-paying entry role).
+# Also used in the soft senior_penalty calculation.
 ENTRY_LEVEL_SIGNALS = [
     r"\bnew[\s-]*grad", r"\bnew[\s-]*graduate\b", r"\bcampus\s+hire\b",
     r"\bentry[\s-]*level\b",
@@ -97,6 +153,10 @@ ENTRY_LEVEL_SIGNALS = [
 ]
 
 # ── Description-level senior signals (soft penalty) ─────────────────────────
+# Unlike TITLE_REJECT_PATTERNS (hard reject), these are checked in the JD body
+# and only apply a -30 penalty if 3+ match with zero entry signals. This
+# handles JDs that mention "3+ years" once casually vs. those that repeatedly
+# emphasize senior requirements.
 SENIOR_DESC_SIGNALS = [
     r"\b[3-9]\+?\s*(?:years?|yrs?)\b",
     r"\b1[0-9]\+?\s*(?:years?|yrs?)\b",
@@ -119,6 +179,13 @@ APPDEV_KEYWORDS = [
 ]
 
 # ── Personal tech stack (categorized) ───────────────────────────────────────
+# Weights reflect how central each technology is to the user's skill set.
+# Higher weight = stronger match signal. Categories are used for organization
+# only — scoring sums across all categories.
+#
+# Scoring is binary presence: if "python" appears anywhere in title+description,
+# add 10 points. No frequency weighting — mentioning Python 5 times doesn't
+# score higher than mentioning it once.
 STACK_CATEGORIES = {
     "core": {
         "python": 10, "c++": 6, "java": 4, "sql": 5, "go": 4,
@@ -144,7 +211,10 @@ STACK_CATEGORIES = {
     },
 }
 
-# Bonus when full tech combos appear together
+# Bonus when full tech combos appear together.
+# Synergy rewards jobs that match the user's actual project experience
+# (e.g., "Python + FastAPI + AWS" = a real stack the user has built with).
+# All keywords in the combo must be present to earn the bonus.
 SYNERGY_COMBOS = [
     ({"python", "fastapi", "aws"}, 10),
     ({"python", "pytorch", "aws"}, 10),
@@ -155,13 +225,20 @@ SYNERGY_COMBOS = [
     ({"postgresql", "redis", "api"}, 6),
 ]
 
+# Maximum theoretical raw score. Used to normalize to 0-100%.
+# Approximate breakdown: stack ~50 + synergy ~10 + level 20 + exp 10 + recency 10
+# + location 10 + h1b 8 + misc ≈ 130
 SCORE_MAX_RAW = 130
 
+# Big Tech companies get a +5 competition score — more applicants means
+# the user should prioritize these applications (higher urgency, not penalty).
 BIG_TECH = {
     "google", "amazon", "meta", "apple", "microsoft",
     "netflix", "uber", "airbnb", "stripe", "openai",
 }
 
+# Positive sponsorship signals — if the JD explicitly mentions visa sponsorship,
+# the job gets a +8 bonus since the user needs F1/OPT sponsorship.
 H1B_PREFER = [
     "h1b", "h-1b", "visa sponsorship", "will sponsor",
     "sponsorship available", "sponsorship provided", "open to sponsorship",
@@ -203,7 +280,12 @@ def select_variant(description: str) -> str:
 # ── Scoring components ──────────────────────────────────────────────────────
 
 def keyword_score(text: str) -> tuple[int, int]:
-    """Binary presence match across all stack categories. Returns (raw_score, hit_count)."""
+    """Binary presence match across all stack categories. Returns (raw_score, hit_count).
+
+    Scans title+description for each keyword in STACK_CATEGORIES. Each keyword
+    is checked once (binary: present or not). The score is the sum of weights
+    for all matched keywords. hit_count tracks how many distinct keywords matched.
+    """
     lower = text.lower()
     score = 0
     hits = 0
@@ -282,6 +364,12 @@ def extract_experience(text: str) -> tuple[int | None, int | None]:
 
 
 def experience_score(min_exp: int | None, max_exp: int | None) -> int:
+    """Score based on parsed experience requirements.
+
+    Sweet spot for a new grad: 0-2 years (+10). The further from this
+    range, the lower the score. Jobs requiring 3+ years get reduced scores
+    since they're borderline for a new grad applicant.
+    """
     if min_exp is None and max_exp is None:
         return 0
     if (min_exp is None or min_exp <= 2) and (max_exp is None or max_exp >= 2):
@@ -296,6 +384,11 @@ def experience_score(min_exp: int | None, max_exp: int | None) -> int:
 
 
 def recency_score(iso_timestamp: str | None) -> int:
+    """Time-decay scoring — freshly posted jobs are more valuable.
+
+    Applying early increases chances. Jobs older than 48h get a penalty (-5)
+    because they likely already have many applicants.
+    """
     if not iso_timestamp:
         return 0
     try:
@@ -317,6 +410,12 @@ def recency_score(iso_timestamp: str | None) -> int:
 
 
 def competition_estimate(company: str, hours_old: float = 0) -> int:
+    """Estimate applicant competition (0-10) for prioritization.
+
+    Big Tech companies (+5) and older postings (+2-5) tend to have more
+    applicants. This score is informational — it doesn't affect should_apply,
+    but helps the user prioritize which jobs to apply to first.
+    """
     company_lower = company.lower()
     score = 0
     if any(bt in company_lower for bt in BIG_TECH):
@@ -390,10 +489,12 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     if has_senior_salary and not has_entry_signals:
         return _reject("Senior-level salary ($130K+) with no entry-level signals")
 
-    # ══ Passed all hard filters — compute score ══
+    # ══ Passed all hard filters — compute additive score ══
+    # Each component adds to a raw score (max ~130), then normalized to 0-100%.
+    # The reasons list tracks which components contributed for the UI display.
     reasons = []
 
-    # Keyword matching
+    # Keyword matching — how well does this JD match the user's tech stack?
     ks, hits = keyword_score(text)
     if ks > 0:
         reasons.append(f"Stack +{ks}")
@@ -460,10 +561,11 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
         senior_penalty = -30
         reasons.append("Senior desc -30")
 
-    # ── Aggregate ──
+    # ── Aggregate: sum all components, normalize to 0-100% ──
     raw = ks + sb + lp + es + rs + loc_score + h1b_bonus + senior_penalty
     score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
     score = max(0, min(100, raw))
+    # 30% threshold: below this, the job is too weak a match to be worth applying
     should_apply = score_pct >= 30
     reason = "; ".join(reasons) if reasons else "Meets basic criteria"
     if not should_apply:

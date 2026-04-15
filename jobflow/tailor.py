@@ -1,3 +1,33 @@
+"""Resume LaTeX manipulation — merging, tailoring, and file management.
+
+The resume tailoring workflow has two paths:
+
+CLI path (jobflow apply → jobflow save):
+    1. build_tailor_prompt() assembles: master_prompt + JD + base .tex
+    2. User feeds this to Claude externally
+    3. extract_preamble_and_education() splits base .tex at \\section{Experience}
+    4. merge_resume() combines preamble with Claude's tailored sections
+    5. save_tailored_resume() writes the final .tex file
+
+Web path (POST /api/tailor/generate):
+    1. _build_tailor_prompt() in web/__init__.py uses a different prompt format
+       that asks Claude to output the COMPLETE .tex file (not just sections)
+    2. _extract_tex_from_output() strips markdown artifacts
+    3. The full .tex is saved directly (no preamble merge needed)
+
+The merge_resume() function handles cleanup of Claude's output:
+    - Strips markdown code fences (```) that Claude sometimes adds
+    - Removes markdown headers (## Section 1 — ...)
+    - Strips "Company — Role" header lines
+    - Collapses excessive blank lines
+    - Ensures \\end{document} is present
+
+Three resume variants exist:
+    - "se"     — Software Engineering (default, backend/infra focus)
+    - "ml"     — Machine Learning (PyTorch, model training, NLP)
+    - "appdev" — App Development (React, full-stack, UI/UX)
+"""
+
 import re
 from pathlib import Path
 
@@ -5,7 +35,7 @@ from .models import JobPosting
 
 
 def load_base_resume(variant: str, config: dict) -> str:
-    """Load the base resume .tex for the given variant."""
+    """Load the base resume .tex for the given variant (se, ml, or appdev)."""
     path = config["resumes"].get(variant)
     if not path or not Path(path).exists():
         raise FileNotFoundError(f"Base resume not found for variant '{variant}': {path}")

@@ -1,3 +1,21 @@
+"""CSV-based application tracker — records every job the user processes.
+
+This is a simple append-only CSV that tracks the full lifecycle of each
+application: from initial discovery (date_found) through status changes
+(Pending → Applied → Interview → Offer/Rejected) to final outcome.
+
+The CSV is the source of truth for the `jobflow list` command and the
+/api/stats endpoint. It's separate from linkedin_jobs.json — that store
+tracks discovered jobs, while this CSV tracks jobs the user has acted on.
+
+Deduplication: Jobs are deduped by URL first, then by company+role combo
+to prevent the same application from being tracked twice.
+
+Schema migration: If new columns are added to HEADERS, _migrate_csv()
+will automatically add the missing columns to existing CSV files without
+data loss.
+"""
+
 import csv
 from datetime import date
 from pathlib import Path

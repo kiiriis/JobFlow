@@ -1,4 +1,26 @@
-"""Scan job boards from JobBoards_Links.json and return matching jobs."""
+"""Multi-platform job scanner — aggregates listings from LinkedIn, Lever,
+Greenhouse, Ashby, and GitHub new-grad repos.
+
+Data flow:
+    1. scan_all_api_boards() orchestrates all platform scanners
+    2. Each scanner (scan_lever, scan_linkedin_jobspy, etc.) returns [JobPosting]
+    3. Every JobPosting is scored by evaluate_job() → (JobPosting, FilterResult)
+    4. deduplicate_results() removes already-seen jobs via seen_jobs.json
+    5. Results saved to scan_results.json, then merged into linkedin_jobs.json
+
+Platform differences:
+    - Lever:       REST API, JSON, epoch ms timestamps, no auth needed
+    - Greenhouse:  REST API, JSON, ISO timestamps, no auth needed
+    - Ashby:       REST API, JSON, ISO timestamps, no auth needed
+    - LinkedIn:    python-jobspy library (scrapes LinkedIn), returns DataFrame
+    - GitHub:      Raw README markdown parsing (SimplifyJobs, Jobright repos)
+
+Deduplication (seen_jobs.json):
+    Tracks previously seen job URLs with timestamps. Entries expire after
+    48 hours (SEEN_TTL_HOURS) so reposted/updated jobs can resurface.
+    Format: {"url": "ISO_timestamp_EST", ...}
+    Backward-compatible: auto-migrates old array format on first load.
+"""
 
 import json
 import random
@@ -7,6 +29,7 @@ import ssl
 import time
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from html import unescape
 from pathlib import Path
 
@@ -18,7 +41,8 @@ from .models import JobPosting
 
 console = Console()
 
-# Build a default SSL context and URL opener with browser-like headers
+# Build a default SSL context and URL opener with browser-like headers.
+# Using browser User-Agent prevents some ATS platforms from blocking requests.
 _SSL_CTX = ssl.create_default_context()
 _OPENER = urllib.request.build_opener()
 _OPENER.addheaders = [
@@ -28,7 +52,13 @@ _OPENER.addheaders = [
 
 
 def _fetch_json(url: str, retries: int = 3) -> dict | list | None:
-    """Fetch JSON from a URL using stdlib urllib with retry/backoff."""
+    """Fetch JSON from a URL using stdlib urllib with retry/backoff.
+
+    Uses exponential backoff (3^attempt seconds) on failure. Rate limit
+    responses (429) respect the Retry-After header if present. We use
+    stdlib urllib instead of requests to avoid the extra dependency for
+    simple GET requests.
+    """
     for attempt in range(retries):
         try:
             req = urllib.request.Request(url, headers={
@@ -67,7 +97,11 @@ def _matches_keywords(text: str, keywords: list[str]) -> bool:
     return any(kw.lower() in lower for kw in keywords)
 
 
-# Role must be software/engineering related
+# Role must be software/engineering related.
+# This is a pre-filter applied BEFORE evaluate_job() to reduce noise. It's
+# intentionally broad — we'd rather let a borderline role through to the
+# scoring engine than miss a valid job. The scoring engine handles the
+# fine-grained filtering (senior, sponsorship, etc.).
 SWE_ROLE_KEYWORDS = [
     "software", "engineer", "developer", "sde", "swe", "backend",
     "frontend", "full stack", "fullstack", "full-stack", "platform",
@@ -75,6 +109,7 @@ SWE_ROLE_KEYWORDS = [
     "machine learning", "ml engineer", "ai engineer", "applied scientist",
     "research engineer", "security engineer", "site reliability",
     "cloud engineer", "distributed systems",
+    "member of technical staff", "mts", "data scientist", "data analyst",
 ]
 
 
@@ -114,7 +149,13 @@ def _is_recent(posted_at: str | int | None, max_age_hours: int) -> bool:
 # ---------------------------------------------------------------------------
 
 def scan_lever(company: str, api_url: str, include_kw: list[str], max_age_hours: int = 0) -> list[JobPosting]:
-    """Scan a Lever company's job board via API."""
+    """Scan a Lever company's job board via API.
+
+    Lever's public API (api.lever.co/v0/postings/{company}) returns JSON with
+    no auth required. Uses createdAt (epoch milliseconds) for recency filtering.
+    include_kw is a list of entry-level keywords from job_boards.json that
+    must appear in title/commitment/team to pass the pre-filter.
+    """
     data = _fetch_json(api_url)
     if not data or not isinstance(data, list):
         return []
@@ -153,7 +194,12 @@ def scan_lever(company: str, api_url: str, include_kw: list[str], max_age_hours:
 
 
 def scan_greenhouse(company: str, api_url: str, include_kw: list[str], max_age_hours: int = 0) -> list[JobPosting]:
-    """Scan a Greenhouse company's job board via API."""
+    """Scan a Greenhouse company's job board via API.
+
+    Greenhouse API (boards-api.greenhouse.io/v1/boards/{company}/jobs)
+    returns JSON with job objects nested under a "jobs" key. Uses updated_at
+    (ISO format) for recency. Description is in HTML (content field).
+    """
     data = _fetch_json(api_url)
     if not data or "jobs" not in data:
         return []
@@ -189,7 +235,11 @@ def scan_greenhouse(company: str, api_url: str, include_kw: list[str], max_age_h
 
 
 def scan_ashby(company: str, api_url: str, include_kw: list[str], max_age_hours: int = 0) -> list[JobPosting]:
-    """Scan an Ashby company's job board via API."""
+    """Scan an Ashby company's job board via API.
+
+    Ashby API returns jobs under a "jobs" key with publishedAt (ISO format)
+    for recency. Location can be a string or dict with a "name" key.
+    """
     data = _fetch_json(api_url)
     if not data:
         return []
@@ -248,10 +298,22 @@ def scan_all_api_boards(
     platforms: list[str] | None = None,
     max_age_hours: int = 0,
 ) -> list[tuple[JobPosting, 'FilterResult']]:
-    """
-    Scan all API-based job boards (Lever, Greenhouse, Ashby).
-    Returns list of (JobPosting, FilterResult) tuples for relevant jobs.
-    max_age_hours: only include jobs posted within this many hours (0 = no limit).
+    """Main scan orchestrator — scans all platforms and scores every job.
+
+    This is the entry point called by both the CLI (`jobflow scan`) and the
+    web dashboard's "Scan Now" button. It iterates through all configured
+    platforms, collects JobPostings, and scores each one with evaluate_job().
+
+    Args:
+        config: Loaded config dict with job_boards path
+        platforms: Filter to specific platforms (e.g., ["linkedin"]), or None for all
+        max_age_hours: Only include jobs posted within this window (0 = all time).
+                       Passed directly to jobspy's hours_old parameter for LinkedIn,
+                       and used for timestamp filtering on ATS platforms.
+
+    Returns:
+        List of (JobPosting, FilterResult) tuples — includes both passing and
+        rejected jobs so callers can show skip counts.
     """
     from .filter import evaluate_job
 
@@ -342,6 +404,10 @@ def scan_all_api_boards(
 # ---------------------------------------------------------------------------
 # LinkedIn scanner (python-jobspy)
 # ---------------------------------------------------------------------------
+# Uses the python-jobspy library to scrape LinkedIn job listings. Each search
+# term is run as a separate query, results are deduped by URL across terms.
+# linkedin_fetch_description=True fetches the full JD for each job (slow but
+# needed for accurate scoring). Descriptions are truncated to 5K chars.
 
 LINKEDIN_SEARCH_TERMS = [
     "Software Engineer New Grad",
@@ -362,6 +428,8 @@ def scan_linkedin_jobspy(max_age_hours: int = 0) -> list[JobPosting]:
 
     all_jobs = []
     seen_urls = set()
+    # Default to 72h window if no limit specified — LinkedIn's timestamps are
+    # imprecise (often just a date), so a wider window catches more jobs.
     hours = max_age_hours if max_age_hours > 0 else 72
 
     for i, term in enumerate(LINKEDIN_SEARCH_TERMS):
@@ -424,7 +492,7 @@ def scan_linkedin_jobspy(max_age_hours: int = 0) -> list[JobPosting]:
                 count += 1
             console.print(f"[green]{count} new[/green]")
 
-        # Delay between search terms to avoid rate limiting
+        # Random delay (2-4s) between search terms to avoid LinkedIn rate limiting
         if i < len(LINKEDIN_SEARCH_TERMS) - 1:
             time.sleep(random.uniform(2, 4))
 
@@ -462,7 +530,13 @@ def _fetch_text(url: str, retries: int = 3) -> str | None:
 # ---------------------------------------------------------------------------
 
 def scan_github_repos(repos_config: dict, include_kw: list[str]) -> list[JobPosting]:
-    """Scan GitHub new-grad repos by parsing README markdown tables."""
+    """Scan GitHub new-grad repos by parsing README markdown tables.
+
+    These repos (SimplifyJobs, Jobright) maintain community-curated lists of
+    new grad job postings in README tables. We fetch the raw README and parse
+    the HTML or markdown tables to extract job entries. Closed positions
+    (marked with a lock emoji) are skipped.
+    """
     repos = repos_config.get("repos", {})
     all_jobs = []
     seen = set()
@@ -486,7 +560,12 @@ def scan_github_repos(repos_config: dict, include_kw: list[str]) -> list[JobPost
 
 
 def _parse_github_readme(md: str, include_kw: list[str], seen: set) -> list[JobPosting]:
-    """Parse job tables from SimplifyJobs (HTML <tr>/<td>) and Jobright (markdown |) READMEs."""
+    """Parse job tables from SimplifyJobs (HTML <tr>/<td>) and Jobright (markdown |) READMEs.
+
+    Two formats are supported because different repos use different table styles:
+    - SimplifyJobs: HTML tables with <tr>/<td> tags
+    - Jobright: Standard markdown pipe-delimited tables
+    """
     jobs = []
 
     # Try HTML table format first (SimplifyJobs uses <tr>/<td>)
@@ -585,35 +664,58 @@ def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
 # ---------------------------------------------------------------------------
 # Deduplication helpers
 # ---------------------------------------------------------------------------
+# seen_jobs.json tracks which jobs we've already processed to avoid showing
+# the same job twice across scans. Format: {"url_or_key": "EST_timestamp"}.
+#
+# The 48-hour TTL ensures that:
+# 1. Jobs that get reposted/updated resurface after 2 days
+# 2. The file doesn't grow unboundedly (was 5,573 entries before TTL was added)
+# 3. If a job appears in multiple search terms, it's still deduped within a scan
+#
+# All timestamps use US/Eastern timezone for consistency with the user.
 
-def load_seen_jobs(config: dict) -> set:
-    """Load previously seen job URLs from seen_jobs.json."""
+SEEN_TTL_HOURS = 48
+EST = ZoneInfo("US/Eastern")
+
+
+def load_seen_jobs(config: dict) -> dict[str, str]:
+    """Load previously seen job URLs from seen_jobs.json, pruning entries older than 48h."""
     path = config["output_dir"] / "seen_jobs.json"
-    if path.exists():
-        with open(path) as f:
-            return set(json.load(f))
-    return set()
+    if not path.exists():
+        return {}
+    with open(path) as f:
+        data = json.load(f)
+    # Backward compat: convert old list format to dict with current timestamp
+    if isinstance(data, list):
+        now = datetime.now(EST).isoformat()
+        data = {url: now for url in data}
+    # Prune expired entries
+    cutoff = datetime.now(EST) - timedelta(hours=SEEN_TTL_HOURS)
+    return {
+        url: ts for url, ts in data.items()
+        if datetime.fromisoformat(ts) > cutoff
+    }
 
 
-def save_seen_jobs(config: dict, seen: set) -> None:
-    """Save seen job URLs to seen_jobs.json."""
+def save_seen_jobs(config: dict, seen: dict[str, str]) -> None:
+    """Save seen job URLs with timestamps to seen_jobs.json."""
     path = config["output_dir"] / "seen_jobs.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
-        json.dump(sorted(seen), f, indent=2)
+        json.dump(dict(sorted(seen.items())), f, indent=2)
 
 
 def deduplicate_results(
     results: list[tuple[JobPosting, 'FilterResult']],
-    seen: set,
-) -> tuple[list[tuple[JobPosting, 'FilterResult']], set]:
-    """Remove already-seen jobs. Returns (new_results, updated_seen_set)."""
+    seen: dict[str, str],
+) -> tuple[list[tuple[JobPosting, 'FilterResult']], dict[str, str]]:
+    """Remove already-seen jobs. Returns (new_results, updated_seen_dict)."""
     new_results = []
+    now = datetime.now(EST).isoformat()
     for job, filt in results:
-        # Use URL + title as dedup key
         key = job.url if job.url else f"{job.company}_{job.title}"
         if key not in seen:
-            seen.add(key)
+            seen[key] = now
             new_results.append((job, filt))
     return new_results, seen
 

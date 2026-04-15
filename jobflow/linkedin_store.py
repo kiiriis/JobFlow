@@ -1,4 +1,30 @@
-"""LinkedIn jobs local store — merges CI scan results with user status tracking."""
+"""LinkedIn jobs persistent store — the canonical job database.
+
+This module manages data/ci/linkedin_jobs.json, which is the single source of
+truth for all jobs displayed on the /linkedin dashboard. It is updated from
+two sources:
+
+    1. GitHub Actions CI (hourly): scan → scan_results.json → merge_scan_results()
+    2. Web dashboard "Scan Now": _run_scan() → merge_scan_results()
+
+The store is a dict of {dedup_key: job_entry} where dedup_key is typically
+the job URL. Each entry contains all scoring data, user status, and timestamps.
+
+Key operations:
+    - merge_scan_results(): Integrates new scan results with deduplication
+    - prune_old_jobs(): Removes jobs older than 7 days (except Tracking/Applied)
+    - get_filtered_jobs(): Returns sorted, filtered job list for the dashboard
+    - get_time_counts(): Computes dynamic time buckets for the sidebar
+
+User statuses ("Tracking", "Applied", "Not Interested") are preserved across
+merges and never overwritten by scan data. AI scores (from GPT-4o-mini) take
+priority over algorithmic scores when present.
+
+Time buckets adapt to the scan schedule:
+    - Weekday 9AM-9PM: 30-min buckets (matches 30-min scan frequency)
+    - Weekday 9PM-9AM: 60-min buckets (matches 60-min scan frequency)
+    - Weekend: 4-hour buckets (matches 4-hour scan frequency)
+"""
 
 import json
 from datetime import datetime, timedelta, timezone
@@ -7,7 +33,8 @@ from pathlib import Path
 LINKEDIN_STATUSES = ["Tracking", "Applied", "Not Interested"]
 RECOMMENDED_THRESHOLD = 25  # score_pct >= this marks job as "recommended"
 RETENTION_DAYS = 7
-# Statuses that survive the 7-day prune
+# Jobs with these statuses survive the 7-day prune — the user explicitly
+# marked them as important, so we keep them regardless of age.
 KEEP_STATUSES = {"Tracking", "Applied"}
 
 
@@ -39,7 +66,17 @@ def _dedup_key(entry: dict) -> str:
 
 
 def _rescore_entry(entry: dict) -> dict:
-    """Re-score a job entry using the current filter logic, including hard-reject."""
+    """Re-score a job entry using the current filter logic, including hard-reject.
+
+    This duplicates the logic from filter.evaluate_job() but operates on
+    store dict entries instead of JobPosting objects. It runs on every merge
+    so that score changes (e.g., updated filter rules, new synergy combos)
+    retroactively apply to all stored jobs.
+
+    If the job has an AI score (from GPT-4o-mini), that takes priority:
+    ai_score (0-10) is converted to score_pct (0-100%) and only AI-scored
+    jobs can be marked as "recommended" (ai_score >= 7).
+    """
     from .filter import (
         keyword_score, synergy_bonus, level_tag, extract_experience,
         competition_estimate, experience_score, recency_score,
@@ -141,8 +178,16 @@ def _rescore_entry(entry: dict) -> dict:
 def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
     """Merge new jobs into the store with deduplication and re-scoring.
 
-    Dedup: same company+title across different locations → keep one (prefer the one with URL).
-    All jobs are re-scored using the current filter logic.
+    Three-phase merge:
+    1. Pre-dedup scan results by company+title (LinkedIn often returns the same
+       job in multiple locations — keep the one with a URL)
+    2. Merge each job into the store:
+       - Existing job: update last_seen, carry AI scores, preserve user status
+       - New job: create entry with first_seen = date_posted (or merge time)
+    3. Post-dedup the store itself to clean up historical duplicates
+
+    All jobs are re-scored using _rescore_entry() so filter improvements
+    apply retroactively.
     """
     now = datetime.now(timezone.utc).isoformat()
     jobs = store.get("jobs", {})
@@ -280,11 +325,26 @@ def get_filtered_jobs(
     sort_dir: str = "desc",
     tz_offset: int = 0,
 ) -> list[dict]:
-    """Return jobs as a sorted list with filtering.
+    """Return jobs as a sorted list with multi-dimensional filtering.
 
-    time_range: "hour" (last 1h), "today" (since user's midnight), "yesterday"
-    bucket_filter: bucket key like "2026-04-14_13:30" to show jobs from that bucket
-    tz_offset: user's timezone offset in minutes from UTC (e.g. 240 = UTC-4 EDT)
+    This powers the main /linkedin dashboard table. All filters are AND-combined.
+    The tz_offset parameter enables timezone-aware time filters — "today" means
+    the user's local midnight, not UTC midnight.
+
+    Args:
+        status: Filter by user status ("Tracking", "Applied", "Not Interested",
+                "Recommended" — the last is a virtual status based on AI score)
+        level: Filter by detected seniority ("New Grad", "Entry", "Mid", "Unknown")
+        query: Free-text search across company, title, location
+        search_term: Filter by the LinkedIn search term that found this job
+        time_range: "hour" (last 1h), "today" (since local midnight), "yesterday"
+        bucket_filter: Exact bucket key like "2026-04-14_13:30" for drill-down
+        sort_col: Column to sort by (default: last_seen)
+        sort_dir: "asc" or "desc"
+        tz_offset: Browser's timezone offset in minutes from UTC (JS: new Date().getTimezoneOffset())
+
+    Sorting: "Not Interested" jobs are always pushed to the bottom regardless
+    of sort order, since the user has dismissed them.
     """
     jobs = store.get("jobs", {})
     result = []
@@ -586,11 +646,17 @@ def _bucket_key(local_dt: datetime) -> str:
 def get_time_counts(store: dict, tz_offset: int = 0) -> dict:
     """Return counts for time range tabs and dynamic bucket breakdown.
 
-    tz_offset: user's timezone offset in minutes from UTC (e.g. 240 = UTC-4).
-    Buckets are computed in user's local time with dynamic sizing:
-    - Weekday 9AM-9PM: 30 min buckets
-    - Weekday 9PM-9AM: 60 min buckets
-    - Weekend: 4-hour buckets
+    Powers the sidebar time filters on the /linkedin page. Returns:
+    - this_hour: count of jobs first_seen in the last 60 minutes
+    - today: count since user's local midnight
+    - yesterday: count from yesterday (local time)
+    - buckets: list of {key, label, count, minutes, start_iso} for the last 24h
+
+    Bucket sizes match the CI scan schedule so each bucket roughly corresponds
+    to one scan window:
+    - Weekday 9AM-9PM: 30-min buckets (CI scans every 30 min)
+    - Weekday 9PM-9AM: 60-min buckets (CI scans every 60 min)
+    - Weekend: 4-hour buckets (CI scans every 4 hours)
     """
     now_utc = datetime.now(tz=timezone.utc)
     user_tz = timezone(timedelta(minutes=-tz_offset))
@@ -647,7 +713,12 @@ def get_time_counts(store: dict, tz_offset: int = 0) -> dict:
 
 
 def get_sidebar_stats(store: dict) -> dict:
-    """Compute sidebar statistics for the dashboard."""
+    """Compute sidebar statistics for the dashboard.
+
+    Returns match score distribution, top companies by job count,
+    and experience requirement breakdown — all used for the sidebar
+    analytics panel on the /linkedin page.
+    """
     jobs = list(store.get("jobs", {}).values())
     total = len(jobs)
 
@@ -692,7 +763,13 @@ def get_sidebar_stats(store: dict) -> dict:
 
 
 def backfill_job(job: dict) -> dict:
-    """Re-score and fill all fields on a job entry."""
+    """Re-score and fill all fields on a job entry.
+
+    Called on every job during CI merge to ensure consistency. Migrates
+    old status values ("Should Apply", "New") to empty string and adds
+    missing fields like search_term. Then re-scores to apply any filter
+    rule changes.
+    """
     # Migrate old statuses
     if job.get("status") in ("Should Apply", "New"):
         job["status"] = ""

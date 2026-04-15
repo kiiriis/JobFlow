@@ -1,3 +1,18 @@
+"""YAML configuration loader with automatic path resolution.
+
+Two config files exist:
+    config/config.yaml     — Local development (output → data/output/)
+    config/config.ci.yaml  — CI/GitHub Actions (output → data/ci/)
+
+The JOBFLOW_CONFIG env var selects which one to use at runtime.
+All paths in the config are relative to the project root (parent of
+the config/ directory) and get resolved to absolute Path objects here,
+so no other module needs to worry about relative path resolution.
+
+The returned dict includes a special "_root" key pointing to the project
+root, used by web/__init__.py to locate data/ci/linkedin_jobs.json.
+"""
+
 import os
 from pathlib import Path
 
@@ -8,6 +23,15 @@ DEFAULT_CONFIG_PATH = "config/config.yaml"
 
 
 def load_config(path: str = "") -> dict:
+    """Load and validate config, resolving all paths to absolute.
+
+    Resolution strategy: config lives at config/config.yaml, so the project
+    root is config_path.parent.parent. All relative paths in the YAML are
+    resolved against this root.
+
+    Returns a dict with Path objects for: output_dir, csv_path, resume_prompt,
+    job_boards, resumes[variant], and _root.
+    """
     if not path:
         path = os.environ.get("JOBFLOW_CONFIG", DEFAULT_CONFIG_PATH)
     config_path = Path(path)
@@ -24,7 +48,7 @@ def load_config(path: str = "") -> dict:
         if key not in config:
             raise ValueError(f"Missing required config key: {key}")
 
-    # Resolve paths relative to project root (parent of config dir)
+    # Project root = parent of config/ directory (e.g., JobFlow/)
     root = config_path.parent.parent
     config["_root"] = root
     config["output_dir"] = root / config["output_dir"]
@@ -34,6 +58,7 @@ def load_config(path: str = "") -> dict:
     if "job_boards" in config:
         config["job_boards"] = root / config["job_boards"]
 
+    # Resolve each resume variant path (se, ml, appdev)
     for variant, rel_path in config["resumes"].items():
         config["resumes"][variant] = root / rel_path
 

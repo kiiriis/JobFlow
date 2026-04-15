@@ -1,3 +1,12 @@
+"""Job description parser — structures raw scraped text into a JobPosting.
+
+This is a thin wrapper used by the `jobflow apply --paste` command. The user
+pastes raw JD text, and this module wraps it into a JobPosting object with
+the metadata provided via CLI flags (--title, --company, --location).
+
+Also saves the structured JD to a text file for reference/auditing.
+"""
+
 from pathlib import Path
 
 from .models import JobPosting

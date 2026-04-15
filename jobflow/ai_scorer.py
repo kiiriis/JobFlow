@@ -1,4 +1,24 @@
-"""AI-powered job relevance scoring using OpenAI GPT-4o-mini."""
+"""AI-powered job relevance scoring using OpenAI GPT-4o-mini.
+
+This is an optional scoring layer that runs AFTER the algorithmic filter
+(filter.py). While the algo scorer uses keyword matching and rule-based
+heuristics, the AI scorer reads the full JD and makes a holistic judgment.
+
+How it integrates:
+    1. scan command calls ai_score_jobs() after saving scan_results.json
+    2. Each job gets an ai_score (0-10) and ai_reason (one sentence)
+    3. In linkedin_store._rescore_entry(), AI scores override algo scores:
+       ai_score * 10 → score_pct (e.g., AI score 8 → 80%)
+    4. Only AI-scored jobs can be marked as "recommended" (ai_score >= 7)
+
+The scorer silently skips if:
+    - OPENAI_API_KEY env var is not set
+    - openai package is not installed
+    - config/profile.txt doesn't exist (no candidate profile to score against)
+    - A job is already scored (idempotent)
+
+Cost: ~$0.001 per job (GPT-4o-mini, ~500 input tokens, 100 output tokens)
+"""
 
 import json
 import os

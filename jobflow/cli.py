@@ -1,3 +1,25 @@
+"""Typer CLI — the command-line interface for all JobFlow operations.
+
+Commands:
+    jobflow scan      — Scan job boards (LinkedIn, Lever, Greenhouse, Ashby, GitHub)
+    jobflow apply     — Process a single job posting (scrape → filter → tailor prompt)
+    jobflow save      — Merge tailored LaTeX sections + compile PDF
+    jobflow process   — Process jobs from scan results interactively
+    jobflow list      — View tracked applications
+    jobflow status    — Update application status
+    jobflow init      — First-time setup (create config, directories, CSV)
+    jobflow web       — Launch the Flask dashboard
+
+The scan command is the most-used: it's called by GitHub Actions hourly
+(`jobflow scan --platform linkedin --new --save --hours 4`) and by the
+web dashboard's "Scan Now" button.
+
+The apply → save workflow is for manual job processing:
+    1. `jobflow apply <url> --paste` → scrape JD, score, build tailoring prompt
+    2. User feeds the prompt to Claude to get tailored LaTeX
+    3. `jobflow save --dir <path>` → merge preamble + tailored sections, compile PDF
+"""
+
 import os
 from datetime import date
 from pathlib import Path

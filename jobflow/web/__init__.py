@@ -1,4 +1,39 @@
-"""JobFlow Web Dashboard — Flask app factory and routes."""
+"""JobFlow Web Dashboard — Flask app factory with HTMX-powered routes.
+
+This is the main web interface deployed on Render.com. It provides:
+
+Pages:
+    /           → Redirects to /linkedin
+    /linkedin   → Main job feed with filtering, sorting, time buckets, status management
+    /scan       → Trigger job scans from the browser
+    /tailor     → Paste a JD → Claude tailors your resume → download PDF
+    /boards     → ATS platform scanner (placeholder)
+    /health     → JSON health check for uptime monitoring
+
+Architecture:
+    - HTMX for dynamic updates (no full-page reloads)
+    - Partial templates in _partials/ return HTML fragments
+    - Background threads for long-running operations (scan, tailor)
+    - In-memory session store for tailor sessions (max 20, auto-evict)
+
+Data flow:
+    1. /api/scan/trigger → starts background scan thread
+    2. _run_scan() calls scan_all_api_boards() + filter + dedup
+    3. Results saved to scan_results.json and merged into linkedin_jobs.json
+    4. /api/linkedin/jobs reads linkedin_jobs.json and returns filtered HTML table
+    5. Response headers carry count metadata (X-Counts, X-Level-Counts, etc.)
+       so the JS can update sidebar chips without a separate request
+
+Auto-pull (local only):
+    A background thread runs `git pull --rebase` every hour to pick up CI scan
+    results, then re-merges into the store. Disabled on Render (data updates
+    via redeploy triggered by CI push).
+
+Tailor sessions:
+    Each tailoring request creates an in-memory session with a UUID. The session
+    tracks: JD text, variant, Claude output, PDF path, feedback history, and
+    cancellation state. Sessions auto-evict when exceeding MAX_SESSIONS (20).
+"""
 
 import json
 import os
@@ -37,7 +72,9 @@ from ..linkedin_store import (
 )
 
 
-# Shared scan state for background thread
+# Shared scan state for the background scan thread.
+# Since Flask runs in a single process (gunicorn -w 1), this dict is safe
+# for thread communication without locks — only one scan runs at a time.
 scan_state = {
     "running": False,
     "results": None,
@@ -47,7 +84,9 @@ scan_state = {
     "skipped": 0,
 }
 
-# In-memory store for tailor sessions
+# In-memory store for tailor sessions.
+# Keyed by UUID session_id. Each session tracks the full state of a resume
+# tailoring request, including the Claude subprocess, output .tex, and PDF.
 tailor_sessions = {}
 
 MAX_SESSIONS = 20  # Evict oldest sessions beyond this
@@ -582,7 +621,15 @@ def create_app():
 
 
 def _run_scan(config, platforms, hours, new_only):
-    """Run scan in background thread."""
+    """Run scan in background thread.
+
+    Called when the user clicks "Start Scan" on the /scan page. Runs the full
+    scan pipeline: fetch jobs → score → dedup → save → merge into linkedin store.
+
+    Only jobs passing evaluate_job() (should_apply=True) are saved to
+    scan_results.json and merged into linkedin_jobs.json. Rejected jobs are
+    counted in scan_state for the UI summary but not persisted.
+    """
     from ..scanner import scan_all_api_boards, load_seen_jobs, save_seen_jobs, deduplicate_results
 
     scan_state["running"] = True
@@ -672,7 +719,16 @@ def _parse_meta_line(output: str) -> tuple[str, str, str, str]:
 
 
 def _build_tailor_prompt(jd_text, base_tex, master_prompt):
-    """Build prompt that asks Claude to edit the .tex file in-place."""
+    """Build prompt that asks Claude to output a COMPLETE tailored .tex file.
+
+    Unlike the CLI's build_tailor_prompt() (which asks for sections only),
+    this prompt asks Claude to output the entire file from \\documentclass to
+    \\end{document}. This avoids the preamble merge step and gives Claude
+    full control over the output.
+
+    The META line requirement (first line of output) lets us extract company/role
+    metadata without a separate API call.
+    """
     return (
         f"{master_prompt}\n\n"
         f"---\n\n"
@@ -745,7 +801,15 @@ def _run_claude(session, prompt):
 
 
 def _run_tailor(session_id, config):
-    """Run initial resume tailoring in background thread."""
+    """Run initial resume tailoring in background thread.
+
+    Pipeline: load base .tex → build prompt → run Claude CLI → parse META line
+    → extract .tex → save → compile PDF → auto-condense if >1 page.
+
+    The Claude CLI is run as a subprocess (`claude -p <prompt> --model <model>`),
+    not via API, because the web server may not have an API key but the user
+    has Claude Code installed.
+    """
     session = tailor_sessions[session_id]
     try:
         jd_text = session["jd_text"]
@@ -808,7 +872,12 @@ def _run_tailor(session_id, config):
 
 
 def _auto_condense(session_id, config):
-    """Automatically condense a resume that spilled to 2+ pages."""
+    """Automatically condense a resume that spilled to 2+ pages.
+
+    Called when _run_tailor() detects the compiled PDF has >1 page. Sends
+    the current .tex back to Claude with instructions to shorten bullet points
+    and reduce skill counts while preserving all sections and entries.
+    """
     session = tailor_sessions[session_id]
     session["iteration"] += 1
     try:
@@ -868,7 +937,13 @@ def _auto_condense(session_id, config):
 
 
 def _run_tailor_refine(session_id, config, feedback):
-    """Run resume refinement with user feedback in background thread."""
+    """Run resume refinement with user feedback in background thread.
+
+    Called when the user submits feedback on a completed tailor session.
+    Uses the PREVIOUS .tex output (not the original base) as the starting
+    point, so edits are cumulative across iterations. The user can refine
+    as many times as needed.
+    """
     session = tailor_sessions[session_id]
     try:
         jd_text = session["jd_text"]

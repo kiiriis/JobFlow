@@ -1,3 +1,19 @@
+"""pdflatex compilation wrapper — compiles .tex files to PDF.
+
+Used by both the CLI (jobflow save) and web dashboard (/api/tailor/generate)
+to compile tailored resumes into PDFs. Runs pdflatex twice to resolve
+cross-references (page numbers, hyperlinks).
+
+Requirements:
+    - pdflatex must be on PATH (from MacTeX on macOS, texlive on Linux)
+    - Not available on Render free tier — the web dashboard will show the
+      .tex file but skip PDF compilation if pdflatex is missing.
+
+The get_page_count() function uses a regex on raw PDF bytes to count pages.
+This is used by the auto-condense feature: if a tailored resume compiles to
+2+ pages, Claude is asked to shorten it to fit on exactly one page.
+"""
+
 import re
 import shutil
 import subprocess

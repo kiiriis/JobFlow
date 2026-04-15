@@ -461,18 +461,42 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
         return _reject("No visa sponsorship or requires citizenship/clearance")
 
     # ── 4. Non-US location ──
-    non_us_patterns = [
-        r"\bindia\b", r"\bgermany\b", r"\bfrance\b", r"\bbrazil\b",
-        r"\bcanada\b", r"\bjapan\b", r"\bkorea\b", r"\bsingapore\b",
-        r"\baustralia\b", r"\buk\b", r"\bunited\s+kingdom\b", r"\blondon\b",
-        r"\bberlin\b", r"\bdublin\b", r"\bparis\b", r"\bamsterdam\b",
-        r"\bdenmark\b", r"\bserbia\b", r"\bbelgrade\b",
-        r"\btoronto\b", r"\bvancouver\b", r"\bbangalore\b",
-        r"\bmumbai\b", r"\bluxembourg\b", r"\bsweden\b",
-        r"\bstockholm\b", r"\bnetherlands\b", r"\bmelbourne\b",
-        r"\bsydney\b", r"\bseoul\b", r"\btel\s+aviv\b", r"\bisrael\b",
+    # Allowlist approach: if location doesn't match any US signal, reject it.
+    # This catches Peru, Brazil, Canada, etc. without needing to enumerate them.
+    US_STATE_ABBREVS = {
+        "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN",
+        "IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV",
+        "NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN",
+        "TX","UT","VT","VA","WA","WV","WI","WY","DC",
+    }
+    us_location_patterns = [
+        r"\bunited\s+states\b", r"\busa\b", r"\bus\b", r"\bu\.s\.?\b",
+        r"\bremote\b", r"\bhybrid\b",
+        # Major US cities
+        r"\bnew\s+york\b", r"\bsan\s+francisco\b", r"\bseattle\b",
+        r"\baustin\b", r"\bboston\b", r"\bchicago\b", r"\blos\s+angeles\b",
+        r"\bdenver\b", r"\batlanta\b", r"\bsunnyvale\b", r"\bmountain\s+view\b",
+        r"\bpalo\s+alto\b", r"\bsan\s+jose\b", r"\bsan\s+diego\b",
+        r"\bportland\b", r"\bphiladelphia\b", r"\bwashington\b",
+        r"\braleigh\b", r"\bcharlotte\b", r"\bmiami\b", r"\bdallas\b",
+        r"\bhouston\b", r"\bphoenix\b", r"\bsalt\s+lake\b", r"\bdetroit\b",
+        r"\bminneapolis\b", r"\bpittsburgh\b", r"\bcleveland\b", r"\bcolumbus\b",
+        r"\bindianapolis\b", r"\bnashville\b", r"\bsan\s+antonio\b",
+        r"\bjacksonville\b", r"\bmemphis\b", r"\bsacramento\b",
+        r"\bkansas\s+city\b", r"\btampa\b", r"\borlando\b", r"\bcincinnati\b",
+        r"\bst\.?\s*louis\b", r"\bsaint\s+louis\b", r"\bbaltimore\b",
+        r"\brichmond\b", r"\bdurham\b", r"\bchapel\s+hill\b", r"\bboulder\b",
+        r"\bann\s+arbor\b", r"\bprovo\b", r"\bredmond\b", r"\bkirkland\b",
+        r"\birvine\b", r"\bsanta\s+clara\b", r"\bcupertino\b", r"\bmenlo\s+park\b",
+        r"\bcambridge\b", r"\bbellevue\b", r"\barlington\b",
     ]
-    if has_match(job.location.lower(), non_us_patterns):
+    loc_lower = job.location.lower()
+    # Check for US state abbreviation (e.g. "CA", "NY") — must be real US state
+    has_state_abbrev = any(
+        word in US_STATE_ABBREVS
+        for word in re.findall(r"\b[A-Z]{2}\b", job.location)
+    )
+    if loc_lower and not has_match(loc_lower, us_location_patterns) and not has_state_abbrev:
         return _reject(f"Non-US location: {job.location}")
 
     # ── 5. Overqualified experience (hard reject) ──

@@ -111,7 +111,7 @@ class TestHardRejectSponsorship:
 
     def test_sponsorship_positive_passes(self):
         """Job that offers sponsorship should NOT be rejected."""
-        job = JobPosting(url="x", title="SWE", company="Acme", location="SF", description="Python. Will sponsor H1B visa.")
+        job = JobPosting(url="x", title="SWE", company="Acme", location="San Francisco, CA", description="Python. Will sponsor H1B visa.")
         result = evaluate_job(job)
         assert result.score > 0
 
@@ -143,7 +143,7 @@ class TestHardRejectExperience:
         "Entry level, 2 years experience preferred.",
     ])
     def test_entry_experience_passes(self, desc):
-        job = JobPosting(url="x", title="Junior SWE", company="Acme", location="US", description=f"Python. {desc}")
+        job = JobPosting(url="x", title="Junior SWE", company="Acme", location="Remote, US", description=f"Python. {desc}")
         result = evaluate_job(job)
         assert result.score > 0
 

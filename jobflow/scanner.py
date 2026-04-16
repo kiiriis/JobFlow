@@ -23,6 +23,7 @@ Deduplication (seen_jobs.json):
 """
 
 import json
+import os
 import random
 import re
 import ssl
@@ -677,9 +678,14 @@ def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
 SEEN_TTL_HOURS = 48
 EST = ZoneInfo("US/Eastern")
 
+_USE_DB = bool(os.environ.get("DATABASE_URL"))
+
 
 def load_seen_jobs(config: dict) -> dict[str, str]:
-    """Load previously seen job URLs from seen_jobs.json, pruning entries older than 48h."""
+    """Load previously seen job URLs, pruning entries older than 48h."""
+    if _USE_DB:
+        from .db import load_seen_jobs as db_load
+        return db_load()
     path = config["output_dir"] / "seen_jobs.json"
     if not path.exists():
         return {}
@@ -698,7 +704,11 @@ def load_seen_jobs(config: dict) -> dict[str, str]:
 
 
 def save_seen_jobs(config: dict, seen: dict[str, str]) -> None:
-    """Save seen job URLs with timestamps to seen_jobs.json."""
+    """Save seen job URLs with timestamps."""
+    if _USE_DB:
+        from .db import save_seen_jobs_bulk as db_save
+        db_save(seen)
+        return
     path = config["output_dir"] / "seen_jobs.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:

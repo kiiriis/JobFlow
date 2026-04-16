@@ -9,5 +9,7 @@ services:
         value: config/config.yaml
       - key: PYTHON_VERSION
         value: "3.12"
+      - key: DATABASE_URL
+        sync: false  # Set manually in Render dashboard (Neon connection string)
     plan: free
     autoDeploy: true

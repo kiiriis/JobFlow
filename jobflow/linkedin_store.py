@@ -1,34 +1,31 @@
 """LinkedIn jobs persistent store — the canonical job database.
 
-This module manages data/ci/linkedin_jobs.json, which is the single source of
-truth for all jobs displayed on the /linkedin dashboard. It is updated from
-two sources:
+Dual-backend: uses PostgreSQL (Neon) when DATABASE_URL is set, falls back
+to JSON files otherwise. This allows local dev without a database while
+Render + CI use persistent storage.
 
-    1. GitHub Actions CI (hourly): scan → scan_results.json → merge_scan_results()
-    2. Web dashboard "Scan Now": _run_scan() → merge_scan_results()
+When DATABASE_URL is set:
+    - All public functions delegate to jobflow.db
+    - TTL: jobs auto-expire after 2 days unless status is Tracking/Applied
+    - No file I/O — all data lives in PostgreSQL
 
-The store is a dict of {dedup_key: job_entry} where dedup_key is typically
-the job URL. Each entry contains all scoring data, user status, and timestamps.
+When DATABASE_URL is NOT set:
+    - Original JSON file behavior (data/ci/linkedin_jobs.json)
+    - 7-day prune for old jobs
 
 Key operations:
     - merge_scan_results(): Integrates new scan results with deduplication
-    - prune_old_jobs(): Removes jobs older than 7 days (except Tracking/Applied)
+    - prune_old_jobs(): Removes old jobs (TTL in DB, 7-day in JSON)
     - get_filtered_jobs(): Returns sorted, filtered job list for the dashboard
     - get_time_counts(): Computes dynamic time buckets for the sidebar
-
-User statuses ("Tracking", "Applied", "Not Interested") are preserved across
-merges and never overwritten by scan data. AI scores (from GPT-4o-mini) take
-priority over algorithmic scores when present.
-
-Time buckets adapt to the scan schedule:
-    - Weekday 9AM-9PM: 30-min buckets (matches 30-min scan frequency)
-    - Weekday 9PM-9AM: 60-min buckets (matches 60-min scan frequency)
-    - Weekend: 4-hour buckets (matches 4-hour scan frequency)
 """
 
 import json
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+USE_DB = bool(os.environ.get("DATABASE_URL"))
 
 LINKEDIN_STATUSES = ["Tracking", "Applied", "Not Interested"]
 RECOMMENDED_THRESHOLD = 25  # score_pct >= this marks job as "recommended"

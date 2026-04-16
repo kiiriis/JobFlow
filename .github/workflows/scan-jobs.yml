@@ -35,12 +35,37 @@ jobs:
         env:
           JOBFLOW_CONFIG: config/config.ci.yaml
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "Starting scan at $(date -u)"
           jobflow scan --platform linkedin --new --save --hours 4 2>&1 || true
           echo "Scan finished at $(date -u)"
 
-      - name: Merge into linkedin_jobs.json
+      - name: Merge into database
+        if: ${{ env.DATABASE_URL != '' }}
+        env:
+          JOBFLOW_CONFIG: config/config.ci.yaml
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python -c "
+          from pathlib import Path
+          from jobflow.db import init_db, merge_scan_results, prune_expired_jobs
+          import json
+
+          init_db()
+          scan_path = Path('data/ci/scan_results.json')
+          if not scan_path.exists():
+              print('No scan_results.json found, skipping merge')
+              exit(0)
+
+          scan_data = json.loads(scan_path.read_text())
+          new_count = merge_scan_results(scan_data)
+          pruned = prune_expired_jobs()
+          print(f'Merged: {new_count} new jobs, pruned {pruned} expired')
+          "
+
+      - name: Merge into linkedin_jobs.json (fallback)
+        if: ${{ env.DATABASE_URL == '' }}
         env:
           JOBFLOW_CONFIG: config/config.ci.yaml
         run: |
@@ -68,6 +93,7 @@ jobs:
           "
 
       - name: Commit results
+        if: ${{ env.DATABASE_URL == '' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

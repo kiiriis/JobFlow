@@ -69,6 +69,7 @@ from ..linkedin_store import (
     get_time_counts,
     backfill_job,
     LINKEDIN_STATUSES,
+    USE_DB,
 )
 
 
@@ -155,7 +156,7 @@ def create_app():
         if scan_state["running"]:
             return jsonify({"error": "Scan already running"}), 409
 
-        data = request.form or request.json or {}
+        data = request.form or request.get_json(silent=True) or {}
         platform = data.get("platform", "") or None
         hours = int(data.get("hours", 0) or 0)
         new_only = data.get("new_only") in ("true", "on", True, "1")
@@ -197,7 +198,7 @@ def create_app():
 
     @app.route("/api/scan/track", methods=["POST"])
     def api_track_job():
-        data = request.form or request.json or {}
+        data = request.form or request.get_json(silent=True) or {}
         added = append_job(
             config["csv_path"],
             company=data.get("company", ""),
@@ -475,8 +476,16 @@ def create_app():
     linkedin_store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
     scan_results_path = config["_root"] / "data" / "ci" / "scan_results.json"
 
+    # Initialize DB if available
+    if USE_DB:
+        from ..db import init_db as _init_db
+        from .. import db as _db
+        _init_db()
+
     def _do_linkedin_merge():
-        """Merge scan_results.json into linkedin_jobs.json."""
+        """Merge scan_results.json into linkedin_jobs.json (JSON backend only)."""
+        if USE_DB:
+            return  # DB backend handles merges directly
         if not scan_results_path.exists():
             return
         try:
@@ -486,15 +495,15 @@ def create_app():
         store = load_store(linkedin_store_path)
         store = merge_scan_results(store, scan_data)
         store = prune_old_jobs(store)
-        # Backfill new fields on existing jobs
         for key in store.get("jobs", {}):
             store["jobs"][key] = backfill_job(store["jobs"][key])
         save_store(linkedin_store_path, store)
 
-    # Merge once on startup
-    _do_linkedin_merge()
+    # Merge once on startup (JSON backend only)
+    if not USE_DB:
+        _do_linkedin_merge()
 
-    # Auto-pull thread
+    # Auto-pull thread (JSON backend, local dev only)
     def _auto_pull_loop():
         while True:
             time.sleep(3600)
@@ -509,8 +518,7 @@ def create_app():
             except Exception:
                 pass
 
-    # Only run auto-pull locally (not on Render — data updates via redeploy)
-    if not os.environ.get("RENDER"):
+    if not USE_DB and not os.environ.get("RENDER"):
         pull_thread = threading.Thread(target=_auto_pull_loop, daemon=True)
         pull_thread.start()
 
@@ -520,11 +528,19 @@ def create_app():
 
     @app.route("/linkedin")
     def linkedin_page():
-        store = load_store(linkedin_store_path)
-        counts = get_status_counts(store)
-        level_counts = get_level_counts(store)
-        search_terms = get_search_terms(store)
-        time_counts = get_time_counts(store)
+        if USE_DB:
+            counts = _db.get_status_counts()
+            level_counts = _db.get_level_counts()
+            search_terms = _db.get_search_terms()
+            time_counts = _db.get_time_counts()
+            last_updated = _db.get_last_updated()
+        else:
+            store = load_store(linkedin_store_path)
+            counts = get_status_counts(store)
+            level_counts = get_level_counts(store)
+            search_terms = get_search_terms(store)
+            time_counts = get_time_counts(store)
+            last_updated = store.get("last_updated", "")
         return render_template(
             "linkedin.html",
             statuses=LINKEDIN_STATUSES,
@@ -532,7 +548,7 @@ def create_app():
             level_counts=level_counts,
             search_terms=search_terms,
             time_counts=time_counts,
-            last_updated=store.get("last_updated", ""),
+            last_updated=last_updated,
         )
 
     @app.route("/api/linkedin/jobs")
@@ -546,31 +562,35 @@ def create_app():
         sort_col = request.args.get("sort", "last_seen")
         sort_dir = request.args.get("dir", "desc")
         tz_offset = int(request.args.get("tz", "0") or "0")  # minutes from UTC
-        store = load_store(linkedin_store_path)
-        jobs = get_filtered_jobs(
-            store,
-            status=status_filter,
-            level=level_filter,
-            query=query,
-            search_term=search_term,
-            time_range=time_range,
-            bucket_filter=bucket_filter,
-            sort_col=sort_col,
-            sort_dir=sort_dir,
-            tz_offset=tz_offset,
-        )
-        # Filtered counts: respect active time/search filters so chips stay consistent
-        fc = get_filtered_counts(
-            store,
-            time_range=time_range,
-            bucket_filter=bucket_filter,
-            tz_offset=tz_offset,
-            query=query,
-            search_term=search_term,
-        )
+
+        if USE_DB:
+            jobs = _db.get_filtered_jobs(
+                status=status_filter, level=level_filter, query=query,
+                search_term=search_term, time_range=time_range,
+                bucket_filter=bucket_filter, sort_col=sort_col,
+                sort_dir=sort_dir, tz_offset=tz_offset,
+            )
+            fc = _db.get_filtered_counts(
+                time_range=time_range, bucket_filter=bucket_filter,
+                tz_offset=tz_offset, query=query, search_term=search_term,
+            )
+            time_counts = _db.get_time_counts(tz_offset=tz_offset)
+        else:
+            store = load_store(linkedin_store_path)
+            jobs = get_filtered_jobs(
+                store, status=status_filter, level=level_filter, query=query,
+                search_term=search_term, time_range=time_range,
+                bucket_filter=bucket_filter, sort_col=sort_col,
+                sort_dir=sort_dir, tz_offset=tz_offset,
+            )
+            fc = get_filtered_counts(
+                store, time_range=time_range, bucket_filter=bucket_filter,
+                tz_offset=tz_offset, query=query, search_term=search_term,
+            )
+            time_counts = get_time_counts(store, tz_offset=tz_offset)
+
         counts = fc["status"]
         level_counts = fc["level"]
-        time_counts = get_time_counts(store, tz_offset=tz_offset)
         resp = make_response(render_template(
             "_partials/linkedin_tbody.html",
             jobs=jobs,
@@ -590,13 +610,17 @@ def create_app():
 
     @app.route("/api/linkedin/jobs/<path:key>/status", methods=["PATCH"])
     def api_linkedin_status(key):
-        data = request.form or request.json or {}
+        data = request.form or request.get_json(silent=True) or {}
         new_status = data.get("status", "")
-        store = load_store(linkedin_store_path)
-        if update_job_status(store, key, new_status):
-            save_store(linkedin_store_path, store)
-        job = store.get("jobs", {}).get(key, {})
-        job["_key"] = key
+        if USE_DB:
+            _db.update_job_status(key, new_status)
+            job = _db.get_job(key) or {"_key": key}
+        else:
+            store = load_store(linkedin_store_path)
+            if update_job_status(store, key, new_status):
+                save_store(linkedin_store_path, store)
+            job = store.get("jobs", {}).get(key, {})
+            job["_key"] = key
         return render_template(
             "_partials/linkedin_row.html",
             job=job,
@@ -605,6 +629,13 @@ def create_app():
 
     @app.route("/api/linkedin/refresh", methods=["POST"])
     def api_linkedin_refresh():
+        if USE_DB:
+            # DB is always fresh — just prune expired jobs
+            try:
+                _db.prune_expired_jobs()
+                return '<span style="color:#5cb85c;">Refreshed!</span>'
+            except Exception as e:
+                return f'<span style="color:#d9534f;">Error: {e}</span>'
         try:
             subprocess.run(
                 ["git", "pull", "--rebase", "origin", "main"],
@@ -677,16 +708,20 @@ def _run_scan(config, platforms, hours, new_only):
         results_path.write_text(json.dumps(output, indent=2))
         scan_state["results"] = output
 
-        # Merge into linkedin_jobs.json so new jobs appear in the feed
+        # Merge into store so new jobs appear in the feed
         try:
-            store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
-            store = load_store(store_path)
-            store = merge_scan_results(store, output)
-            store = prune_old_jobs(store)
-            for key in store.get("jobs", {}):
-                store["jobs"][key] = backfill_job(store["jobs"][key])
-            save_store(store_path, store)
-            scan_state["new_jobs"] = len(output)
+            if USE_DB:
+                from ..db import merge_scan_results as db_merge
+                scan_state["new_jobs"] = db_merge(output)
+            else:
+                store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
+                store = load_store(store_path)
+                store = merge_scan_results(store, output)
+                store = prune_old_jobs(store)
+                for key in store.get("jobs", {}):
+                    store["jobs"][key] = backfill_job(store["jobs"][key])
+                save_store(store_path, store)
+                scan_state["new_jobs"] = len(output)
         except Exception:
             pass
 

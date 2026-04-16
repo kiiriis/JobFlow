@@ -466,7 +466,7 @@ function scanNow(btn) {
     fetch('/api/scan/trigger', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'platform=linkedin&hours=1&new_only=true'
+        body: 'hours=4&new_only=true'
     }).then(function() {
         pollScanStatus(btn);
     });

@@ -170,11 +170,12 @@ def score_single_job(client, profile: str, job: dict, max_retries: int = 3) -> d
     return None
 
 
-def ai_score_jobs(jobs: list[dict], config_root: Path | None = None) -> list[dict]:
+def ai_score_jobs(jobs: list[dict], config_root: Path | None = None, max_score: int = 30) -> list[dict]:
     """Score a list of job dicts with Llama 4 Scout via Groq. Modifies jobs in-place.
 
-    Adds ai_score (1-10) and ai_reason to each job.
+    Adds ai_score (1-10), ai_reason, and ai_model to each job.
     Silently skips if GROQ_API_KEY is not set or groq is not installed.
+    Caps at max_score jobs per call to avoid blocking scans on rate limits.
     """
     client = _get_client()
     if not client:
@@ -185,7 +186,10 @@ def ai_score_jobs(jobs: list[dict], config_root: Path | None = None) -> list[dic
         return jobs
 
     scored = 0
+    failures = 0
     for job in jobs:
+        if scored >= max_score:
+            break
         # Skip if already scored
         if job.get("ai_score"):
             continue
@@ -197,5 +201,10 @@ def ai_score_jobs(jobs: list[dict], config_root: Path | None = None) -> list[dic
             scored += 1
             # Groq free tier: 30 RPM — 5s sleep = 12 RPM, safe margin
             time.sleep(5)
+        else:
+            failures += 1
+            # Stop early if hitting repeated failures (likely rate limited)
+            if failures >= 3:
+                break
 
     return jobs

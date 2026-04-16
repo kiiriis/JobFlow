@@ -720,15 +720,6 @@ def _run_scan(config, platforms, hours, new_only):
         config["output_dir"].mkdir(parents=True, exist_ok=True)
         results_path.write_text(json.dumps(output, indent=2))
 
-        # AI scoring with Llama 3.3 70B via Groq
-        if os.environ.get("GROQ_API_KEY"):
-            try:
-                from ..ai_scorer import ai_score_jobs
-                ai_score_jobs(output, config.get("_root"))
-                results_path.write_text(json.dumps(output, indent=2))
-            except Exception:
-                pass  # Graceful degradation — scoring failure shouldn't block scan
-
         scan_state["results"] = output
 
         # Merge into store so new jobs appear in the feed

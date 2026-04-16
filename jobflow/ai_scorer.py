@@ -193,8 +193,9 @@ def ai_score_jobs(jobs: list[dict], config_root: Path | None = None) -> list[dic
         if result:
             job["ai_score"] = result["ai_score"]
             job["ai_reason"] = result["ai_reason"]
+            job["ai_model"] = "groq"
             scored += 1
-            # Groq free tier: 30 RPM, 30K TPM — ~1.5K tokens/req = ~20 req/min
-            time.sleep(3)
+            # Groq free tier: 30 RPM — 5s sleep = 12 RPM, safe margin
+            time.sleep(5)
 
     return jobs

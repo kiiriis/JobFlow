@@ -575,7 +575,7 @@ def create_app():
                 time_range=time_range, bucket_filter=bucket_filter,
                 tz_offset=tz_offset, query=query, search_term=search_term,
             )
-            time_counts = _db.get_time_counts(tz_offset=tz_offset)
+            time_counts = _db.get_time_counts(tz_offset=tz_offset, time_range=time_range)
         else:
             store = load_store(linkedin_store_path)
             jobs = get_filtered_jobs(
@@ -588,7 +588,7 @@ def create_app():
                 store, time_range=time_range, bucket_filter=bucket_filter,
                 tz_offset=tz_offset, query=query, search_term=search_term,
             )
-            time_counts = get_time_counts(store, tz_offset=tz_offset)
+            time_counts = get_time_counts(store, tz_offset=tz_offset, time_range=time_range)
 
         counts = fc["status"]
         level_counts = fc["level"]

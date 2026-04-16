@@ -143,6 +143,9 @@
 .match-high { color: #5ee8a8; }
 .match-med { color: #ffd066; }
 .match-low { color: #8fa4be; }
+.ai-model-badge { display:inline-block; font-size:9px; font-weight:700; padding:1px 4px; border-radius:3px; margin-left:4px; vertical-align:middle; opacity:0.7; }
+.ai-model-claude { background:#d4a574; color:#1a1a2e; }
+.ai-model-groq { background:#5b9bd5; color:#1a1a2e; }
 
 /* Score */
 .score-val { font-size: 0.82rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
@@ -425,10 +428,10 @@ function dismissJob(btn, key) {
     });
 }
 function setBucket(key) {
-    document.getElementById('filter-bucket').value = key;
-    document.getElementById('filter-time').value = '';
-    document.querySelectorAll('.time-tab').forEach(function(t) { t.classList.remove('active'); });
-    document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.toggle('active', c.dataset.bucket === key); });
+    var current = document.getElementById('filter-bucket').value;
+    // Toggle: clicking active bucket deselects it
+    document.getElementById('filter-bucket').value = (current === key) ? '' : key;
+    document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.toggle('active', c.dataset.bucket === document.getElementById('filter-bucket').value); });
     triggerFilter();
 }
 

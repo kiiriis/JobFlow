@@ -128,14 +128,14 @@ def main():
 
     init_db()
 
-    # Fetch unscored jobs
+    # Fetch unscored + Groq-scored jobs (Claude rescores Groq, skips already-Claude-scored)
     conn = get_conn()
     try:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT url, company, title, location, description_preview
+                SELECT url, company, title, location, description_preview, ai_model
                 FROM jobs
-                WHERE ai_score IS NULL
+                WHERE ai_score IS NULL OR ai_model = 'groq'
                 ORDER BY first_seen DESC
             """)
             rows = cur.fetchall()
@@ -143,7 +143,11 @@ def main():
         put_conn(conn)
 
     total = len(rows)
-    print(f"Found {total} unscored jobs ({(total + BATCH_SIZE - 1) // BATCH_SIZE} batches of {BATCH_SIZE})")
+    unscored = sum(1 for r in rows if r[5] is None)
+    groq_rescore = sum(1 for r in rows if r[5] == 'groq')
+    batches = (total + BATCH_SIZE - 1) // BATCH_SIZE
+    print(f"Found {total} jobs to score ({batches} batches of {BATCH_SIZE})")
+    print(f"  {unscored} unscored, {groq_rescore} Groq→Claude rescore")
     if not rows:
         print("Nothing to score!")
         return
@@ -177,7 +181,8 @@ def main():
                     cur.execute("""
                         UPDATE jobs
                         SET ai_score = %s, ai_reason = %s,
-                            score_pct = %s, recommended = %s
+                            score_pct = %s, recommended = %s,
+                            ai_model = 'claude'
                         WHERE url = %s
                     """, (ai_score, ai_reason, score_pct, recommended, url))
 

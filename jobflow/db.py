@@ -94,6 +94,7 @@ def init_db():
                     score_pct           INTEGER NOT NULL DEFAULT 0,
                     ai_score            INTEGER,
                     ai_reason           TEXT NOT NULL DEFAULT '',
+                    ai_model            TEXT,
                     recommended         BOOLEAN NOT NULL DEFAULT FALSE,
                     level               TEXT NOT NULL DEFAULT 'Unknown',
                     min_exp             INTEGER,
@@ -121,6 +122,8 @@ def init_db():
                 );
                 CREATE INDEX IF NOT EXISTS idx_seen_jobs_seen_at ON seen_jobs (seen_at);
             """)
+            # Migration for existing databases
+            cur.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS ai_model TEXT")
         conn.commit()
     except Exception:
         conn.rollback()
@@ -150,7 +153,7 @@ JOB_COLUMNS = [
     "url", "company", "title", "location", "description_preview",
     "search_term", "date_posted", "variant", "reason",
     "first_seen", "last_seen",
-    "score", "score_pct", "ai_score", "ai_reason", "recommended",
+    "score", "score_pct", "ai_score", "ai_reason", "ai_model", "recommended",
     "level", "min_exp", "max_exp", "competition", "keyword_hits",
     "status", "h1b", "reject_reason", "expires_at",
 ]
@@ -217,14 +220,14 @@ def merge_scan_results(scan_results: list[dict]) -> int:
                         url, company, title, location, description_preview,
                         search_term, date_posted, variant, reason,
                         first_seen, last_seen,
-                        score, score_pct, ai_score, ai_reason, recommended,
+                        score, score_pct, ai_score, ai_reason, ai_model, recommended,
                         level, min_exp, max_exp, competition, keyword_hits,
                         status, h1b, reject_reason, expires_at
                     ) VALUES (
                         %s, %s, %s, %s, %s,
                         %s, %s, %s, %s,
                         %s, %s,
-                        %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s,
                         %s, %s, %s, %s
                     )
@@ -244,6 +247,10 @@ def merge_scan_results(scan_results: list[dict]) -> int:
                         ai_reason = CASE
                             WHEN jobs.ai_score IS NOT NULL THEN jobs.ai_reason
                             ELSE EXCLUDED.ai_reason
+                        END,
+                        ai_model = CASE
+                            WHEN jobs.ai_score IS NOT NULL THEN jobs.ai_model
+                            ELSE EXCLUDED.ai_model
                         END,
                         recommended = CASE
                             WHEN jobs.ai_score IS NOT NULL THEN jobs.recommended
@@ -277,6 +284,7 @@ def merge_scan_results(scan_results: list[dict]) -> int:
                     scored.get("score_pct", 0),
                     scored.get("ai_score"),
                     scored.get("ai_reason", ""),
+                    scored.get("ai_model"),
                     scored.get("recommended", False),
                     scored.get("level", "Unknown"),
                     scored.get("min_exp"),
@@ -617,8 +625,8 @@ def get_filtered_counts(
     }
 
 
-def get_time_counts(tz_offset: int = 0) -> dict:
-    """Return time tab counts + dynamic bucket breakdown for last 24h."""
+def get_time_counts(tz_offset: int = 0, time_range: str = "") -> dict:
+    """Return time tab counts + dynamic bucket breakdown matching the active time range."""
     now_utc = datetime.now(tz=timezone.utc)
     user_tz = timezone(timedelta(minutes=-tz_offset))
     now_local = now_utc.astimezone(user_tz)
@@ -627,7 +635,21 @@ def get_time_counts(tz_offset: int = 0) -> dict:
     today_start_utc = local_midnight.astimezone(timezone.utc)
     yesterday_start_utc = (local_midnight - timedelta(days=1)).astimezone(timezone.utc)
     one_hour_ago = now_utc - timedelta(hours=1)
-    twenty_four_ago = now_utc - timedelta(hours=24)
+
+    # Determine bucket query window based on active time range
+    if time_range == "hour":
+        bucket_start_utc = one_hour_ago
+        bucket_end_utc = None
+    elif time_range == "today":
+        bucket_start_utc = today_start_utc
+        bucket_end_utc = None
+    elif time_range == "yesterday":
+        bucket_start_utc = yesterday_start_utc
+        bucket_end_utc = today_start_utc
+    else:
+        # "all" or empty — show all jobs' buckets
+        bucket_start_utc = None
+        bucket_end_utc = None
 
     conn = get_conn()
     try:
@@ -641,10 +663,18 @@ def get_time_counts(tz_offset: int = 0) -> dict:
             """, (one_hour_ago, today_start_utc, yesterday_start_utc, today_start_utc))
             tab_row = cur.fetchone()
 
-            cur.execute(
-                "SELECT first_seen FROM jobs WHERE first_seen >= %s",
-                (twenty_four_ago,),
-            )
+            if bucket_start_utc and bucket_end_utc:
+                cur.execute(
+                    "SELECT first_seen FROM jobs WHERE first_seen >= %s AND first_seen < %s",
+                    (bucket_start_utc, bucket_end_utc),
+                )
+            elif bucket_start_utc:
+                cur.execute(
+                    "SELECT first_seen FROM jobs WHERE first_seen >= %s",
+                    (bucket_start_utc,),
+                )
+            else:
+                cur.execute("SELECT first_seen FROM jobs")
             fs_rows = cur.fetchall()
     except Exception:
         conn.rollback()

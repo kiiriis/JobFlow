@@ -640,14 +640,14 @@ def _bucket_key(local_dt: datetime) -> str:
     return local_dt.strftime("%Y-%m-%d_%H:%M")
 
 
-def get_time_counts(store: dict, tz_offset: int = 0) -> dict:
+def get_time_counts(store: dict, tz_offset: int = 0, time_range: str = "") -> dict:
     """Return counts for time range tabs and dynamic bucket breakdown.
 
     Powers the sidebar time filters on the /linkedin page. Returns:
     - this_hour: count of jobs first_seen in the last 60 minutes
     - today: count since user's local midnight
     - yesterday: count from yesterday (local time)
-    - buckets: list of {key, label, count, minutes, start_iso} for the last 24h
+    - buckets: list of {key, label, count, minutes, start_iso} matching the active time range
 
     Bucket sizes match the CI scan schedule so each bucket roughly corresponds
     to one scan window:
@@ -664,12 +664,25 @@ def get_time_counts(store: dict, tz_offset: int = 0) -> dict:
     yesterday_start_utc = (local_midnight - timedelta(days=1)).astimezone(timezone.utc)
     one_hour_ago = now_utc - timedelta(hours=1)
 
+    # Determine bucket window based on active time range
+    if time_range == "hour":
+        bucket_range_start = one_hour_ago
+        bucket_range_end = None
+    elif time_range == "today":
+        bucket_range_start = today_start_utc
+        bucket_range_end = None
+    elif time_range == "yesterday":
+        bucket_range_start = yesterday_start_utc
+        bucket_range_end = today_start_utc
+    else:
+        bucket_range_start = None
+        bucket_range_end = None
+
     hour_count = 0
     today_count = 0
     yesterday_count = 0
 
-    # Dynamic buckets for last 24 hours (keyed by local bucket start)
-    buckets = {}  # key -> {key, label, count, minutes, start_iso}
+    buckets = {}
 
     for job in store.get("jobs", {}).values():
         fs = _parse_iso(job.get("first_seen", ""))
@@ -682,8 +695,14 @@ def get_time_counts(store: dict, tz_offset: int = 0) -> dict:
         if yesterday_start_utc <= fs < today_start_utc:
             yesterday_count += 1
 
-        diff_hours = (now_utc - fs).total_seconds() / 3600
-        if diff_hours < 24:
+        # Check if this job falls within the bucket window
+        in_range = True
+        if bucket_range_start and fs < bucket_range_start:
+            in_range = False
+        if bucket_range_end and fs >= bucket_range_end:
+            in_range = False
+
+        if in_range:
             fs_local = fs.astimezone(user_tz)
             bs = _bucket_start(fs_local)
             bk = _bucket_key(bs)
@@ -698,7 +717,6 @@ def get_time_counts(store: dict, tz_offset: int = 0) -> dict:
                 }
             buckets[bk]["count"] += 1
 
-    # Sorted list, most recent first
     bucket_list = sorted(buckets.values(), key=lambda b: b["start_iso"], reverse=True)
 
     return {

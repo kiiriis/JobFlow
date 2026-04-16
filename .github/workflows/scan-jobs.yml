@@ -34,7 +34,7 @@ jobs:
       - name: Run LinkedIn scan
         env:
           JOBFLOW_CONFIG: config/config.ci.yaml
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "Starting scan at $(date -u)"

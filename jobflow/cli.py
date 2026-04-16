@@ -318,10 +318,10 @@ def scan(
         results_path.write_text(json.dumps(existing, indent=2))
         console.print(f"\n[green]Results saved to:[/green] {results_path} ({len(existing)} total jobs)")
 
-        # AI scoring with GPT-4o-mini (only if OPENAI_API_KEY is set)
-        if os.environ.get("OPENAI_API_KEY"):
+        # AI scoring with Llama 3.3 70B via Groq (only if GROQ_API_KEY is set)
+        if os.environ.get("GROQ_API_KEY"):
             from .ai_scorer import ai_score_jobs
-            console.print("\n[bold cyan]Running AI relevance scoring (GPT-4o-mini)...[/bold cyan]")
+            console.print("\n[bold cyan]Running AI relevance scoring (Llama 3.3 70B via Groq)...[/bold cyan]")
             ai_score_jobs(new_entries, config.get("_root"))
             # Update the entries in the saved results
             url_to_ai = {e["url"]: e for e in new_entries if e.get("ai_score")}
@@ -334,7 +334,7 @@ def scan(
             scored_count = len(url_to_ai)
             console.print(f"[green]AI scored {scored_count} new jobs[/green]")
         else:
-            console.print("\n[dim]AI scoring skipped (OPENAI_API_KEY not set)[/dim]")
+            console.print("\n[dim]AI scoring skipped (GROQ_API_KEY not set)[/dim]")
 
         console.print(
             "\n[yellow]Next steps:[/yellow]\n"

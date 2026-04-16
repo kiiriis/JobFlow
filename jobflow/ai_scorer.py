@@ -1,4 +1,4 @@
-"""AI-powered job relevance scoring using OpenAI GPT-4o-mini.
+"""AI-powered job relevance scoring using Groq (Llama 3.3 70B).
 
 This is an optional scoring layer that runs AFTER the algorithmic filter
 (filter.py). While the algo scorer uses keyword matching and rule-based
@@ -12,16 +12,18 @@ How it integrates:
     4. Only AI-scored jobs can be marked as "recommended" (ai_score >= 7)
 
 The scorer silently skips if:
-    - OPENAI_API_KEY env var is not set
-    - openai package is not installed
+    - GROQ_API_KEY env var is not set
+    - groq package is not installed
     - config/profile.txt doesn't exist (no candidate profile to score against)
     - A job is already scored (idempotent)
 
-Cost: ~$0.001 per job (GPT-4o-mini, ~500 input tokens, 100 output tokens)
+Cost: Free (Groq free tier — 30 RPM, 14,400 requests/day)
 """
 
 import json
 import os
+import re
+import time
 from pathlib import Path
 
 
@@ -105,19 +107,19 @@ def _load_profile(config_root: Path | None = None) -> str:
 
 
 def _get_client():
-    """Create OpenAI client. Returns None if unavailable."""
-    api_key = os.environ.get("OPENAI_API_KEY")
+    """Create Groq client. Returns None if unavailable."""
+    api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         return None
     try:
-        from openai import OpenAI
-        return OpenAI(api_key=api_key)
+        from groq import Groq
+        return Groq(api_key=api_key)
     except ImportError:
         return None
 
 
 def score_single_job(client, profile: str, job: dict) -> dict | None:
-    """Score a single job with GPT-4o-mini. Returns {"ai_score": int, "ai_reason": str} or None."""
+    """Score a single job with Llama 3.3 70B via Groq. Returns {"ai_score": int, "ai_reason": str} or None."""
     prompt = SCORE_PROMPT.format(
         profile=profile,
         title=job.get("title", ""),
@@ -127,18 +129,23 @@ def score_single_job(client, profile: str, job: dict) -> dict | None:
     )
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
             max_tokens=100,
         )
         text = response.choices[0].message.content.strip()
-        # Parse JSON — handle markdown code fences if present
+        # Parse JSON — handle markdown code fences, backticks, trailing text
         if text.startswith("```"):
             text = text.split("```")[1]
             if text.startswith("json"):
                 text = text[4:]
             text = text.strip()
+        text = text.strip("`")
+        # Extract first JSON object if there's trailing text
+        m = re.search(r'\{.*\}', text, re.DOTALL)
+        if m:
+            text = m.group()
         result = json.loads(text)
         score = max(0, min(10, int(result.get("score", 5))))
         reason = str(result.get("reason", ""))[:200]
@@ -148,10 +155,10 @@ def score_single_job(client, profile: str, job: dict) -> dict | None:
 
 
 def ai_score_jobs(jobs: list[dict], config_root: Path | None = None) -> list[dict]:
-    """Score a list of job dicts with GPT-4o-mini. Modifies jobs in-place.
+    """Score a list of job dicts with Llama 3.3 70B via Groq. Modifies jobs in-place.
 
     Adds ai_score (1-10) and ai_reason to each job.
-    Silently skips if OPENAI_API_KEY is not set or openai is not installed.
+    Silently skips if GROQ_API_KEY is not set or groq is not installed.
     """
     client = _get_client()
     if not client:
@@ -171,5 +178,7 @@ def ai_score_jobs(jobs: list[dict], config_root: Path | None = None) -> list[dic
             job["ai_score"] = result["ai_score"]
             job["ai_reason"] = result["ai_reason"]
             scored += 1
+            # Rate limit: Groq free tier = 30 RPM → 2.1s between calls
+            time.sleep(2.1)
 
     return jobs

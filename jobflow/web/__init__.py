@@ -147,7 +147,7 @@ def create_app():
 
     @app.route("/scan")
     def scan_page():
-        return render_template("scan.html")
+        return render_template("scan.html", scan_running=scan_state["running"])
 
     # ── API Routes ───────────────────────────────────────────────
 

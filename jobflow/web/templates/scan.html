@@ -44,7 +44,12 @@
 </article>
 
 <div id="scan-results">
-    {% set results_exist = False %}
+    {% if scan_running %}
+    <article aria-busy="true"
+        hx-get="/api/scan/status" hx-trigger="every 3s" hx-swap="outerHTML">
+        <p>Scanning job boards... This may take a minute.</p>
+    </article>
+    {% endif %}
 </div>
 
 {% endblock %}

@@ -1,15 +1,15 @@
 name: Scan LinkedIn Jobs
 
 on:
-  schedule:
-    # Weekdays: every 30 min during 9 AM – 9 PM EST (13:00–01:00 UTC)
-    - cron: '0,30 13-23 * * 1-5'
-    - cron: '0,30 0 * * 2-6'
-    # Weekdays: every 60 min during 9 PM – 9 AM EST (01:00–12:00 UTC)
-    - cron: '0 1-12 * * 2-6'
-    # Weekends: every 4 hours
-    - cron: '0 */4 * * 0,6'
-  workflow_dispatch: # Allow manual trigger from Actions tab
+  # Schedule disabled — scanning now handled by cron-job.org → POST /api/scan/trigger
+  # Kept workflow_dispatch as a manual backup in case cron-job.org goes down.
+  #
+  # schedule:
+  #   - cron: '0,30 13-23 * * 1-5'
+  #   - cron: '0,30 0 * * 2-6'
+  #   - cron: '0 1-12 * * 2-6'
+  #   - cron: '0 */4 * * 0,6'
+  workflow_dispatch: # Manual trigger from Actions tab (backup)
 
 permissions:
   contents: write

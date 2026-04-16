@@ -345,8 +345,8 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
             <div class="li-filters" role="toolbar" aria-label="Job filters">
                 <input type="text" id="filter-q" placeholder="Search jobs, companies, locations..."
                        class="li-search-input" oninput="debounceFilter()" aria-label="Search jobs">
-                <button class="li-chip" onclick="setFilter('status', '')" data-status="" aria-pressed="false">All <span class="li-chip-count">{{ counts.get('All', 0) }}</span></button>
-                <button class="li-chip chip-rec active" onclick="setFilter('status', 'Recommended')" data-status="Recommended" aria-pressed="true">★ Rec <span class="li-chip-count">{{ counts.get('Recommended', 0) }}</span></button>
+                <button class="li-chip active" onclick="setFilter('status', '')" data-status="" aria-pressed="true">All <span class="li-chip-count">{{ counts.get('All', 0) }}</span></button>
+                <button class="li-chip chip-rec" onclick="setFilter('status', 'Recommended')" data-status="Recommended" aria-pressed="false">★ Rec <span class="li-chip-count">{{ counts.get('Recommended', 0) }}</span></button>
                 {% for lvl in ['New Grad', 'Entry', 'Mid'] %}
                 <button class="li-chip" onclick="setFilter('level', '{{ lvl }}')" data-level="{{ lvl }}" aria-pressed="false">{{ lvl }} <span class="li-chip-count">{{ level_counts.get(lvl, 0) }}</span></button>
                 {% endfor %}
@@ -371,7 +371,7 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
             </div>
 
             <!-- Hidden filter state -->
-            <input type="hidden" id="filter-status" value="Recommended">
+            <input type="hidden" id="filter-status" value="">
             <input type="hidden" id="filter-level" value="">
             <input type="hidden" id="filter-sort" value="first_seen">
             <input type="hidden" id="filter-dir" value="desc">

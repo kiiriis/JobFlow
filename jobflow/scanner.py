@@ -29,6 +29,7 @@ import re
 import ssl
 import time
 import urllib.request
+from urllib.parse import urlparse
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from html import unescape
@@ -625,16 +626,24 @@ def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
     # Extract application URL (take last href — first is often the company homepage)
     url = ""
     full_row = " ".join(cols)
-    href_matches = re.findall(r'href="(https?://[^"]+)"', full_row)
+    href_matches = re.findall(r'href=["\']?(https?://[^"\'> ]+)', full_row)
     for href in reversed(href_matches):
-        if "simplify.jobs/c/" not in href and "simplify.jobs/p/" not in href:
-            url = href.split("?utm_source")[0]
-            break
+        if "simplify.jobs/c/" in href or "simplify.jobs/p/" in href:
+            continue
+        cleaned = href.split("?utm_source")[0].split("&utm_source")[0]
+        # Skip bare homepages (no path or just /)
+        path = urlparse(cleaned).path.rstrip("/")
+        if not path or path == "":
+            continue
+        url = cleaned
+        break
     if not url:
         # Markdown link fallback
         url_m = re.search(r'\[.*?\]\((https?://[^)]+)\)', full_row)
         if url_m and "simplify.jobs/c/" not in url_m.group(1):
-            url = url_m.group(1).split("?utm_source")[0]
+            candidate = url_m.group(1).split("?utm_source")[0]
+            if urlparse(candidate).path.rstrip("/"):
+                url = candidate
 
     # Skip closed
     if "🔒" in full_row:

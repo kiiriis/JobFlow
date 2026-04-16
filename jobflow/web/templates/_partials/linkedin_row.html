@@ -12,7 +12,13 @@
                 <div class="role-title">
                     {% if job.recommended %}<span style="color:var(--yellow)" {% if job.ai_reason %}title="AI: {{ job.ai_reason }}"{% endif %}>★ </span>{% endif %}
                     {% if job.url %}<a href="{{ job.url }}" target="_blank" rel="noopener">{{ job.title }}</a>{% else %}{{ job.title }}{% endif %}
-                    <span class="li-badge badge-linkedin">LinkedIn</span>
+                    {% if job.url and 'linkedin.com' in job.url %}<span class="li-badge badge-linkedin">LinkedIn</span>
+                    {% elif job.url and 'greenhouse.io' in job.url %}<span class="li-badge badge-gh">Greenhouse</span>
+                    {% elif job.url and 'lever.co' in job.url %}<span class="li-badge badge-lever">Lever</span>
+                    {% elif job.url and 'ashbyhq.com' in job.url %}<span class="li-badge badge-ashby">Ashby</span>
+                    {% elif job.url and 'myworkdayjobs.com' in job.url %}<span class="li-badge badge-wd">Workday</span>
+                    {% elif job.url %}<span class="li-badge badge-other">Career</span>
+                    {% endif %}
                     {% if job.h1b is defined and job.h1b %}<span class="li-badge badge-h1b">H1B ✓</span>{% endif %}
                 </div>
                 <div class="role-sub">

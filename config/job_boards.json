@@ -697,6 +697,10 @@
         "jobright_swe_new_grad": {
           "url": "https://github.com/jobright-ai/2026-Software-Engineer-New-Grad",
           "raw_readme": "https://raw.githubusercontent.com/jobright-ai/2026-Software-Engineer-New-Grad/master/README.md"
+        },
+        "speedyapply_new_grad_usa": {
+          "url": "https://github.com/speedyapply/2026-SWE-College-Jobs",
+          "raw_readme": "https://raw.githubusercontent.com/speedyapply/2026-SWE-College-Jobs/main/NEW_GRAD_USA.md"
         }
       }
     },

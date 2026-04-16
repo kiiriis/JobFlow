@@ -602,6 +602,55 @@ def _parse_github_readme(md: str, include_kw: list[str], seen: set) -> list[JobP
     return jobs
 
 
+def _extract_apply_url(cols: list[str]) -> str:
+    """Extract the apply/job-posting URL from table columns.
+
+    Each GitHub repo puts the apply link in a different place:
+    - SimplifyJobs (HTML <td>): column 4 has the apply <a href>, skip simplify.jobs/c/ company profiles
+    - Jobright (markdown |): column 2 has [Title](jobright.ai/...) — the apply link is IN the title
+    - SpeedyApply (markdown | with HTML): last column with an <a href> img is the apply button
+
+    Strategy: look for hrefs in columns 3+ first (apply columns), fall back to column 2 (title link).
+    Skip simplify.jobs/c/ (company profiles) and bare homepages (no path).
+    """
+    # First pass: search columns 3+ for apply links (where apply buttons live)
+    for col in cols[3:] if len(cols) > 3 else []:
+        hrefs = re.findall(r'href=["\']?(https?://[^"\'> ]+)', col)
+        for href in hrefs:
+            if "simplify.jobs/c/" in href:
+                continue
+            cleaned = href.split("?utm_source")[0].split("&utm_source")[0]
+            if urlparse(cleaned).path.rstrip("/"):
+                return cleaned
+
+    # Second pass: column 2 (role/title) — Jobright puts the apply link here
+    if len(cols) > 1:
+        # Check for markdown link [Title](url)
+        url_m = re.search(r'\[.*?\]\((https?://[^)]+)\)', cols[1])
+        if url_m:
+            cleaned = url_m.group(1).split("?utm_source")[0].split("&utm_source")[0]
+            if urlparse(cleaned).path.rstrip("/"):
+                return cleaned
+        # Check for HTML href in title column
+        hrefs = re.findall(r'href=["\']?(https?://[^"\'> ]+)', cols[1])
+        for href in hrefs:
+            cleaned = href.split("?utm_source")[0].split("&utm_source")[0]
+            if urlparse(cleaned).path.rstrip("/"):
+                return cleaned
+
+    # Third pass: column 3 (sometimes apply is here)
+    if len(cols) > 2:
+        hrefs = re.findall(r'href=["\']?(https?://[^"\'> ]+)', cols[2])
+        for href in hrefs:
+            if "simplify.jobs/c/" in href:
+                continue
+            cleaned = href.split("?utm_source")[0].split("&utm_source")[0]
+            if urlparse(cleaned).path.rstrip("/"):
+                return cleaned
+
+    return ""
+
+
 def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
     """Parse a single table row (HTML or markdown) into a JobPosting."""
     # Extract company name from links
@@ -623,25 +672,8 @@ def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
     location_raw = cols[2] if len(cols) > 2 else ""
     location = _strip_html(location_raw.replace("</br>", ", ")).strip()
 
-    # Extract application URL (take last href — first is often the company homepage)
-    url = ""
-    full_row = " ".join(cols)
-    href_matches = re.findall(r'href=["\']?(https?://[^"\'> ]+)', full_row)
-    for href in reversed(href_matches):
-        cleaned = href.split("?utm_source")[0].split("&utm_source")[0]
-        # Skip bare homepages (no path or just /)
-        path = urlparse(cleaned).path.rstrip("/")
-        if not path or path == "":
-            continue
-        url = cleaned
-        break
-    if not url:
-        # Markdown link fallback
-        url_m = re.search(r'\[.*?\]\((https?://[^)]+)\)', full_row)
-        if url_m:
-            candidate = url_m.group(1).split("?utm_source")[0]
-            if urlparse(candidate).path.rstrip("/"):
-                url = candidate
+    # Extract application URL from the correct column
+    url = _extract_apply_url(cols)
 
     # Skip closed
     if "🔒" in full_row:

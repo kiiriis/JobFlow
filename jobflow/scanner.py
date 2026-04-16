@@ -622,11 +622,11 @@ def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
     location_raw = cols[2] if len(cols) > 2 else ""
     location = _strip_html(location_raw.replace("</br>", ", ")).strip()
 
-    # Extract application URL
+    # Extract application URL (take last href — first is often the company homepage)
     url = ""
     full_row = " ".join(cols)
     href_matches = re.findall(r'href="(https?://[^"]+)"', full_row)
-    for href in href_matches:
+    for href in reversed(href_matches):
         if "simplify.jobs/c/" not in href and "simplify.jobs/p/" not in href:
             url = href.split("?utm_source")[0]
             break

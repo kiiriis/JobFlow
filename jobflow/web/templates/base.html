@@ -1,9 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}JobFlow{% endblock %}</title>
+    <script>
+    (function(){
+        var t = localStorage.getItem('jf-theme') ||
+                (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', t);
+    })();
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,7 +24,7 @@
     <div id="htmx-progress"></div>
 
     <!-- Toast Container -->
-    <div id="toast-container"></div>
+    <div id="toast-container" aria-live="polite"></div>
 
     <nav class="container-fluid">
         <ul>
@@ -71,6 +78,17 @@
             window.location = row.dataset.href;
         }
     });
+
+    // ── Theme toggle ──────────────────────
+    function toggleTheme() {
+        var html = document.documentElement;
+        var current = html.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('jf-theme', next);
+        var icon = document.querySelector('.theme-icon');
+        if (icon) icon.textContent = next === 'dark' ? '\u2600' : '\u263E';
+    }
     </script>
 </body>
 </html>

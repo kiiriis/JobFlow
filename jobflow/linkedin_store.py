@@ -598,43 +598,22 @@ def format_recency(iso_timestamp: str) -> str:
 def _bucket_minutes(local_dt: datetime) -> int:
     """Return bucket size in minutes based on local day/hour.
 
-    Weekday 9AM-9PM: 30 min (peak hours, scans every 30 min)
-    Weekday 9PM-9AM: 60 min (off-peak, scans every 60 min)
-    Weekend: 240 min / 4 hours (scans every 4 hours)
+    Cron runs every 30 minutes, so buckets are always 30 min.
     """
-    dow = local_dt.weekday()  # 0=Mon, 5=Sat, 6=Sun
-    if dow >= 5:  # Weekend
-        return 240
-    hour = local_dt.hour
-    if 9 <= hour < 21:  # Weekday 9AM-9PM
-        return 30
-    return 60  # Weekday off-peak
+    return 30
 
 
 def _bucket_start(local_dt: datetime) -> datetime:
     """Snap a local datetime to its bucket start."""
     bm = _bucket_minutes(local_dt)
-    if bm == 240:
-        # 4-hour buckets: 0, 4, 8, 12, 16, 20
-        block = (local_dt.hour // 4) * 4
-        return local_dt.replace(hour=block, minute=0, second=0, microsecond=0)
-    elif bm == 60:
-        return local_dt.replace(minute=0, second=0, microsecond=0)
-    else:
-        # 30-min: snap to :00 or :30
-        m = 0 if local_dt.minute < 30 else 30
-        return local_dt.replace(minute=m, second=0, microsecond=0)
+    # 30-min: snap to :00 or :30
+    m = 0 if local_dt.minute < 30 else 30
+    return local_dt.replace(minute=m, second=0, microsecond=0)
 
 
 def _bucket_label(local_dt: datetime, bm: int) -> str:
     """Human-readable label for a bucket."""
-    if bm == 240:
-        end = local_dt + timedelta(hours=4)
-        return f"{local_dt.strftime('%I %p').lstrip('0')}-{end.strftime('%I %p').lstrip('0')}"
-    elif bm == 30:
-        return local_dt.strftime("%I:%M %p").lstrip("0")
-    else:
-        return local_dt.strftime("%I %p").lstrip("0")
+    return local_dt.strftime("%I:%M %p").lstrip("0")
 
 
 def _bucket_key(local_dt: datetime) -> str:

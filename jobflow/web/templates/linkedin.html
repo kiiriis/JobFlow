@@ -3,7 +3,7 @@
 {% block content %}
 
 <style>
-/* ── Atriveo-inspired LinkedIn page overrides ── */
+/* ── LinkedIn page styles (themed) ── */
 .li-page { font-family: "Sora", sans-serif; }
 .li-page * { font-family: inherit; }
 
@@ -11,213 +11,274 @@
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
 }
-.li-header hgroup h2 { font-size: 1.4rem; margin: 0; font-weight: 700; }
-.li-header hgroup p { font-size: 0.75rem; color: var(--muted); margin: 0; font-family: "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: 0.08em; }
-.li-meta { display: flex; align-items: center; gap: 10px; }
-.li-live { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(57,217,138,0.35); background: rgba(57,217,138,0.1); color: #9df0c3; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-family: "IBM Plex Mono", monospace; }
-.li-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #72f0b0; animation: li-pulse 1.9s infinite; }
+.li-header hgroup h2 { font-size: 1.4rem; margin: 0; font-weight: 700; color: var(--text-primary); }
+.li-header hgroup p { font-size: 0.75rem; color: var(--text-muted); margin: 0; font-family: "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: 0.08em; }
+.li-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.li-live { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--live-border); background: var(--live-bg); color: var(--live-text); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-family: "IBM Plex Mono", monospace; }
+.li-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--live-dot); animation: li-pulse 1.9s infinite; }
 @keyframes li-pulse { 0% { box-shadow: 0 0 0 0 rgba(114,240,176,0.65); } 100% { box-shadow: 0 0 0 8px rgba(114,240,176,0); } }
+[data-theme="light"] .li-live-dot { animation-name: li-pulse-light; }
+@keyframes li-pulse-light { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,0.5); } 100% { box-shadow: 0 0 0 8px rgba(22,163,74,0); } }
 
 /* ── Layout ── */
 .li-layout { display: grid; grid-template-columns: 1fr; }
-
-/* ── Sidebar ── */
-.li-panel { border: 1px solid rgba(70,96,125,0.3); border-radius: 10px; background: rgba(15,27,42,0.7); padding: 14px; backdrop-filter: blur(8px); }
-.li-panel-title { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: #8fa4be; font-family: "IBM Plex Mono", monospace; font-weight: 600; margin-bottom: 10px; }
-.li-stat-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 0.78rem; }
-.li-stat-label { color: #c8d6e5; white-space: nowrap; }
-.li-stat-bar { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.06); overflow: hidden; }
-.li-stat-bar-fill { height: 100%; border-radius: 2px; }
-.li-stat-count { color: #8fa4be; font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; font-weight: 500; min-width: 24px; text-align: right; }
-
-/* Bar colors */
-.bar-green { background: #39d98a; }
-.bar-blue { background: #5b9bd5; }
-.bar-yellow { background: #f5c842; }
-.bar-gray { background: #5a6a7e; }
-.bar-purple { background: #a78bfa; }
-.bar-teal { background: #34d3c4; }
-.bar-orange { background: #ffab5e; }
-
-/* ── Main content ── */
 .li-main { min-width: 0; }
 
-/* Filter bar */
+/* ── Sidebar ── */
+.li-panel { border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-card); padding: 14px; backdrop-filter: blur(8px); }
+.li-panel-title { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); font-family: "IBM Plex Mono", monospace; font-weight: 600; margin-bottom: 10px; }
+.li-stat-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 0.78rem; }
+.li-stat-label { color: var(--text-primary); white-space: nowrap; }
+.li-stat-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--border-subtle); overflow: hidden; }
+.li-stat-bar-fill { height: 100%; border-radius: 2px; }
+.li-stat-count { color: var(--text-secondary); font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; font-weight: 500; min-width: 24px; text-align: right; }
+.bar-green { background: var(--green); } .bar-blue { background: #5b9bd5; } .bar-yellow { background: var(--yellow); }
+.bar-gray { background: var(--text-muted); } .bar-purple { background: var(--purple); } .bar-teal { background: var(--accent); } .bar-orange { background: #ffab5e; }
+
+/* ── Filter bar ── */
 .li-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .li-search-input {
     all: unset !important;
     display: inline-block !important; box-sizing: border-box !important;
     flex: 1 !important; min-width: 180px !important; max-width: 360px !important;
     padding: 8px 14px !important; font-size: 0.82rem !important;
-    color: #e9f1fb !important; background: rgba(6,13,21,0.55) !important;
-    border: 1px solid rgba(70,96,125,0.35) !important; border-radius: 8px !important;
+    color: var(--text-primary) !important; background: var(--bg-input) !important;
+    border: 1px solid var(--border-color) !important; border-radius: 8px !important;
     font-family: "Sora", sans-serif !important;
 }
-.li-search-input:focus { border-color: rgba(52,211,196,0.65) !important; box-shadow: 0 0 0 3px rgba(52,211,196,0.12) !important; }
-.li-search-input::placeholder { color: #6b7f96 !important; }
+.li-search-input:focus { border-color: var(--accent-border) !important; box-shadow: 0 0 0 3px rgba(52,211,196,0.12) !important; }
+[data-theme="light"] .li-search-input:focus { box-shadow: 0 0 0 3px rgba(13,148,136,0.1) !important; }
+.li-search-input::placeholder { color: var(--text-placeholder) !important; }
 
-/* Chips */
+/* ── Chips ── */
 .li-chip {
     display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
     border-radius: 999px; font-size: 0.72rem; font-weight: 600; cursor: pointer;
-    border: 1px solid rgba(70,96,125,0.35); background: rgba(11,20,32,0.6);
-    color: #8fa4be; font-family: "IBM Plex Mono", monospace;
+    border: 1px solid var(--border-color); background: var(--chip-bg);
+    color: var(--text-secondary); font-family: "IBM Plex Mono", monospace;
     transition: all 150ms ease;
 }
-.li-chip:hover { color: #e9f1fb; border-color: rgba(52,211,196,0.5); }
-.li-chip.active { color: #02211d; border-color: rgba(52,211,196,0.8); background: linear-gradient(145deg, #62eee1, #35c9bb); }
+.li-chip:hover { color: var(--text-primary); border-color: var(--accent-border); }
+.li-chip.active { color: var(--chip-active-text); border-color: var(--accent); background: linear-gradient(145deg, #62eee1, #35c9bb); }
+[data-theme="light"] .li-chip.active { background: linear-gradient(145deg, #14b8a6, #0d9488); }
 .li-chip-count { background: rgba(255,255,255,0.15); border-radius: 999px; padding: 1px 7px; font-size: 0.65rem; }
 .li-chip.active .li-chip-count { background: rgba(0,0,0,0.2); }
+.li-chip.chip-rec { border-color: rgba(245,200,66,0.4); color: var(--yellow); }
+.li-chip.chip-rec:hover { border-color: var(--yellow); }
+.li-chip.chip-rec.active { background: linear-gradient(145deg, #f5d862, #d4a832); color: #1a1500; border-color: var(--yellow); }
+[data-theme="light"] .li-chip.chip-rec.active { background: linear-gradient(145deg, #eab308, #ca8a04); color: #fff; }
 
-/* Recommended chip */
-.li-chip.chip-rec { border-color: rgba(245,200,66,0.4); color: #f5c842; }
-.li-chip.chip-rec:hover { border-color: #f5c842; }
-.li-chip.chip-rec.active { background: linear-gradient(145deg, #f5d862, #d4a832); color: #1a1500; border-color: #f5c842; }
-
-/* Search term select */
+/* ── Search term select ── */
 .li-term-select {
     all: unset !important; display: inline-block !important; box-sizing: border-box !important;
     padding: 5px 28px 5px 10px !important; font-size: 0.72rem !important;
-    color: #e9f1fb !important; background: rgba(6,13,21,0.55) !important;
-    border: 1px solid rgba(70,96,125,0.35) !important; border-radius: 8px !important;
+    color: var(--text-primary) !important; background: var(--bg-input) !important;
+    border: 1px solid var(--border-color) !important; border-radius: 8px !important;
     font-family: "IBM Plex Mono", monospace !important; cursor: pointer !important;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238fa4be' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important; background-position: right 8px center !important;
     -webkit-appearance: none !important; appearance: none !important;
 }
-.li-term-select option { background: #0c1624; color: #e9f1fb; }
+.li-term-select option { background: var(--option-bg); color: var(--text-primary); }
 
-/* Summary line */
-.li-summary { color: #8fa4be; font-size: 0.75rem; font-family: "IBM Plex Mono", monospace; margin-bottom: 10px; letter-spacing: 0.02em; }
-.li-summary b { color: #e9f1fb; }
+/* ── Summary ── */
+.li-summary { color: var(--text-secondary); font-size: 0.75rem; font-family: "IBM Plex Mono", monospace; margin-bottom: 10px; letter-spacing: 0.02em; }
+.li-summary b { color: var(--text-primary); }
 
 /* ── Table ── */
-.li-table-wrap { border: 1px solid rgba(36,55,79,0.6); border-radius: 10px; overflow: hidden; }
+.li-table-wrap { border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; background: var(--bg-secondary); }
 .li-table-scroll { overflow-x: auto; max-height: calc(100vh - 220px); min-height: 300px; }
 .li-table { width: 100%; border-collapse: collapse; min-width: 700px; }
 .li-table thead th {
     position: sticky; top: 0; z-index: 2;
-    background: rgba(10,20,33,0.97); color: #8fa4be;
+    background: var(--bg-table-head); color: var(--text-secondary);
     text-align: left; font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase;
     font-family: "IBM Plex Mono", monospace; font-weight: 600;
     padding: 10px 12px; white-space: nowrap; user-select: none; cursor: pointer;
-    border-bottom: 1px solid rgba(36,55,79,0.8);
+    border-bottom: 1px solid var(--border-strong);
 }
-.li-table thead th:hover { color: #e9f1fb; }
+.li-table thead th:hover { color: var(--text-primary); }
 .li-table thead th .sort-i { margin-left: 3px; opacity: 0.3; font-size: 0.6rem; }
-.li-table thead th.s-asc .sort-i::after { content: "▲"; opacity: 1; }
-.li-table thead th.s-desc .sort-i::after { content: "▼"; opacity: 1; }
-
-.li-table tbody tr {
-    border-bottom: 1px solid rgba(36,55,79,0.5);
-    transition: background 120ms ease;
-}
+.li-table thead th.s-asc .sort-i::after { content: "\25B2"; opacity: 1; }
+.li-table thead th.s-desc .sort-i::after { content: "\25BC"; opacity: 1; }
+.li-table tbody tr { border-bottom: 1px solid var(--border-subtle); }
 .li-table tbody tr:last-child { border-bottom: none; }
-.li-table tbody tr:hover { background: rgba(255,255,255,0.025); }
-.li-table td { padding: 10px 12px; font-size: 0.82rem; vertical-align: middle; }
+.li-table tbody tr:hover { background: var(--bg-hover); }
+.li-table td { padding: 10px 12px; font-size: 0.82rem; vertical-align: middle; color: var(--text-primary); }
 
-/* Row number */
-.td-n { color: #5a6a7e; font-size: 0.72rem; font-family: "IBM Plex Mono", monospace; width: 28px; text-align: right; padding-right: 6px; }
+/* ── Row entrance animation ── */
+@keyframes rowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.li-table tbody tr { animation: rowIn 0.25s ease both; }
+.li-table tbody tr:nth-child(1) { animation-delay: 0ms; }
+.li-table tbody tr:nth-child(2) { animation-delay: 25ms; }
+.li-table tbody tr:nth-child(3) { animation-delay: 50ms; }
+.li-table tbody tr:nth-child(4) { animation-delay: 75ms; }
+.li-table tbody tr:nth-child(5) { animation-delay: 100ms; }
+.li-table tbody tr:nth-child(6) { animation-delay: 125ms; }
+.li-table tbody tr:nth-child(7) { animation-delay: 150ms; }
+.li-table tbody tr:nth-child(8) { animation-delay: 175ms; }
+.li-table tbody tr:nth-child(9) { animation-delay: 200ms; }
+.li-table tbody tr:nth-child(10) { animation-delay: 225ms; }
+.li-table tbody tr:nth-child(n+11) { animation-delay: 250ms; }
 
-/* Company avatar */
+/* ── Row cells ── */
+.td-n { color: var(--text-muted); font-size: 0.72rem; font-family: "IBM Plex Mono", monospace; width: 28px; text-align: right; padding-right: 6px; }
 .co-avatar { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.72rem; color: #fff; flex-shrink: 0; }
-
-/* Role cell */
 .role-cell { display: flex; align-items: center; gap: 10px; min-width: 240px; }
 .role-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.role-title { font-size: 0.85rem; font-weight: 600; color: #e9f1fb; line-height: 1.3; }
+.role-title { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
 .role-title a { color: inherit; text-decoration: none; }
-.role-title a:hover { color: #34d3c4; }
-.role-sub { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #6b7f96; font-family: "IBM Plex Mono", monospace; flex-wrap: wrap; }
-.role-sub .sep { color: #3a4f68; }
+.role-title a:hover { color: var(--accent); }
+.role-sub { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-muted); font-family: "IBM Plex Mono", monospace; flex-wrap: wrap; }
+.role-sub .sep { color: var(--sep-color); }
 
-/* Badges inline */
+/* ── Badges ── */
 .li-badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 5px; font-size: 0.62rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
-.badge-linkedin { background: rgba(52,211,196,0.12); color: #34d3c4; }
-.badge-h1b { background: rgba(57,217,138,0.12); color: #39d98a; }
-.badge-exp-tag { background: rgba(143,164,190,0.1); color: #8fa4be; }
-.badge-rec-tag { background: rgba(245,200,66,0.12); color: #f5c842; }
+.badge-linkedin { background: var(--accent-bg); color: var(--accent); }
+.badge-h1b { background: var(--green-bg); color: var(--green); }
+.badge-exp-tag { background: rgba(143,164,190,0.1); color: var(--text-secondary); }
+[data-theme="light"] .badge-exp-tag { background: rgba(0,0,0,0.04); }
+.badge-rec-tag { background: var(--yellow-bg); color: var(--yellow); }
 
-/* Match % */
+/* ── Match % ── */
 .match-val { font-size: 0.85rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
-.match-high { color: #5ee8a8; }
-.match-med { color: #ffd066; }
-.match-low { color: #8fa4be; }
-.ai-model-badge { display:inline-block; font-size:9px; font-weight:700; padding:1px 4px; border-radius:3px; margin-left:4px; vertical-align:middle; opacity:0.7; }
-.ai-model-claude { background:#d4a574; color:#1a1a2e; }
-.ai-model-groq { background:#5b9bd5; color:#1a1a2e; }
+.match-high { color: var(--match-high); }
+.match-med { color: var(--match-med); }
+.match-low { color: var(--match-low); }
+.ai-model-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-left: 4px; vertical-align: middle; opacity: 0.7; }
+.ai-model-claude { background: #d4a574; color: #1a1a2e; }
+.ai-model-groq { background: #5b9bd5; color: #1a1a2e; }
 
-/* Score */
+/* ── Score ── */
 .score-val { font-size: 0.82rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
-.score-val.sv-high { color: #a78bfa; }
+.score-val.sv-high { color: var(--purple); }
 .score-val.sv-med { color: #5b9bd5; }
-.score-val.sv-low { color: #6b7f96; }
+.score-val.sv-low { color: var(--text-muted); }
 
-/* Level badge */
+/* ── Level badge ── */
 .lvl-badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
-.lvl-newgrad { color: #52d98a; background: rgba(57,217,138,0.12); }
-.lvl-entry { color: #a78bfa; background: rgba(167,139,250,0.12); }
-.lvl-mid { color: #f5b85a; background: rgba(255,171,94,0.14); }
-.lvl-unknown { color: #6b7f96; background: rgba(107,127,150,0.1); }
+.lvl-newgrad { color: var(--green-text); background: var(--green-bg); }
+.lvl-entry { color: var(--purple); background: var(--purple-bg); }
+.lvl-mid { color: var(--orange-text); background: var(--orange-bg); }
+.lvl-unknown { color: var(--text-muted); background: rgba(107,127,150,0.1); }
+[data-theme="light"] .lvl-unknown { background: rgba(0,0,0,0.04); }
 
-/* Apply button */
-.apply-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 14px; border-radius: 7px; border: none; background: rgba(52,211,196,0.15); color: #34d3c4; font-size: 0.72rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; letter-spacing: 0.03em; text-decoration: none; cursor: pointer; transition: background 140ms, color 140ms; }
-.apply-btn:hover { background: rgba(52,211,196,0.28); color: #7ef5ea; }
+/* ── Apply button ── */
+.apply-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 14px; border-radius: 7px; border: none; background: var(--accent-bg); color: var(--accent); font-size: 0.72rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; letter-spacing: 0.03em; text-decoration: none; cursor: pointer; transition: background 140ms, color 140ms; }
+.apply-btn:hover { background: rgba(52,211,196,0.28); color: var(--accent-hover); }
+[data-theme="light"] .apply-btn:hover { background: rgba(13,148,136,0.15); }
 .apply-btn::after { content: " \2197"; font-size: 0.65rem; }
-.dismiss-btn { display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;border:none;background:rgba(224,96,96,0.15);color:#e06060;font-size:0.75rem;font-weight:700;cursor:pointer;margin-left:4px;transition:background 140ms,color 140ms; }
-.dismiss-btn:hover { background:rgba(224,96,96,0.35);color:#ff8a8a; }
-tr.dismissing { opacity:0.3; transition:opacity 300ms; }
 
-/* Status select (minimal) */
+/* ── Dismiss ── */
+.dismiss-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; border: none; background: var(--red-bg); color: var(--red); font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-left: 4px; transition: background 140ms, color 140ms; }
+.dismiss-btn:hover { background: rgba(224,96,96,0.35); color: #ff8a8a; }
+[data-theme="light"] .dismiss-btn:hover { background: rgba(220,38,38,0.15); color: #dc2626; }
+@keyframes dismissOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(30px); } }
+tr.dismissing { animation: dismissOut 0.3s ease forwards; }
+
+/* ── Status select ── */
 .li-status-sel {
     all: unset !important; display: inline-block !important; box-sizing: border-box !important;
     padding: 3px 22px 3px 8px !important; font-size: 0.7rem !important; cursor: pointer !important;
-    color: #8fa4be !important; background: rgba(11,20,32,0.5) !important;
-    border: 1px solid rgba(70,96,125,0.25) !important; border-radius: 6px !important;
+    color: var(--text-secondary) !important; background: var(--bg-input) !important;
+    border: 1px solid var(--border-color) !important; border-radius: 6px !important;
     font-family: "IBM Plex Mono", monospace !important;
     -webkit-appearance: none !important; appearance: none !important;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%236b7f96' stroke-width='1.2' fill='none'/%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important; background-position: right 6px center !important;
 }
-.li-status-sel option { background: #0c1624; color: #e9f1fb; }
+.li-status-sel option { background: var(--option-bg); color: var(--text-primary); }
 
-/* Empty state */
-.li-empty { text-align: center; color: #6b7f96; font-size: 0.85rem; padding: 48px 16px; font-family: "IBM Plex Mono", monospace; }
+/* ── Empty state ── */
+.li-empty { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 48px 16px; font-family: "IBM Plex Mono", monospace; }
 
-/* Refresh button */
-.li-refresh { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 7px; border: 1px solid rgba(70,96,125,0.35); background: transparent; color: #8fa4be; font-size: 0.72rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; cursor: pointer; transition: all 150ms; }
-.li-refresh:hover { border-color: var(--pico-primary); color: #e9f1fb; }
-.li-scan-btn { border-color: rgba(52,211,196,0.4); color: #34d3c4; }
-.li-scan-btn:hover { border-color: #34d3c4; color: #7ef5ea; }
+/* ── Refresh / Scan buttons ── */
+.li-refresh { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 7px; border: 1px solid var(--border-color); background: transparent; color: var(--text-secondary); font-size: 0.72rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; cursor: pointer; transition: all 150ms; }
+.li-refresh:hover { border-color: var(--accent); color: var(--text-primary); }
+.li-scan-btn { border-color: var(--accent-border); color: var(--accent); }
+.li-scan-btn:hover { border-color: var(--accent); color: var(--accent-hover); }
 .li-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(52,211,196,0.3); border-top-color: #34d3c4; border-radius: 50%; animation: spin 0.8s linear infinite; }
+.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(52,211,196,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Time Tabs ── */
 .time-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
-.time-tabs { display: inline-flex; align-items: center; border: 1px solid rgba(70,96,125,0.3); border-radius: 999px; overflow: hidden; background: rgba(8,16,26,0.45); }
-.time-tab { appearance: none; border: 0; background: transparent; color: #8fa4be; font-size: 0.72rem; font-weight: 600; padding: 6px 14px; cursor: pointer; transition: background 160ms, color 160ms; font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
-.time-tab:hover { color: #e9f1fb; background: rgba(255,255,255,0.05); }
+.time-tabs { display: inline-flex; align-items: center; border: 1px solid var(--border-color); border-radius: 999px; overflow: hidden; background: var(--chip-bg); }
+.time-tab { appearance: none; border: 0; background: transparent; color: var(--text-secondary); font-size: 0.72rem; font-weight: 600; padding: 6px 14px; cursor: pointer; transition: background 160ms, color 160ms; font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
+.time-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
 .time-tab.active { color: #fff; background: linear-gradient(145deg, #6c5ce7, #a78bfa); }
 .time-tab .t-count { font-size: 0.62rem; background: rgba(255,255,255,0.2); border-radius: 999px; padding: 1px 6px; margin-left: 4px; }
-
-.sort-tabs { display: inline-flex; align-items: center; border: 1px solid rgba(70,96,125,0.3); border-radius: 8px; overflow: hidden; margin-left: auto; }
-.sort-tab { appearance: none; border: 0; background: transparent; color: #8fa4be; font-size: 0.7rem; font-weight: 600; padding: 5px 12px; cursor: pointer; font-family: "IBM Plex Mono", monospace; transition: all 150ms; }
-.sort-tab:hover { color: #e9f1fb; }
-.sort-tab.active { color: #e9f1fb; background: rgba(255,255,255,0.06); }
+.sort-tabs { display: inline-flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-left: auto; }
+.sort-tab { appearance: none; border: 0; background: transparent; color: var(--text-secondary); font-size: 0.7rem; font-weight: 600; padding: 5px 12px; cursor: pointer; font-family: "IBM Plex Mono", monospace; transition: all 150ms; }
+.sort-tab:hover { color: var(--text-primary); }
+.sort-tab.active { color: var(--text-primary); background: var(--bg-hover); }
 
 /* ── Hourly Cards ── */
 .hourly-strip { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
-.hourly-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; flex: 1; min-width: 0; scrollbar-width: thin; scrollbar-color: rgba(70,96,125,0.3) transparent; }
+.hourly-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; flex: 1; min-width: 0; scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
 .hourly-scroll::-webkit-scrollbar { height: 4px; }
-.hourly-scroll::-webkit-scrollbar-thumb { background: rgba(70,96,125,0.4); border-radius: 2px; }
-.hour-card { flex: 0 0 auto; min-width: 72px; padding: 8px 10px; border: 1px solid rgba(70,96,125,0.3); border-radius: 10px; text-align: center; cursor: pointer; transition: all 150ms; background: rgba(10,20,33,0.5); }
-.hour-card:hover { border-color: rgba(52,211,196,0.5); background: rgba(15,27,42,0.8); }
-.hour-card.active { border-color: rgba(52,211,196,0.8); background: rgba(52,211,196,0.08); }
-.hour-card .h-time { font-size: 0.7rem; font-weight: 700; color: #e9f1fb; font-family: "IBM Plex Mono", monospace; }
-.hour-card .h-count { font-size: 0.62rem; color: #6b7f96; font-family: "IBM Plex Mono", monospace; margin-top: 2px; }
-.hourly-nav { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(70,96,125,0.4); background: rgba(10,20,33,0.9); color: #8fa4be; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.7rem; }
-.hourly-nav:hover { border-color: var(--pico-primary); color: #e9f1fb; }
+.hourly-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
+.hour-card { flex: 0 0 auto; min-width: 72px; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 10px; text-align: center; cursor: pointer; transition: all 150ms; background: var(--bg-card); }
+.hour-card:hover { border-color: var(--accent-border); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.hour-card.active { border-color: var(--accent); background: var(--accent-bg); }
+.hour-card .h-time { font-size: 0.7rem; font-weight: 700; color: var(--text-primary); font-family: "IBM Plex Mono", monospace; }
+.hour-card .h-count { font-size: 0.62rem; color: var(--text-muted); font-family: "IBM Plex Mono", monospace; margin-top: 2px; }
+.hourly-nav { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.7rem; }
+.hourly-nav:hover { border-color: var(--accent); color: var(--text-primary); }
+
+/* ── Auto-refresh indicator ── */
+.auto-refresh-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: inline-block; margin-left: 6px; animation: ar-blink 2s ease infinite; }
+@keyframes ar-blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+/* ══════════════════════════════════════════
+   MOBILE RESPONSIVE
+   ══════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .li-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .li-meta { width: 100%; flex-wrap: wrap; gap: 8px; }
+    .li-filters { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .li-filters::-webkit-scrollbar { display: none; }
+    .li-search-input { min-width: 140px !important; max-width: 200px !important; flex-shrink: 0 !important; }
+    .li-chip { flex-shrink: 0; }
+    .time-bar { gap: 8px; }
+    .time-tabs { overflow-x: auto; scrollbar-width: none; }
+    .time-tabs::-webkit-scrollbar { display: none; }
+    .time-tab { padding: 5px 10px; font-size: 0.65rem; }
+    .sort-tabs { margin-left: 0; }
+    .hourly-strip { margin-bottom: 10px; }
+    .hourly-nav { display: none; }
+
+    /* Table → Card layout on mobile */
+    .li-table { min-width: 0; }
+    .li-table-scroll { max-height: none; overflow-x: visible; }
+    .li-table thead { display: none; }
+    .li-table, .li-table tbody { display: block; }
+    .li-table tbody tr {
+        display: flex; flex-wrap: wrap; align-items: center;
+        gap: 8px; padding: 12px; margin-bottom: 6px;
+        border: 1px solid var(--border-subtle); border-radius: 10px;
+        background: var(--bg-card);
+    }
+    .li-table tbody tr:hover { background: var(--bg-card); }
+    .li-table td { padding: 0; border: none; }
+    .li-table td.td-n { display: none; }
+    .li-table td:nth-child(2) { flex: 1 1 100%; order: 1; }
+    .li-table td:nth-child(2) .role-cell { min-width: 0; }
+    .li-table td:nth-child(3) { order: 2; }
+    .li-table td:nth-child(4) { order: 3; }
+    .li-table td:nth-child(5) { order: 4; margin-left: auto; }
+    .co-avatar { width: 28px; height: 28px; font-size: 0.65rem; }
+    .role-title { font-size: 0.8rem; }
+    .apply-btn { padding: 4px 10px; font-size: 0.68rem; }
+    .dismiss-btn { width: 22px; height: 22px; font-size: 0.7rem; }
+}
+
+@media (max-width: 480px) {
+    .li-header hgroup h2 { font-size: 1.2rem; }
+    .li-meta { gap: 6px; }
+    .li-refresh, .li-scan-btn { font-size: 0.65rem; padding: 4px 8px; }
+    .li-live { font-size: 0.6rem; padding: 4px 8px; }
+}
 </style>
 
 <div class="li-page">
@@ -228,10 +289,13 @@ tr.dismissing { opacity:0.3; transition:opacity 300ms; }
             <p>Hourly Job Intelligence</p>
         </hgroup>
         <div class="li-meta">
-            <span class="li-live"><span class="li-live-dot"></span>Live Feed</span>
-            <small style="color:#6b7f96; font-family:'IBM Plex Mono',monospace; font-size:0.72rem;" id="last-updated">
+            <span class="li-live"><span class="li-live-dot"></span>Live Feed<span class="auto-refresh-dot" title="Auto-refreshing every 60s"></span></span>
+            <small style="color:var(--text-muted); font-family:'IBM Plex Mono',monospace; font-size:0.72rem;" id="last-updated">
                 {% if last_updated %}<span class="utc-time" data-utc="{{ last_updated }}"></span>{% endif %}
             </small>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle dark/light theme">
+                <span class="theme-icon">&#9790;</span>
+            </button>
             <button class="li-refresh"
                     hx-post="/api/linkedin/refresh"
                     hx-target="#last-updated"
@@ -248,47 +312,46 @@ tr.dismissing { opacity:0.3; transition:opacity 300ms; }
 
     <!-- Time tabs + sort -->
     <div class="time-bar">
-        <div class="time-tabs">
-            <button class="time-tab" onclick="setTime('hour')" data-time="hour">This Hour <span class="t-count" id="tc-hour">--</span></button>
-            <button class="time-tab" onclick="setTime('today')" data-time="today">Today <span class="t-count" id="tc-today">--</span></button>
-            <button class="time-tab" onclick="setTime('yesterday')" data-time="yesterday">Yesterday <span class="t-count" id="tc-yesterday">--</span></button>
-            <button class="time-tab active" onclick="setTime('')" data-time="">All Time</button>
+        <div class="time-tabs" role="tablist" aria-label="Time range">
+            <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('hour')" data-time="hour">This Hour <span class="t-count" id="tc-hour">--</span></button>
+            <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('today')" data-time="today">Today <span class="t-count" id="tc-today">--</span></button>
+            <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('yesterday')" data-time="yesterday">Yesterday <span class="t-count" id="tc-yesterday">--</span></button>
+            <button class="time-tab active" role="tab" aria-selected="true" onclick="setTime('')" data-time="">All Time</button>
         </div>
-        <div class="sort-tabs">
-            <button class="sort-tab" onclick="quickSort('score_pct')" data-qsort="score_pct">★ Score</button>
-            <button class="sort-tab active" onclick="quickSort('first_seen')" data-qsort="first_seen">↓ Recent</button>
+        <div class="sort-tabs" role="tablist" aria-label="Sort order">
+            <button class="sort-tab" role="tab" onclick="quickSort('score_pct')" data-qsort="score_pct">★ Score</button>
+            <button class="sort-tab active" role="tab" onclick="quickSort('first_seen')" data-qsort="first_seen">↓ Recent</button>
         </div>
     </div>
 
-    <!-- Hourly cards (rendered client-side for local timezone) -->
+    <!-- Hourly cards -->
     <div class="hourly-strip">
-        <button class="hourly-nav" onclick="document.getElementById('hourly-scroll').scrollBy({left:-200,behavior:'smooth'})">&#8249;</button>
+        <button class="hourly-nav" aria-label="Scroll left" onclick="document.getElementById('hourly-scroll').scrollBy({left:-200,behavior:'smooth'})">&#8249;</button>
         <div class="hourly-scroll" id="hourly-scroll"></div>
-        <button class="hourly-nav" onclick="document.getElementById('hourly-scroll').scrollBy({left:200,behavior:'smooth'})">&#8250;</button>
+        <button class="hourly-nav" aria-label="Scroll right" onclick="document.getElementById('hourly-scroll').scrollBy({left:200,behavior:'smooth'})">&#8250;</button>
     </div>
     <script>
-    // Bucket data populated by first API call (needs tz_offset from browser)
     var BUCKET_DATA = [];
     </script>
 
     <div class="li-layout">
         <div class="li-main">
             <!-- Filters -->
-            <div class="li-filters">
+            <div class="li-filters" role="toolbar" aria-label="Job filters">
                 <input type="text" id="filter-q" placeholder="Search jobs, companies, locations..."
-                       class="li-search-input" oninput="debounceFilter()">
-                <button class="li-chip active" onclick="setFilter('status', '')" data-status="">All <span class="li-chip-count">{{ counts.get('All', 0) }}</span></button>
-                <button class="li-chip chip-rec" onclick="setFilter('status', 'Recommended')" data-status="Recommended">★ Rec <span class="li-chip-count">{{ counts.get('Recommended', 0) }}</span></button>
+                       class="li-search-input" oninput="debounceFilter()" aria-label="Search jobs">
+                <button class="li-chip active" onclick="setFilter('status', '')" data-status="" aria-pressed="true">All <span class="li-chip-count">{{ counts.get('All', 0) }}</span></button>
+                <button class="li-chip chip-rec" onclick="setFilter('status', 'Recommended')" data-status="Recommended" aria-pressed="false">★ Rec <span class="li-chip-count">{{ counts.get('Recommended', 0) }}</span></button>
                 {% for lvl in ['New Grad', 'Entry', 'Mid'] %}
-                <button class="li-chip" onclick="setFilter('level', '{{ lvl }}')" data-level="{{ lvl }}">{{ lvl }} <span class="li-chip-count">{{ level_counts.get(lvl, 0) }}</span></button>
+                <button class="li-chip" onclick="setFilter('level', '{{ lvl }}')" data-level="{{ lvl }}" aria-pressed="false">{{ lvl }} <span class="li-chip-count">{{ level_counts.get(lvl, 0) }}</span></button>
                 {% endfor %}
                 {% for st in statuses %}
                 {% if counts.get(st, 0) > 0 %}
-                <button class="li-chip" onclick="setFilter('status', '{{ st }}')" data-status="{{ st }}">{{ st }} <span class="li-chip-count">{{ counts.get(st, 0) }}</span></button>
+                <button class="li-chip" onclick="setFilter('status', '{{ st }}')" data-status="{{ st }}" aria-pressed="false">{{ st }} <span class="li-chip-count">{{ counts.get(st, 0) }}</span></button>
                 {% endif %}
                 {% endfor %}
                 {% if search_terms %}
-                <select id="filter-search-term" class="li-term-select" onchange="triggerFilter()">
+                <select id="filter-search-term" class="li-term-select" onchange="triggerFilter()" aria-label="Filter by search term">
                     <option value="">All search terms</option>
                     {% for t in search_terms %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
                 </select>
@@ -296,7 +359,7 @@ tr.dismissing { opacity:0.3; transition:opacity 300ms; }
             </div>
 
             <!-- Summary -->
-            <div class="li-summary" id="li-summary">
+            <div class="li-summary" id="li-summary" aria-live="polite">
                 <b>{{ counts.get('All', 0) }}</b> jobs
                 {% if counts.get('Recommended', 0) %} · <b>{{ counts.get('Recommended', 0) }}</b> recommended{% endif %}
                 {% if counts.get('Applied', 0) %} · Applied: <b>{{ counts.get('Applied', 0) }}</b>{% endif %}
@@ -313,7 +376,7 @@ tr.dismissing { opacity:0.3; transition:opacity 300ms; }
             <!-- Table -->
             <div class="li-table-wrap">
                 <div class="li-table-scroll">
-                    <table class="li-table">
+                    <table class="li-table" role="grid">
                         <thead>
                             <tr>
                                 <th width="28"></th>
@@ -335,32 +398,33 @@ tr.dismissing { opacity:0.3; transition:opacity 300ms; }
 
 <script>
 var _debounceTimer = null;
+var _autoRefreshInterval = null;
 var AVATAR_COLORS = ['#e06060','#f5b85a','#52d98a','#5b9bd5','#a78bfa','#34d3c4','#ff7eb3','#ff9f43','#6c5ce7','#00b894'];
 
-function setFilter(name, value) {
-    // Reset other filters when switching category
-    if (name === 'status') {
-        document.getElementById('filter-level').value = '';
-    }
-    if (name === 'level') {
-        document.getElementById('filter-status').value = '';
-    }
-    document.getElementById('filter-' + name).value = value;
+// ── Theme icon sync ──
+(function() {
+    var t = document.documentElement.getAttribute('data-theme');
+    var icon = document.querySelector('.theme-icon');
+    if (icon) icon.innerHTML = t === 'dark' ? '&#9788;' : '&#9790;';
+})();
 
-    // Update chip active states
+function setFilter(name, value) {
+    if (name === 'status') document.getElementById('filter-level').value = '';
+    if (name === 'level') document.getElementById('filter-status').value = '';
+    document.getElementById('filter-' + name).value = value;
     document.querySelectorAll('.li-chip').forEach(function(c) {
         var isStatus = c.dataset.status !== undefined;
         var isLevel = c.dataset.level !== undefined;
         if (name === 'status' && isStatus) {
             c.classList.toggle('active', c.dataset.status === value);
+            c.setAttribute('aria-pressed', c.dataset.status === value);
         } else if (name === 'level' && isLevel) {
             c.classList.toggle('active', c.dataset.level === value);
+            c.setAttribute('aria-pressed', c.dataset.level === value);
         }
-        // Clear other category
-        if (name === 'status' && isLevel) c.classList.remove('active');
-        if (name === 'level' && isStatus) c.classList.remove('active');
+        if (name === 'status' && isLevel) { c.classList.remove('active'); c.setAttribute('aria-pressed', 'false'); }
+        if (name === 'level' && isStatus) { c.classList.remove('active'); c.setAttribute('aria-pressed', 'false'); }
     });
-
     triggerFilter();
 }
 
@@ -382,7 +446,11 @@ function toggleSort(col) {
 function setTime(val) {
     document.getElementById('filter-time').value = val;
     document.getElementById('filter-bucket').value = '';
-    document.querySelectorAll('.time-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.time === val); });
+    document.querySelectorAll('.time-tab').forEach(function(t) {
+        var isActive = t.dataset.time === val;
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', isActive);
+    });
     document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.remove('active'); });
     triggerFilter();
 }
@@ -406,7 +474,7 @@ function pollScanStatus(btn) {
                 btn.disabled = false;
                 btn.innerHTML = 'Scan Now';
                 triggerFilter();
-                showToast('Scan complete — new jobs loaded');
+                showToast('Scan complete \u2014 new jobs loaded');
             }
         });
     }, 3000);
@@ -416,6 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
     pollScanStatus(document.getElementById('scan-btn'));
 });
 {% endif %}
+
 function dismissJob(btn, key) {
     var row = btn.closest('tr');
     row.classList.add('dismissing');
@@ -423,17 +492,19 @@ function dismissJob(btn, key) {
         method: 'DELETE'
     }).then(function(resp) {
         if (!resp.ok) throw new Error('Delete failed');
-        row.remove();
-        showToast('Deleted');
-        triggerFilter();
+        setTimeout(function() {
+            row.remove();
+            showToast('Deleted');
+            triggerFilter();
+        }, 300);
     }).catch(function() {
         row.classList.remove('dismissing');
-        showToast('Failed to delete');
+        showToast('Failed to delete', 'error');
     });
 }
+
 function setBucket(key) {
     var current = document.getElementById('filter-bucket').value;
-    // Toggle: clicking active bucket deselects it
     document.getElementById('filter-bucket').value = (current === key) ? '' : key;
     document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.toggle('active', c.dataset.bucket === document.getElementById('filter-bucket').value); });
     triggerFilter();
@@ -468,7 +539,6 @@ function triggerFilter() {
     if (termEl) params.set('search_term', termEl.value);
 
     fetch('/api/linkedin/jobs?' + params.toString()).then(function(resp) {
-        // Update status chip counts
         var countsStr = resp.headers.get('X-Counts');
         var parsedCounts = null;
         if (countsStr) {
@@ -482,7 +552,6 @@ function triggerFilter() {
                 });
             } catch(e) {}
         }
-        // Update level chip counts
         var levelStr = resp.headers.get('X-Level-Counts');
         if (levelStr) {
             try {
@@ -494,7 +563,6 @@ function triggerFilter() {
                 });
             } catch(e) {}
         }
-        // Update summary line with filtered count
         var totalStr = resp.headers.get('X-Total');
         var summaryEl = document.getElementById('li-summary');
         if (summaryEl && totalStr !== null) {
@@ -505,7 +573,6 @@ function triggerFilter() {
             if (applied > 0) html_parts += ' &middot; Applied: <b>' + applied + '</b>';
             summaryEl.innerHTML = html_parts;
         }
-        // Update time tab counts
         var timeStr = resp.headers.get('X-Time-Counts');
         if (timeStr) {
             try {
@@ -516,7 +583,6 @@ function triggerFilter() {
                 el = document.getElementById('tc-yesterday'); if (el) el.textContent = tc.yesterday || 0;
             } catch(e) {}
         }
-        // Update dynamic bucket cards
         var bucketStr = resp.headers.get('X-Buckets');
         if (bucketStr) {
             try {
@@ -528,7 +594,6 @@ function triggerFilter() {
     }).then(function(html) {
         document.getElementById('linkedin-body').innerHTML = html;
         htmx.process(document.getElementById('linkedin-body'));
-        // Convert recency timestamps to local: "20h ago (11:58 PM)"
         document.querySelectorAll('.utc-recency').forEach(function(el) {
             var utc = el.dataset.utc;
             if (!utc) return;
@@ -543,10 +608,16 @@ function triggerFilter() {
             var clock = d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
             el.textContent = rel + ' (' + clock + ')';
         });
+        // Update last-updated timestamp
+        var updEl = document.getElementById('last-updated');
+        if (updEl) {
+            var now = new Date();
+            updEl.textContent = 'Updated ' + now.toLocaleString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+        }
     });
 }
 
-// ── Timezone-aware rendering ──
+// ── Timezone helpers ──
 function formatLocalTime(utcStr) {
     if (!utcStr) return '';
     var d = new Date(utcStr.replace(' ', 'T') + (utcStr.includes('+') || utcStr.includes('Z') ? '' : 'Z'));
@@ -564,11 +635,9 @@ function renderBucketCards() {
     var container = document.getElementById('hourly-scroll');
     if (!container) return;
     var cards = (BUCKET_DATA || []).filter(function(b){ return b.count > 0; });
-    // Already sorted most recent first from server
     var activeBucket = document.getElementById('filter-bucket').value;
     container.innerHTML = cards.map(function(c) {
         var active = c.key === activeBucket ? ' active' : '';
-        var sizeLabel = c.minutes <= 30 ? '' : c.minutes <= 60 ? '' : ' (' + (c.minutes/60) + 'h)';
         return '<div class="hour-card' + active + '" onclick="setBucket(\'' + c.key + '\')" data-bucket="' + c.key + '">' +
                '<div class="h-time">' + c.label + '</div>' +
                '<div class="h-count">' + c.count + ' jobs</div></div>';
@@ -576,12 +645,29 @@ function renderBucketCards() {
 }
 
 function getUserTzOffset() {
-    return new Date().getTimezoneOffset(); // minutes, e.g. 240 for EDT (UTC-4)
+    return new Date().getTimezoneOffset();
 }
+
+// ── Auto-refresh (60s, pauses when tab hidden) ──
+function startAutoRefresh() {
+    clearInterval(_autoRefreshInterval);
+    _autoRefreshInterval = setInterval(function() {
+        if (!document.hidden) triggerFilter();
+    }, 60000);
+}
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        clearInterval(_autoRefreshInterval);
+    } else {
+        triggerFilter();
+        startAutoRefresh();
+    }
+});
 
 document.addEventListener('DOMContentLoaded', function() {
     renderUtcTimes();
-    triggerFilter(); // First API call populates bucket cards via X-Buckets header
+    triggerFilter();
+    startAutoRefresh();
 });
 </script>
 

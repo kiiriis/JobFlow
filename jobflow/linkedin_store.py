@@ -27,12 +27,12 @@ from pathlib import Path
 
 USE_DB = bool(os.environ.get("DATABASE_URL"))
 
-LINKEDIN_STATUSES = ["Tracking", "Applied", "Not Interested"]
+LINKEDIN_STATUSES = ["Applied", "Not Interested"]
 RECOMMENDED_THRESHOLD = 25  # score_pct >= this marks job as "recommended"
 RETENTION_DAYS = 7
 # Jobs with these statuses survive the 7-day prune — the user explicitly
 # marked them as important, so we keep them regardless of age.
-KEEP_STATUSES = {"Tracking", "Applied"}
+KEEP_STATUSES = {"Applied"}
 
 
 def load_store(path: Path) -> dict:
@@ -431,12 +431,12 @@ def get_filtered_jobs(
 
     reverse = sort_dir == "desc"
 
-    # Not Interested always at bottom, then custom sort
-    ni = [j for j in result if j.get("status") == "Not Interested"]
-    rest = [j for j in result if j.get("status") != "Not Interested"]
+    # Applied / Not Interested always at bottom, then custom sort
+    bottom = [j for j in result if j.get("status") in ("Applied", "Not Interested")]
+    rest = [j for j in result if j.get("status") not in ("Applied", "Not Interested")]
     rest.sort(key=sort_key, reverse=reverse)
-    ni.sort(key=sort_key, reverse=reverse)
-    return rest + ni
+    bottom.sort(key=sort_key, reverse=reverse)
+    return rest + bottom
 
 
 def get_status_counts(store: dict) -> dict[str, int]:

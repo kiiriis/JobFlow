@@ -416,12 +416,11 @@ document.addEventListener('DOMContentLoaded', function() {
 function dismissJob(btn, key) {
     var row = btn.closest('tr');
     row.classList.add('dismissing');
-    fetch('/api/linkedin/jobs/' + encodeURIComponent(key) + '/status', {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'status=Not+Interested'
+    fetch('/api/linkedin/jobs/' + encodeURIComponent(key), {
+        method: 'DELETE'
     }).then(function() {
-        showToast('Dismissed');
+        row.remove();
+        showToast('Deleted');
         triggerFilter();
     });
 }

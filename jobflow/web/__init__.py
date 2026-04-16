@@ -628,6 +628,18 @@ def create_app():
             statuses=LINKEDIN_STATUSES,
         )
 
+    @app.route("/api/linkedin/jobs/<path:key>", methods=["DELETE"])
+    def api_linkedin_delete(key):
+        if USE_DB:
+            _db.delete_job(key)
+        else:
+            store = load_store(linkedin_store_path)
+            jobs = store.get("jobs", {})
+            if key in jobs:
+                del jobs[key]
+                save_store(linkedin_store_path, store)
+        return "", 204
+
     @app.route("/api/linkedin/refresh", methods=["POST"])
     def api_linkedin_refresh():
         if USE_DB:

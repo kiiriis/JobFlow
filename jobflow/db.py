@@ -334,6 +334,22 @@ def update_job_status(url: str, status: str) -> bool:
         put_conn(conn)
 
 
+def delete_job(url: str) -> bool:
+    """Permanently delete a job from the database."""
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM jobs WHERE url = %s", (url,))
+            found = cur.rowcount > 0
+        conn.commit()
+        return found
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
 def prune_expired_jobs() -> int:
     """Delete jobs whose TTL has expired. Returns count deleted."""
     conn = get_conn()
@@ -428,7 +444,7 @@ def get_filtered_jobs(
     direction = "ASC" if sort_dir == "asc" else "DESC"
 
     order = f"""
-        CASE WHEN status = 'Not Interested' THEN 1 ELSE 0 END,
+        CASE WHEN status IN ('Applied', 'Not Interested') THEN 1 ELSE 0 END,
         {sort_col} {direction} NULLS LAST,
         COALESCE(ai_score, 0) DESC,
         score_pct DESC

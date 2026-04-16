@@ -393,7 +393,7 @@ def get_filtered_jobs(
 
         # Status filter (special case: "Recommended" is not a real status)
         if status == "Recommended":
-            if not entry.get("recommended"):
+            if not entry.get("recommended") or entry.get("status") == "Not Interested":
                 continue
         elif status and entry.get("status") != status:
             continue
@@ -449,7 +449,7 @@ def get_status_counts(store: dict) -> dict[str, int]:
         s = job.get("status", "")
         if s in counts:
             counts[s] += 1
-        if job.get("recommended"):
+        if job.get("recommended") and s != "Not Interested":
             counts["Recommended"] += 1
     counts["All"] = total
     return counts
@@ -544,7 +544,7 @@ def get_filtered_counts(
         s = job.get("status", "")
         if s in status_counts:
             status_counts[s] += 1
-        if job.get("recommended"):
+        if job.get("recommended") and s != "Not Interested":
             status_counts["Recommended"] += 1
         level = job.get("level", "Unknown")
         if level in level_counts:

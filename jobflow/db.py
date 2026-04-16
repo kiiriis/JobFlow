@@ -424,6 +424,7 @@ def get_filtered_jobs(
 
     if status == "Recommended":
         conditions.append("recommended = TRUE")
+        conditions.append("COALESCE(status, '') NOT IN ('Not Interested')")
     elif status:
         conditions.append("status = %s")
         params.append(status)
@@ -491,7 +492,7 @@ def get_status_counts() -> dict[str, int]:
                     COUNT(*) FILTER (WHERE status = 'Tracking') AS tracking,
                     COUNT(*) FILTER (WHERE status = 'Applied') AS applied,
                     COUNT(*) FILTER (WHERE status = 'Not Interested') AS not_interested,
-                    COUNT(*) FILTER (WHERE recommended = TRUE) AS recommended
+                    COUNT(*) FILTER (WHERE recommended = TRUE AND COALESCE(status, '') NOT IN ('Not Interested')) AS recommended
                 FROM jobs
             """)
             row = cur.fetchone()
@@ -593,7 +594,7 @@ def get_filtered_counts(
                     COUNT(*) FILTER (WHERE status = 'Tracking') AS tracking,
                     COUNT(*) FILTER (WHERE status = 'Applied') AS applied,
                     COUNT(*) FILTER (WHERE status = 'Not Interested') AS not_interested,
-                    COUNT(*) FILTER (WHERE recommended = TRUE) AS recommended,
+                    COUNT(*) FILTER (WHERE recommended = TRUE AND COALESCE(status, '') NOT IN ('Not Interested')) AS recommended,
                     COUNT(*) FILTER (WHERE level = 'New Grad') AS new_grad,
                     COUNT(*) FILTER (WHERE level = 'Entry') AS entry,
                     COUNT(*) FILTER (WHERE level = 'Mid') AS mid,

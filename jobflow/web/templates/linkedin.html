@@ -421,10 +421,14 @@ function dismissJob(btn, key) {
     row.classList.add('dismissing');
     fetch('/api/linkedin/jobs/' + encodeURIComponent(key), {
         method: 'DELETE'
-    }).then(function() {
+    }).then(function(resp) {
+        if (!resp.ok) throw new Error('Delete failed');
         row.remove();
         showToast('Deleted');
         triggerFilter();
+    }).catch(function() {
+        row.classList.remove('dismissing');
+        showToast('Failed to delete');
     });
 }
 function setBucket(key) {

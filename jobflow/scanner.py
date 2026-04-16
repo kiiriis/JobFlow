@@ -628,8 +628,6 @@ def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
     full_row = " ".join(cols)
     href_matches = re.findall(r'href=["\']?(https?://[^"\'> ]+)', full_row)
     for href in reversed(href_matches):
-        if "simplify.jobs/c/" in href or "simplify.jobs/p/" in href:
-            continue
         cleaned = href.split("?utm_source")[0].split("&utm_source")[0]
         # Skip bare homepages (no path or just /)
         path = urlparse(cleaned).path.rstrip("/")
@@ -640,7 +638,7 @@ def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
     if not url:
         # Markdown link fallback
         url_m = re.search(r'\[.*?\]\((https?://[^)]+)\)', full_row)
-        if url_m and "simplify.jobs/c/" not in url_m.group(1):
+        if url_m:
             candidate = url_m.group(1).split("?utm_source")[0]
             if urlparse(candidate).path.rstrip("/"):
                 url = candidate

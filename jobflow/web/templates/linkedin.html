@@ -187,6 +187,8 @@ tr.dismissing { opacity:0.3; transition:opacity 300ms; }
 .li-scan-btn { border-color: rgba(52,211,196,0.4); color: #34d3c4; }
 .li-scan-btn:hover { border-color: #34d3c4; color: #7ef5ea; }
 .li-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(52,211,196,0.3); border-top-color: #34d3c4; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Time Tabs ── */
 .time-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -234,8 +236,9 @@ tr.dismissing { opacity:0.3; transition:opacity 300ms; }
                     hx-on::after-request="triggerFilter(); showToast('Refreshed')">
                 Refresh
             </button>
-            <button class="li-refresh li-scan-btn" onclick="scanNow(this)">
-                Scan Now
+            <button class="li-refresh li-scan-btn" id="scan-btn" onclick="scanNow(this)"
+                {% if scan_running %}disabled{% endif %}>
+                {% if scan_running %}<span class="spinner"></span> Scanning...{% else %}Scan Now{% endif %}
             </button>
         </div>
     </div>
@@ -383,25 +386,33 @@ function setTime(val) {
 
 function scanNow(btn) {
     btn.disabled = true;
-    btn.textContent = 'Scanning...';
+    btn.innerHTML = '<span class="spinner"></span> Scanning...';
     fetch('/api/scan/trigger', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'platform=linkedin&hours=1&new_only=true'
     }).then(function() {
-        var poll = setInterval(function() {
-            fetch('/api/scan/status').then(function(r) { return r.text(); }).then(function(html) {
-                if (html.indexOf('aria-busy') === -1) {
-                    clearInterval(poll);
-                    btn.disabled = false;
-                    btn.textContent = 'Scan Now';
-                    triggerFilter();
-                    showToast('Scan complete — new jobs loaded');
-                }
-            });
-        }, 3000);
+        pollScanStatus(btn);
     });
 }
+function pollScanStatus(btn) {
+    var poll = setInterval(function() {
+        fetch('/api/scan/status').then(function(r) { return r.text(); }).then(function(html) {
+            if (html.indexOf('aria-busy') === -1) {
+                clearInterval(poll);
+                btn.disabled = false;
+                btn.innerHTML = 'Scan Now';
+                triggerFilter();
+                showToast('Scan complete — new jobs loaded');
+            }
+        });
+    }, 3000);
+}
+{% if scan_running %}
+document.addEventListener('DOMContentLoaded', function() {
+    pollScanStatus(document.getElementById('scan-btn'));
+});
+{% endif %}
 function dismissJob(btn, key) {
     var row = btn.closest('tr');
     row.classList.add('dismissing');

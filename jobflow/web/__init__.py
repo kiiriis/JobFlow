@@ -549,6 +549,7 @@ def create_app():
             search_terms=search_terms,
             time_counts=time_counts,
             last_updated=last_updated,
+            scan_running=scan_state["running"],
         )
 
     @app.route("/api/linkedin/jobs")

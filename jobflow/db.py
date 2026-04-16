@@ -121,6 +121,11 @@ def init_db():
                     seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 );
                 CREATE INDEX IF NOT EXISTS idx_seen_jobs_seen_at ON seen_jobs (seen_at);
+
+                CREATE TABLE IF NOT EXISTS dismissed_jobs (
+                    url          TEXT PRIMARY KEY,
+                    dismissed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
             """)
             # Migration for existing databases
             cur.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS ai_model TEXT")
@@ -204,9 +209,13 @@ def merge_scan_results(scan_results: list[dict]) -> int:
     new_count = 0
     try:
         with conn.cursor() as cur:
+            # Load dismissed URLs so deleted jobs never reappear
+            cur.execute("SELECT url FROM dismissed_jobs")
+            dismissed_urls = {row[0] for row in cur.fetchall()}
+
             for entry in deduped:
                 url = entry.get("url", "")
-                if not url:
+                if not url or url in dismissed_urls:
                     continue
 
                 # Re-score entry
@@ -343,10 +352,14 @@ def update_job_status(url: str, status: str) -> bool:
 
 
 def delete_job(url: str) -> bool:
-    """Permanently delete a job from the database."""
+    """Permanently delete a job and record it as dismissed so it never reappears."""
     conn = get_conn()
     try:
         with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO dismissed_jobs (url) VALUES (%s) ON CONFLICT DO NOTHING",
+                (url,),
+            )
             cur.execute("DELETE FROM jobs WHERE url = %s", (url,))
             found = cur.rowcount > 0
         conn.commit()

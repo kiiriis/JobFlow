@@ -637,7 +637,8 @@ def create_app():
             jobs = store.get("jobs", {})
             if key in jobs:
                 del jobs[key]
-                save_store(linkedin_store_path, store)
+            store.setdefault("dismissed", []).append(key)
+            save_store(linkedin_store_path, store)
         return "", 204
 
     @app.route("/api/linkedin/refresh", methods=["POST"])

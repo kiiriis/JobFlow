@@ -203,9 +203,11 @@ def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
             seen_combos[combo] = entry
     deduped_results = list(seen_combos.values())
 
+    dismissed = set(store.get("dismissed", []))
+
     for entry in deduped_results:
         key = _dedup_key(entry)
-        if not key:
+        if not key or key in dismissed:
             continue
 
         if key in jobs:

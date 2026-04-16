@@ -1,4 +1,4 @@
-"""AI-powered job relevance scoring using Groq (Llama 3.3 70B).
+"""AI-powered job relevance scoring using Groq (Llama 4 Scout).
 
 This is an optional scoring layer that runs AFTER the algorithmic filter
 (filter.py). While the algo scorer uses keyword matching and rule-based
@@ -118,8 +118,8 @@ def _get_client():
         return None
 
 
-def score_single_job(client, profile: str, job: dict) -> dict | None:
-    """Score a single job with Llama 3.3 70B via Groq. Returns {"ai_score": int, "ai_reason": str} or None."""
+def score_single_job(client, profile: str, job: dict, max_retries: int = 3) -> dict | None:
+    """Score a single job with Llama 4 Scout via Groq. Returns {"ai_score": int, "ai_reason": str} or None."""
     prompt = SCORE_PROMPT.format(
         profile=profile,
         title=job.get("title", ""),
@@ -127,35 +127,43 @@ def score_single_job(client, profile: str, job: dict) -> dict | None:
         location=job.get("location", ""),
         description=job.get("description_preview", "")[:2000],
     )
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-            max_tokens=100,
-        )
-        text = response.choices[0].message.content.strip()
-        # Parse JSON — handle markdown code fences, backticks, trailing text
-        if text.startswith("```"):
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-            text = text.strip()
-        text = text.strip("`")
-        # Extract first JSON object if there's trailing text
-        m = re.search(r'\{.*\}', text, re.DOTALL)
-        if m:
-            text = m.group()
-        result = json.loads(text)
-        score = max(0, min(10, int(result.get("score", 5))))
-        reason = str(result.get("reason", ""))[:200]
-        return {"ai_score": score, "ai_reason": reason}
-    except Exception:
-        return None
+    for attempt in range(max_retries):
+        try:
+            response = client.chat.completions.create(
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_tokens=100,
+            )
+            text = response.choices[0].message.content.strip()
+            # Parse JSON — handle markdown code fences, backticks, trailing text
+            if text.startswith("```"):
+                text = text.split("```")[1]
+                if text.startswith("json"):
+                    text = text[4:]
+                text = text.strip()
+            text = text.strip("`")
+            # Extract first JSON object if there's trailing text
+            m = re.search(r'\{.*\}', text, re.DOTALL)
+            if m:
+                text = m.group()
+            result = json.loads(text)
+            score = max(0, min(10, int(result.get("score", 5))))
+            reason = str(result.get("reason", ""))[:200]
+            return {"ai_score": score, "ai_reason": reason}
+        except Exception as e:
+            err_name = type(e).__name__
+            if "RateLimit" in err_name or "429" in str(e):
+                wait = 5 * (attempt + 1)  # 5s, 10s, 15s
+                print(f"  Rate limited, waiting {wait}s (retry {attempt + 1}/{max_retries})")
+                time.sleep(wait)
+                continue
+            return None
+    return None
 
 
 def ai_score_jobs(jobs: list[dict], config_root: Path | None = None) -> list[dict]:
-    """Score a list of job dicts with Llama 3.3 70B via Groq. Modifies jobs in-place.
+    """Score a list of job dicts with Llama 4 Scout via Groq. Modifies jobs in-place.
 
     Adds ai_score (1-10) and ai_reason to each job.
     Silently skips if GROQ_API_KEY is not set or groq is not installed.
@@ -178,7 +186,7 @@ def ai_score_jobs(jobs: list[dict], config_root: Path | None = None) -> list[dic
             job["ai_score"] = result["ai_score"]
             job["ai_reason"] = result["ai_reason"]
             scored += 1
-            # Rate limit: Groq free tier = 30 RPM → 2.1s between calls
-            time.sleep(2.1)
+            # Groq free tier: 30 RPM, 30K TPM — ~1.5K tokens/req = ~20 req/min
+            time.sleep(3)
 
     return jobs

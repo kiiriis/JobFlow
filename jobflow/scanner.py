@@ -328,57 +328,6 @@ def scan_all_api_boards(
 
     all_results = []
 
-    # Scan Lever companies
-    if not platforms or "lever" in platforms:
-        lever = ats.get("lever", {})
-        companies = lever.get("example_companies", {})
-        if companies:
-            console.print(f"\n[bold cyan]Scanning Lever ({len(companies)} companies)...[/bold cyan]")
-            for name, urls in companies.items():
-                api_url = urls.get("api", "")
-                if not api_url:
-                    continue
-                console.print(f"  [dim]{name}...[/dim]", end=" ")
-                jobs = scan_lever(name, api_url, keywords, max_age_hours)
-                console.print(f"[green]{len(jobs)} matches[/green]")
-                for job in jobs:
-                    result = evaluate_job(job)
-                    all_results.append((job, result))
-
-    # Scan Greenhouse companies
-    if not platforms or "greenhouse" in platforms:
-        gh = ats.get("greenhouse", {})
-        companies = gh.get("example_companies", {})
-        if companies:
-            console.print(f"\n[bold cyan]Scanning Greenhouse ({len(companies)} companies)...[/bold cyan]")
-            for name, urls in companies.items():
-                api_url = urls.get("api", "")
-                if not api_url:
-                    continue
-                console.print(f"  [dim]{name}...[/dim]", end=" ")
-                jobs = scan_greenhouse(name, api_url, keywords, max_age_hours)
-                console.print(f"[green]{len(jobs)} matches[/green]")
-                for job in jobs:
-                    result = evaluate_job(job)
-                    all_results.append((job, result))
-
-    # Scan Ashby companies
-    if not platforms or "ashby" in platforms:
-        ashby = ats.get("ashby", {})
-        companies = ashby.get("example_companies", {})
-        if companies:
-            console.print(f"\n[bold cyan]Scanning Ashby ({len(companies)} companies)...[/bold cyan]")
-            for name, urls in companies.items():
-                api_url = urls.get("api", "")
-                if not api_url:
-                    continue
-                console.print(f"  [dim]{name}...[/dim]", end=" ")
-                jobs = scan_ashby(name, api_url, keywords, max_age_hours)
-                console.print(f"[green]{len(jobs)} matches[/green]")
-                for job in jobs:
-                    result = evaluate_job(job)
-                    all_results.append((job, result))
-
     # Scan LinkedIn via python-jobspy
     if not platforms or "linkedin" in platforms:
         console.print(f"\n[bold cyan]Scanning LinkedIn ({len(LINKEDIN_SEARCH_TERMS)} search terms)...[/bold cyan]")
@@ -676,7 +625,7 @@ def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
     url = _extract_apply_url(cols)
 
     # Skip closed
-    if "🔒" in full_row:
+    if any("🔒" in c for c in cols):
         return None
 
     # Dedup

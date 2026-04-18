@@ -219,6 +219,9 @@ def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
             if entry.get("date_posted") and not jobs[key].get("date_posted"):
                 jobs[key]["date_posted"] = entry["date_posted"]
                 jobs[key]["first_seen"] = entry["date_posted"]
+            # Fill in source if missing (older rows pre-source field)
+            if entry.get("source") and not jobs[key].get("source"):
+                jobs[key]["source"] = entry["source"]
             # Migrate old statuses
             if jobs[key].get("status") in ("Should Apply", "New"):
                 jobs[key]["status"] = ""
@@ -244,6 +247,7 @@ def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
                 "last_seen": now,
                 "date_posted": entry.get("date_posted", ""),
                 "search_term": entry.get("search_term", ""),
+                "source": entry.get("source", "linkedin"),
                 # AI scores from scan (if available)
                 "ai_score": entry.get("ai_score"),
                 "ai_reason": entry.get("ai_reason", ""),
@@ -323,6 +327,7 @@ def get_filtered_jobs(
     sort_col: str = "last_seen",
     sort_dir: str = "desc",
     tz_offset: int = 0,
+    source: str = "",
 ) -> list[dict]:
     """Return jobs as a sorted list with multi-dimensional filtering.
 
@@ -380,6 +385,10 @@ def get_filtered_jobs(
 
     for key, job in jobs.items():
         entry = {"_key": key, **job}
+
+        # Source filter (linkedin vs github)
+        if source and (entry.get("source") or "linkedin") != source:
+            continue
 
         # Time range filter
         if time_cutoff or bucket_start_utc:
@@ -441,12 +450,14 @@ def get_filtered_jobs(
     return rest + bottom
 
 
-def get_status_counts(store: dict) -> dict[str, int]:
+def get_status_counts(store: dict, source: str = "") -> dict[str, int]:
     """Return count of jobs per status + recommended count."""
     counts = {s: 0 for s in LINKEDIN_STATUSES}
     counts["Recommended"] = 0
     total = 0
     for job in store.get("jobs", {}).values():
+        if source and (job.get("source") or "linkedin") != source:
+            continue
         total += 1
         s = job.get("status", "")
         if s in counts:
@@ -457,10 +468,12 @@ def get_status_counts(store: dict) -> dict[str, int]:
     return counts
 
 
-def get_level_counts(store: dict) -> dict[str, int]:
+def get_level_counts(store: dict, source: str = "") -> dict[str, int]:
     """Return count of jobs per level tag."""
     counts = {"All": 0, "New Grad": 0, "Entry": 0, "Mid": 0, "Unknown": 0}
     for job in store.get("jobs", {}).values():
+        if source and (job.get("source") or "linkedin") != source:
+            continue
         level = job.get("level", "Unknown")
         if level in counts:
             counts[level] += 1
@@ -477,6 +490,7 @@ def get_filtered_counts(
     tz_offset: int = 0,
     query: str = "",
     search_term: str = "",
+    source: str = "",
 ) -> dict:
     """Compute status + level counts respecting time/search filters.
 
@@ -519,6 +533,10 @@ def get_filtered_counts(
     total = 0
 
     for job in jobs.values():
+        # Apply source filter
+        if source and (job.get("source") or "linkedin") != source:
+            continue
+
         # Apply time filter
         if time_cutoff or bucket_start_utc:
             fs = _parse_iso(job.get("first_seen", ""))
@@ -559,10 +577,12 @@ def get_filtered_counts(
     return {"status": status_counts, "level": level_counts}
 
 
-def get_search_terms(store: dict) -> list[str]:
+def get_search_terms(store: dict, source: str = "") -> list[str]:
     """Return sorted list of distinct search_term values."""
     terms = set()
     for job in store.get("jobs", {}).values():
+        if source and (job.get("source") or "linkedin") != source:
+            continue
         t = job.get("search_term", "")
         if t:
             terms.add(t)
@@ -621,7 +641,7 @@ def _bucket_key(local_dt: datetime) -> str:
     return local_dt.strftime("%Y-%m-%d_%H:%M")
 
 
-def get_time_counts(store: dict, tz_offset: int = 0, time_range: str = "") -> dict:
+def get_time_counts(store: dict, tz_offset: int = 0, time_range: str = "", source: str = "") -> dict:
     """Return counts for time range tabs and dynamic bucket breakdown.
 
     Powers the sidebar time filters on the /linkedin page. Returns:
@@ -666,6 +686,8 @@ def get_time_counts(store: dict, tz_offset: int = 0, time_range: str = "") -> di
     buckets = {}
 
     for job in store.get("jobs", {}).values():
+        if source and (job.get("source") or "linkedin") != source:
+            continue
         fs = _parse_iso(job.get("first_seen", ""))
         if not fs:
             continue
@@ -772,6 +794,12 @@ def backfill_job(job: dict) -> dict:
 
     if "search_term" not in job:
         job["search_term"] = ""
+
+    # Source inference for pre-existing rows: use URL as a tiebreaker.
+    # linkedin.com URLs → 'linkedin', others → 'github' (covers GitHub + old ATS scans).
+    if not job.get("source"):
+        url = job.get("url") or ""
+        job["source"] = "linkedin" if "linkedin.com" in url else "github"
 
     # Always re-score to ensure consistency
     return _rescore_entry(job)

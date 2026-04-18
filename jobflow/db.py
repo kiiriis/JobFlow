@@ -104,7 +104,8 @@ def init_db():
                     status              TEXT NOT NULL DEFAULT '',
                     h1b                 BOOLEAN NOT NULL DEFAULT FALSE,
                     reject_reason       TEXT,
-                    expires_at          TIMESTAMPTZ
+                    expires_at          TIMESTAMPTZ,
+                    source              TEXT NOT NULL DEFAULT 'linkedin'
                 );
 
                 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status);
@@ -129,6 +130,14 @@ def init_db():
             """)
             # Migration for existing databases
             cur.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS ai_model TEXT")
+            cur.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'linkedin'")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_jobs_source ON jobs (source)")
+            # Retag jobs whose URL clearly isn't LinkedIn — handles pre-existing
+            # rows that got the 'linkedin' default but came from GitHub / ATS scans.
+            cur.execute(
+                "UPDATE jobs SET source = 'github' "
+                "WHERE source = 'linkedin' AND url NOT LIKE '%%linkedin.com%%'"
+            )
         conn.commit()
     except Exception:
         conn.rollback()
@@ -160,7 +169,7 @@ JOB_COLUMNS = [
     "first_seen", "last_seen",
     "score", "score_pct", "ai_score", "ai_reason", "ai_model", "recommended",
     "level", "min_exp", "max_exp", "competition", "keyword_hits",
-    "status", "h1b", "reject_reason", "expires_at",
+    "status", "h1b", "reject_reason", "expires_at", "source",
 ]
 
 
@@ -231,14 +240,14 @@ def merge_scan_results(scan_results: list[dict]) -> int:
                         first_seen, last_seen,
                         score, score_pct, ai_score, ai_reason, ai_model, recommended,
                         level, min_exp, max_exp, competition, keyword_hits,
-                        status, h1b, reject_reason, expires_at
+                        status, h1b, reject_reason, expires_at, source
                     ) VALUES (
                         %s, %s, %s, %s, %s,
                         %s, %s, %s, %s,
                         %s, %s,
                         %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s
+                        %s, %s, %s, %s, %s
                     )
                     ON CONFLICT (url) DO UPDATE SET
                         last_seen = EXCLUDED.last_seen,
@@ -273,6 +282,7 @@ def merge_scan_results(scan_results: list[dict]) -> int:
                         reason = EXCLUDED.reason,
                         variant = EXCLUDED.variant,
                         reject_reason = EXCLUDED.reject_reason,
+                        source = EXCLUDED.source,
                         expires_at = CASE
                             WHEN jobs.status IN ('Tracking', 'Applied') THEN NULL
                             ELSE EXCLUDED.expires_at
@@ -304,6 +314,7 @@ def merge_scan_results(scan_results: list[dict]) -> int:
                     False,  # h1b
                     scored.get("reject_reason"),
                     expires,
+                    scored.get("source", "linkedin"),
                 ))
                 row = cur.fetchone()
                 if row and row[0]:  # xmax = 0 means it was an INSERT, not UPDATE
@@ -401,6 +412,7 @@ def get_filtered_jobs(
     sort_col: str = "last_seen",
     sort_dir: str = "desc",
     tz_offset: int = 0,
+    source: str = "",
 ) -> list[dict]:
     """Return filtered, sorted job list. Mirrors linkedin_store.get_filtered_jobs()."""
     now_utc = datetime.now(tz=timezone.utc)
@@ -455,6 +467,10 @@ def get_filtered_jobs(
         conditions.append("search_term = %s")
         params.append(search_term)
 
+    if source:
+        conditions.append("source = %s")
+        params.append(source)
+
     where = " AND ".join(conditions) if conditions else "TRUE"
 
     allowed_sorts = {
@@ -494,20 +510,22 @@ def get_filtered_jobs(
     return result
 
 
-def get_status_counts() -> dict[str, int]:
+def get_status_counts(source: str = "") -> dict[str, int]:
     """Return count of jobs per status + recommended count."""
+    where = "WHERE source = %s" if source else ""
+    params = (source,) if source else ()
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute("""
+            cur.execute(f"""
                 SELECT
                     COUNT(*) AS total,
                     COUNT(*) FILTER (WHERE status = 'Tracking') AS tracking,
                     COUNT(*) FILTER (WHERE status = 'Applied') AS applied,
                     COUNT(*) FILTER (WHERE status = 'Not Interested') AS not_interested,
                     COUNT(*) FILTER (WHERE recommended = TRUE AND COALESCE(status, '') NOT IN ('Not Interested')) AS recommended
-                FROM jobs
-            """)
+                FROM jobs {where}
+            """, params)
             row = cur.fetchone()
     except Exception:
         conn.rollback()
@@ -524,12 +542,14 @@ def get_status_counts() -> dict[str, int]:
     }
 
 
-def get_level_counts() -> dict[str, int]:
+def get_level_counts(source: str = "") -> dict[str, int]:
     """Return count of jobs per level tag."""
+    where = "WHERE source = %s" if source else ""
+    params = (source,) if source else ()
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT level, COUNT(*) FROM jobs GROUP BY level")
+            cur.execute(f"SELECT level, COUNT(*) FROM jobs {where} GROUP BY level", params)
             rows = cur.fetchall()
     except Exception:
         conn.rollback()
@@ -553,6 +573,7 @@ def get_filtered_counts(
     tz_offset: int = 0,
     query: str = "",
     search_term: str = "",
+    source: str = "",
 ) -> dict:
     """Compute status + level counts with time/search filters applied."""
     now_utc = datetime.now(tz=timezone.utc)
@@ -595,6 +616,10 @@ def get_filtered_counts(
     if search_term:
         conditions.append("search_term = %s")
         params.append(search_term)
+
+    if source:
+        conditions.append("source = %s")
+        params.append(source)
 
     where = " AND ".join(conditions) if conditions else "TRUE"
 
@@ -639,7 +664,7 @@ def get_filtered_counts(
     }
 
 
-def get_time_counts(tz_offset: int = 0, time_range: str = "") -> dict:
+def get_time_counts(tz_offset: int = 0, time_range: str = "", source: str = "") -> dict:
     """Return time tab counts + dynamic bucket breakdown matching the active time range."""
     now_utc = datetime.now(tz=timezone.utc)
     user_tz = timezone(timedelta(minutes=-tz_offset))
@@ -649,6 +674,10 @@ def get_time_counts(tz_offset: int = 0, time_range: str = "") -> dict:
     today_start_utc = local_midnight.astimezone(timezone.utc)
     yesterday_start_utc = (local_midnight - timedelta(days=1)).astimezone(timezone.utc)
     one_hour_ago = now_utc - timedelta(hours=1)
+
+    src_filter = "WHERE source = %s" if source else ""
+    src_tail = "AND source = %s" if source else ""
+    src_param = (source,) if source else ()
 
     # Determine bucket query window based on active time range
     if time_range == "hour":
@@ -668,27 +697,27 @@ def get_time_counts(tz_offset: int = 0, time_range: str = "") -> dict:
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute("""
+            cur.execute(f"""
                 SELECT
                     COUNT(*) FILTER (WHERE first_seen >= %s) AS this_hour,
                     COUNT(*) FILTER (WHERE first_seen >= %s) AS today,
                     COUNT(*) FILTER (WHERE first_seen >= %s AND first_seen < %s) AS yesterday
-                FROM jobs
-            """, (one_hour_ago, today_start_utc, yesterday_start_utc, today_start_utc))
+                FROM jobs {src_filter}
+            """, (one_hour_ago, today_start_utc, yesterday_start_utc, today_start_utc) + src_param)
             tab_row = cur.fetchone()
 
             if bucket_start_utc and bucket_end_utc:
                 cur.execute(
-                    "SELECT first_seen FROM jobs WHERE first_seen >= %s AND first_seen < %s",
-                    (bucket_start_utc, bucket_end_utc),
+                    f"SELECT first_seen FROM jobs WHERE first_seen >= %s AND first_seen < %s {src_tail}",
+                    (bucket_start_utc, bucket_end_utc) + src_param,
                 )
             elif bucket_start_utc:
                 cur.execute(
-                    "SELECT first_seen FROM jobs WHERE first_seen >= %s",
-                    (bucket_start_utc,),
+                    f"SELECT first_seen FROM jobs WHERE first_seen >= %s {src_tail}",
+                    (bucket_start_utc,) + src_param,
                 )
             else:
-                cur.execute("SELECT first_seen FROM jobs")
+                cur.execute(f"SELECT first_seen FROM jobs {src_filter}", src_param)
             fs_rows = cur.fetchall()
     except Exception:
         conn.rollback()
@@ -726,12 +755,17 @@ def get_time_counts(tz_offset: int = 0, time_range: str = "") -> dict:
     }
 
 
-def get_search_terms() -> list[str]:
+def get_search_terms(source: str = "") -> list[str]:
     """Return sorted list of distinct search_term values."""
+    extra = "AND source = %s" if source else ""
+    params = (source,) if source else ()
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT DISTINCT search_term FROM jobs WHERE search_term != '' ORDER BY search_term")
+            cur.execute(
+                f"SELECT DISTINCT search_term FROM jobs WHERE search_term != '' {extra} ORDER BY search_term",
+                params,
+            )
             return [row[0] for row in cur.fetchall()]
     except Exception:
         conn.rollback()

@@ -361,11 +361,8 @@ def scan_all_api_boards(
 # needed for accurate scoring). Descriptions are truncated to 5K chars.
 
 LINKEDIN_SEARCH_TERMS = [
-    "Software Engineer New Grad",
-    "Entry Level Software Engineer",
-    "Software Engineer 1",
-    "New Grad Machine Learning Engineer",
-    "Entry Level AI Engineer",
+    "New Grad Software Engineer 2026",
+    "Entry Level Jobs 2026",
 ]
 
 
@@ -439,6 +436,7 @@ def scan_linkedin_jobspy(max_age_hours: int = 0) -> list[JobPosting]:
                     location=location,
                     description=description[:5000] if description else title,
                     date_posted=date_posted,
+                    source="linkedin",
                 ))
                 count += 1
             console.print(f"[green]{count} new[/green]")
@@ -647,6 +645,7 @@ def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
         company=company,
         location=location,
         description=f"{role} at {company}. Location: {location}",
+        source="github",
     )
 
 

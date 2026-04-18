@@ -82,7 +82,7 @@ def _smart_truncate(text, total=3000):
 def build_jobs_block(batch):
     """Format a batch of jobs for the prompt."""
     parts = []
-    for i, (url, company, title, location, desc) in enumerate(batch, 1):
+    for i, (url, company, title, location, desc, *_) in enumerate(batch, 1):
         preview = _smart_truncate(desc or "", 2500)
         parts.append(f"### Job {i}\nTitle: {title}\nCompany: {company}\nLocation: {location}\nDescription: {preview}\n")
     return "\n".join(parts)

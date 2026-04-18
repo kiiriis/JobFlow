@@ -1,5 +1,8 @@
 {% extends "base.html" %}
-{% block title %}LinkedIn Feed — JobFlow{% endblock %}
+{% set page_title = page_title|default("LinkedIn Feed") %}
+{% set page_subtitle = page_subtitle|default("Hourly Job Intelligence") %}
+{% set api_base = api_base|default("/api/linkedin") %}
+{% block title %}{{ page_title }} — JobFlow{% endblock %}
 {% block content %}
 
 <style>
@@ -290,8 +293,8 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
     <!-- Header -->
     <div class="li-header">
         <hgroup>
-            <h2>LinkedIn Feed</h2>
-            <p>Hourly Job Intelligence</p>
+            <h2>{{ page_title }}</h2>
+            <p>{{ page_subtitle }}</p>
         </hgroup>
         <div class="li-meta">
             <span class="li-live"><span class="li-live-dot"></span>Live Feed<span class="auto-refresh-dot" title="Auto-refreshing every 60s"></span></span>
@@ -302,7 +305,7 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
                 <span class="theme-icon">&#9790;</span>
             </button>
             <button class="li-refresh"
-                    hx-post="/api/linkedin/refresh"
+                    hx-post="{{ api_base }}/refresh"
                     hx-target="#last-updated"
                     hx-swap="innerHTML"
                     hx-on::after-request="triggerFilter(); showToast('Refreshed')">
@@ -402,6 +405,7 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
 </div>
 
 <script>
+var API_BASE = "{{ api_base }}";
 var _debounceTimer = null;
 var _autoRefreshInterval = null;
 var AVATAR_COLORS = ['#e06060','#f5b85a','#52d98a','#5b9bd5','#a78bfa','#34d3c4','#ff7eb3','#ff9f43','#6c5ce7','#00b894'];
@@ -493,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function dismissJob(btn, key) {
     var row = btn.closest('tr');
     row.classList.add('dismissing');
-    fetch('/api/linkedin/jobs/' + encodeURIComponent(key), {
+    fetch(API_BASE + '/jobs/' + encodeURIComponent(key), {
         method: 'DELETE'
     }).then(function(resp) {
         if (!resp.ok) throw new Error('Delete failed');
@@ -543,7 +547,7 @@ function triggerFilter() {
     var termEl = document.getElementById('filter-search-term');
     if (termEl) params.set('search_term', termEl.value);
 
-    fetch('/api/linkedin/jobs?' + params.toString()).then(function(resp) {
+    fetch(API_BASE + '/jobs?' + params.toString()).then(function(resp) {
         var countsStr = resp.headers.get('X-Counts');
         var parsedCounts = null;
         if (countsStr) {

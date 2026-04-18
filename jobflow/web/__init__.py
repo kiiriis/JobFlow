@@ -522,24 +522,19 @@ def create_app():
         pull_thread = threading.Thread(target=_auto_pull_loop, daemon=True)
         pull_thread.start()
 
-    @app.route("/boards")
-    def boards_page():
-        return render_template("boards.html")
-
-    @app.route("/linkedin")
-    def linkedin_page():
+    def _render_feed_page(source: str, page_title: str, page_subtitle: str, api_base: str):
         if USE_DB:
-            counts = _db.get_status_counts()
-            level_counts = _db.get_level_counts()
-            search_terms = _db.get_search_terms()
-            time_counts = _db.get_time_counts()
+            counts = _db.get_status_counts(source=source)
+            level_counts = _db.get_level_counts(source=source)
+            search_terms = _db.get_search_terms(source=source)
+            time_counts = _db.get_time_counts(source=source)
             last_updated = _db.get_last_updated()
         else:
             store = load_store(linkedin_store_path)
-            counts = get_status_counts(store)
-            level_counts = get_level_counts(store)
-            search_terms = get_search_terms(store)
-            time_counts = get_time_counts(store)
+            counts = get_status_counts(store, source=source)
+            level_counts = get_level_counts(store, source=source)
+            search_terms = get_search_terms(store, source=source)
+            time_counts = get_time_counts(store, source=source)
             last_updated = store.get("last_updated", "")
         return render_template(
             "linkedin.html",
@@ -550,10 +545,13 @@ def create_app():
             time_counts=time_counts,
             last_updated=last_updated,
             scan_running=scan_state["running"],
+            page_title=page_title,
+            page_subtitle=page_subtitle,
+            api_base=api_base,
+            source=source,
         )
 
-    @app.route("/api/linkedin/jobs")
-    def api_linkedin_jobs():
+    def _render_feed_jobs(source: str, api_base: str):
         status_filter = request.args.get("status", "")
         level_filter = request.args.get("level", "")
         query = request.args.get("q", "")
@@ -562,33 +560,35 @@ def create_app():
         bucket_filter = request.args.get("bucket", "")
         sort_col = request.args.get("sort", "last_seen")
         sort_dir = request.args.get("dir", "desc")
-        tz_offset = int(request.args.get("tz", "0") or "0")  # minutes from UTC
+        tz_offset = int(request.args.get("tz", "0") or "0")
 
         if USE_DB:
             jobs = _db.get_filtered_jobs(
                 status=status_filter, level=level_filter, query=query,
                 search_term=search_term, time_range=time_range,
                 bucket_filter=bucket_filter, sort_col=sort_col,
-                sort_dir=sort_dir, tz_offset=tz_offset,
+                sort_dir=sort_dir, tz_offset=tz_offset, source=source,
             )
             fc = _db.get_filtered_counts(
                 time_range=time_range, bucket_filter=bucket_filter,
                 tz_offset=tz_offset, query=query, search_term=search_term,
+                source=source,
             )
-            time_counts = _db.get_time_counts(tz_offset=tz_offset, time_range=time_range)
+            time_counts = _db.get_time_counts(tz_offset=tz_offset, time_range=time_range, source=source)
         else:
             store = load_store(linkedin_store_path)
             jobs = get_filtered_jobs(
                 store, status=status_filter, level=level_filter, query=query,
                 search_term=search_term, time_range=time_range,
                 bucket_filter=bucket_filter, sort_col=sort_col,
-                sort_dir=sort_dir, tz_offset=tz_offset,
+                sort_dir=sort_dir, tz_offset=tz_offset, source=source,
             )
             fc = get_filtered_counts(
                 store, time_range=time_range, bucket_filter=bucket_filter,
                 tz_offset=tz_offset, query=query, search_term=search_term,
+                source=source,
             )
-            time_counts = get_time_counts(store, tz_offset=tz_offset, time_range=time_range)
+            time_counts = get_time_counts(store, tz_offset=tz_offset, time_range=time_range, source=source)
 
         counts = fc["status"]
         level_counts = fc["level"]
@@ -597,6 +597,7 @@ def create_app():
             jobs=jobs,
             statuses=LINKEDIN_STATUSES,
             counts=counts,
+            api_base=api_base,
         ))
         resp.headers["X-Counts"] = json.dumps(counts)
         resp.headers["X-Level-Counts"] = json.dumps(level_counts)
@@ -609,8 +610,7 @@ def create_app():
         resp.headers["X-Total"] = str(len(jobs))
         return resp
 
-    @app.route("/api/linkedin/jobs/<path:key>/status", methods=["PATCH"])
-    def api_linkedin_status(key):
+    def _update_status_and_render(key: str, api_base: str):
         data = request.form or request.get_json(silent=True) or {}
         new_status = data.get("status", "")
         if USE_DB:
@@ -626,10 +626,10 @@ def create_app():
             "_partials/linkedin_row.html",
             job=job,
             statuses=LINKEDIN_STATUSES,
+            api_base=api_base,
         )
 
-    @app.route("/api/linkedin/jobs/<path:key>", methods=["DELETE"])
-    def api_linkedin_delete(key):
+    def _delete_job(key: str):
         if USE_DB:
             _db.delete_job(key)
         else:
@@ -641,7 +641,50 @@ def create_app():
             save_store(linkedin_store_path, store)
         return "", 204
 
+    @app.route("/linkedin")
+    def linkedin_page():
+        return _render_feed_page(
+            source="linkedin",
+            page_title="LinkedIn Feed",
+            page_subtitle="Hourly Job Intelligence",
+            api_base="/api/linkedin",
+        )
+
+    @app.route("/boards")
+    def boards_page():
+        return _render_feed_page(
+            source="github",
+            page_title="Job Boards",
+            page_subtitle="New Grad Repo Feed",
+            api_base="/api/boards",
+        )
+
+    @app.route("/api/linkedin/jobs")
+    def api_linkedin_jobs():
+        return _render_feed_jobs(source="linkedin", api_base="/api/linkedin")
+
+    @app.route("/api/boards/jobs")
+    def api_boards_jobs():
+        return _render_feed_jobs(source="github", api_base="/api/boards")
+
+    @app.route("/api/linkedin/jobs/<path:key>/status", methods=["PATCH"])
+    def api_linkedin_status(key):
+        return _update_status_and_render(key, "/api/linkedin")
+
+    @app.route("/api/boards/jobs/<path:key>/status", methods=["PATCH"])
+    def api_boards_status(key):
+        return _update_status_and_render(key, "/api/boards")
+
+    @app.route("/api/linkedin/jobs/<path:key>", methods=["DELETE"])
+    def api_linkedin_delete(key):
+        return _delete_job(key)
+
+    @app.route("/api/boards/jobs/<path:key>", methods=["DELETE"])
+    def api_boards_delete(key):
+        return _delete_job(key)
+
     @app.route("/api/linkedin/refresh", methods=["POST"])
+    @app.route("/api/boards/refresh", methods=["POST"])
     def api_linkedin_refresh():
         if USE_DB:
             # DB is always fresh — just prune expired jobs
@@ -715,6 +758,7 @@ def _run_scan(config, platforms, hours, new_only):
                 "reason": filt.reason,
                 "description_preview": job.description[:2000] if job.description else "",
                 "date_posted": getattr(job, "date_posted", ""),
+                "source": getattr(job, "source", "linkedin"),
             })
 
         results_path = config["output_dir"] / "scan_results.json"

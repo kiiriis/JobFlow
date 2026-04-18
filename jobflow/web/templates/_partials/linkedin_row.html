@@ -3,6 +3,7 @@
 {% set color_idx = (job.company | length) % 10 if job.company else 0 %}
 {% set ai = job.ai_score|default(none) %}
 {% set match_pct = (ai * 10)|int if ai is not none else job.score_pct|default(0)|int %}
+{% set api_base = api_base|default("/api/linkedin") %}
 <tr role="row">
     <td class="td-n">{{ loop.index if loop is defined else '' }}</td>
     <td>
@@ -48,7 +49,7 @@
         <a href="{{ job.url }}" target="_blank" rel="noopener" class="apply-btn" aria-label="Apply to {{ job.title }} at {{ job.company }}">Apply</a>
         {% endif %}
         <select name="status"
-                hx-patch="/api/linkedin/jobs/{{ job._key }}/status"
+                hx-patch="{{ api_base }}/jobs/{{ job._key }}/status"
                 hx-target="closest tr"
                 hx-swap="outerHTML"
                 hx-on::after-request="showToast('Updated'); if(typeof triggerFilter==='function') setTimeout(triggerFilter, 400)"

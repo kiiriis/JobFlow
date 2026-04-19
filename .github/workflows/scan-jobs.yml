@@ -26,6 +26,9 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      JOBFLOW_CONFIG: config/config.ci.yaml
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,19 +43,14 @@ jobs:
         run: pip install -e .
 
       - name: Run LinkedIn scan
-        env:
-          JOBFLOW_CONFIG: config/config.ci.yaml
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "Starting scan at $(date -u)"
+          echo "DATABASE_URL is set: ${{ env.DATABASE_URL != '' }}"
           jobflow scan --platform linkedin --new --save --hours 4 2>&1 || true
           echo "Scan finished at $(date -u)"
 
       - name: Merge into database
         if: ${{ env.DATABASE_URL != '' }}
-        env:
-          JOBFLOW_CONFIG: config/config.ci.yaml
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           python -c "
           from pathlib import Path
@@ -73,8 +71,6 @@ jobs:
 
       - name: Merge into linkedin_jobs.json (fallback)
         if: ${{ env.DATABASE_URL == '' }}
-        env:
-          JOBFLOW_CONFIG: config/config.ci.yaml
         run: |
           python -c "
           from pathlib import Path

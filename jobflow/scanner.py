@@ -361,7 +361,7 @@ def scan_all_api_boards(
 # needed for accurate scoring). Descriptions are truncated to 5K chars.
 
 LINKEDIN_SEARCH_TERMS = [
-    "New Grad Software Engineer 2026",
+    "New Grad Software Engineer",
     "Entry Level Jobs 2026",
 ]
 

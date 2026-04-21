@@ -439,9 +439,9 @@ def init():
     if not config_path.exists():
         config_path.write_text(
             "resumes:\n"
-            "  se: resumes/base/KrishMakadiaSE.tex\n"
-            "  ml: resumes/base/KrishMakadiaML.tex\n"
-            "  appdev: resumes/base/KrishMakadiaAppDev.tex\n"
+            "  se: resumes/base/SE.tex\n"
+            "  ml: resumes/base/ML.tex\n"
+            "  appdev: resumes/base/AppDev.tex\n"
             "\n"
             "output_dir: data/output\n"
             "csv_path: data/applications.csv\n"

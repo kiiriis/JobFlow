@@ -1,0 +1,11 @@
+I am a new grad / entry-level software engineer (graduating YYYY).
+
+Skills: Python, Java, JavaScript, React, Node.js, AWS, Docker, PostgreSQL,
+REST APIs — replace with your actual tech stack.
+
+Looking for: Software Engineer, Backend Engineer, ML Engineer, or similar
+entry-level roles.
+
+Must have: US-based, visa sponsorship friendly (if applicable).
+Prefer: your preferred domains (e.g., backend, ML, systems).
+Avoid: role types you want to exclude (e.g., frontend-only, QA, management).

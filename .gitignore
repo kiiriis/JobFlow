@@ -33,3 +33,10 @@ data/applications.csv
 
 # Resumes (private — contain PII)
 resumes/
+
+# Personal config (copy from .example versions)
+config/config.yaml
+config/profile.txt
+
+# Local screenshots / UI captures
+*.png

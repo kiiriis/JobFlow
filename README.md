@@ -10,7 +10,7 @@ Automated job scanner + resume tailoring system for new grad / entry-level softw
 GitHub Actions (hourly cron)
     |
     v
-Scan LinkedIn (6 search terms x 200 results)
+Scan LinkedIn (5 search terms x 100 results)
     |
     v
 Score & filter (multi-signal engine: keywords, synergy, level, experience)
@@ -37,14 +37,19 @@ git clone https://github.com/kiiriis/JobFlow.git
 cd JobFlow
 pip install -e .
 
+# Set up your personal config (not tracked in git)
+cp config/config.example.yaml config/config.yaml
+cp config/profile.example.txt config/profile.txt
+# Edit both to point to your own resume files and describe your profile
+
 # Run locally
 jobflow web
 
 # Or scan jobs from CLI
-jobflow scan --platform linkedin --hours 4
+jobflow scan --platform linkedin --hours 24
 ```
 
-**Requirements:** Python 3.11+ | Optional: pdflatex (for resume PDFs), Claude CLI (for tailoring)
+**Requirements:** Python 3.11+ | Optional: pdflatex (for resume PDFs), Claude CLI (for tailoring + AI scoring), Postgres/Neon (for persistent job storage — set `DATABASE_URL` env var)
 
 ## Scanning
 
@@ -52,15 +57,15 @@ jobflow scan --platform linkedin --hours 4
 # Scan all platforms (Lever + Greenhouse + Ashby + LinkedIn + GitHub)
 jobflow scan
 
-# LinkedIn only, last hour, only new jobs
-jobflow scan --platform linkedin --new --hours 1
+# LinkedIn only, last 24 hours
+jobflow scan --platform linkedin --hours 24
 
 # Specific platform
 jobflow scan --platform greenhouse --hours 24
 ```
 
 **Sources:**
-- **LinkedIn** — 6 search terms via python-jobspy (new grad, entry level, junior, ML, AI, SDE I)
+- **LinkedIn** — 5 search terms via python-jobspy (new grad, junior, associate, entry level, 2026)
 - **Lever API** — 11 companies (Spotify, Palantir, Plaid, etc.)
 - **Greenhouse API** — 40 companies (Stripe, Airbnb, Databricks, etc.)
 - **Ashby API** — 31 companies (OpenAI, Ramp, Figma, etc.)
@@ -80,7 +85,7 @@ Jobs are scored 0-100% match against your personal tech stack:
 | H1B mention | +8 | "will sponsor" in JD |
 | US location | +10 | US city/state/remote |
 
-**Hard disqualifiers:** no visa sponsorship, US citizen required, security clearance, non-US location.
+**Filter flags (score=0) but never drops:** sponsorship denial, US citizen required, security clearance, non-US location, 4+ years experience required. All jobs flow to the DB so the AI scorer (`scripts/ai_score_local.py`) can correct false positives.
 
 See [docs/SCORING.md](docs/SCORING.md) for full details.
 
@@ -130,8 +135,9 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for setup instructions.
 ```
 JobFlow/
 ├── config/
-│   ├── config.yaml          # Local config
+│   ├── config.example.yaml  # Template — copy to config.yaml
 │   ├── config.ci.yaml       # CI config (GitHub Actions)
+│   ├── profile.example.txt  # Template — copy to profile.txt
 │   └── job_boards.json      # 82 company API endpoints
 ├── data/ci/                 # CI scan output (git-tracked)
 ├── jobflow/

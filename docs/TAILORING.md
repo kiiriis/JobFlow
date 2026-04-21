@@ -8,9 +8,9 @@ JobFlow tailors LaTeX resumes to specific job descriptions using Claude AI. It s
 
 | Variant | Focus | File |
 |---------|-------|------|
-| `se` | Software Engineering (default) | `resumes/base/KrishMakadiaSE.tex` |
-| `ml` | Machine Learning / AI | `resumes/base/KrishMakadiaML.tex` |
-| `appdev` | Full-Stack / App Development | `resumes/base/KrishMakadiaAppDev.tex` |
+| `se` | Software Engineering (default) | `resumes/base/SE.tex` |
+| `ml` | Machine Learning / AI | `resumes/base/ML.tex` |
+| `appdev` | Full-Stack / App Development | `resumes/base/AppDev.tex` |
 
 Variant is auto-selected based on JD keywords (ML keywords → ml, React/Vue/frontend → appdev, else → se).
 

@@ -46,6 +46,9 @@ jobs:
         run: |
           echo "Starting scan at $(date -u)"
           echo "DATABASE_URL is set: ${{ env.DATABASE_URL != '' }}"
+          # Ephemeral per-run output — prevents stale top-500 cache from
+          # evicting fresh jobs and blocking DB inserts.
+          rm -f data/ci/scan_results.json
           jobflow scan --platform linkedin --save --hours 4 2>&1 || true
           echo "Scan finished at $(date -u)"
 

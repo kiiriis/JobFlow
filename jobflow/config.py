@@ -20,6 +20,7 @@ import yaml
 
 
 DEFAULT_CONFIG_PATH = "config/config.yaml"
+FALLBACK_CONFIG_PATH = "config/config.ci.yaml"
 
 
 def load_config(path: str = "") -> dict:
@@ -35,6 +36,11 @@ def load_config(path: str = "") -> dict:
     if not path:
         path = os.environ.get("JOBFLOW_CONFIG", DEFAULT_CONFIG_PATH)
     config_path = Path(path)
+    # Fall back to config.ci.yaml if the primary config is missing — keeps
+    # production deploys (where personal config.yaml is gitignored) working
+    # even if JOBFLOW_CONFIG isn't overridden in the host's env.
+    if not config_path.exists() and Path(FALLBACK_CONFIG_PATH).exists():
+        config_path = Path(FALLBACK_CONFIG_PATH)
     if not config_path.exists():
         raise FileNotFoundError(
             f"Config file not found: {config_path}. Run 'jobflow init' first."

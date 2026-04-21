@@ -756,7 +756,7 @@ def _run_scan(config, platforms, hours, new_only):
                 "competition": filt.competition,
                 "variant": filt.resume_variant,
                 "reason": filt.reason,
-                "description_preview": job.description[:2000] if job.description else "",
+                "description_preview": job.description or "",
                 "date_posted": getattr(job, "date_posted", ""),
                 "source": getattr(job, "source", "linkedin"),
             })

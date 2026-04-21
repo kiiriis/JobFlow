@@ -71,20 +71,12 @@ Return ONLY a valid JSON array with one object per job, in the same order. Nothi
 [{{"id": 1, "score": <0-10>, "reason": "<one sentence>"}}, ...]"""
 
 
-def _smart_truncate(text, total=3000):
-    """Take first 1500 chars + last 1500 chars to capture both requirements and disclaimers."""
-    if not text or len(text) <= total:
-        return text or ""
-    half = total // 2
-    return text[:half] + "\n\n[...]\n\n" + text[-half:]
-
-
 def build_jobs_block(batch):
-    """Format a batch of jobs for the prompt."""
+    """Format a batch of jobs for the prompt. Sends the full JD — Claude's
+    200K context easily handles 15 full descriptions per batch."""
     parts = []
     for i, (url, company, title, location, desc, *_) in enumerate(batch, 1):
-        preview = _smart_truncate(desc or "", 2500)
-        parts.append(f"### Job {i}\nTitle: {title}\nCompany: {company}\nLocation: {location}\nDescription: {preview}\n")
+        parts.append(f"### Job {i}\nTitle: {title}\nCompany: {company}\nLocation: {location}\nDescription: {desc or ''}\n")
     return "\n".join(parts)
 
 

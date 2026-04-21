@@ -437,7 +437,7 @@ def scan_linkedin_jobspy(max_age_hours: int = 0) -> list[JobPosting]:
                     title=title,
                     company=company,
                     location=location,
-                    description=description[:5000] if description else title,
+                    description=description if description else title,
                     date_posted=date_posted,
                     source="linkedin",
                 ))

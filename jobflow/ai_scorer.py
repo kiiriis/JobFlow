@@ -118,14 +118,6 @@ def _get_client():
         return None
 
 
-def _smart_truncate(text: str, total: int = 3000) -> str:
-    """Take first 1500 chars + last 1500 chars to capture both requirements and disclaimers."""
-    if not text or len(text) <= total:
-        return text or ""
-    half = total // 2
-    return text[:half] + "\n\n[...]\n\n" + text[-half:]
-
-
 def score_single_job(client, profile: str, job: dict, max_retries: int = 3) -> dict | None:
     """Score a single job with Llama 4 Scout via Groq. Returns {"ai_score": int, "ai_reason": str} or None."""
     prompt = SCORE_PROMPT.format(
@@ -133,7 +125,7 @@ def score_single_job(client, profile: str, job: dict, max_retries: int = 3) -> d
         title=job.get("title", ""),
         company=job.get("company", ""),
         location=job.get("location", ""),
-        description=_smart_truncate(job.get("description_preview", "")),
+        description=job.get("description_preview", "") or "",
     )
     for attempt in range(max_retries):
         try:

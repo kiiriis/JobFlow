@@ -48,3 +48,4 @@ class FilterResult:
     max_exp: int | None = None
     competition: int = 0
     keyword_hits: int = 0
+    reject_reason: str = ""

@@ -442,9 +442,12 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     level = level_tag(job.title, job.description)
 
     def _reject(reason: str) -> FilterResult:
+        # Keep the job in the pipeline with score=0 so the AI rescorer
+        # (scripts/ai_score_local.py) can correct false positives. The AI
+        # handles sponsorship/seniority nuance better than regex phrase matching.
         return FilterResult(
-            score=0, score_pct=0, should_apply=False, reason=reason,
-            resume_variant=variant, level=level,
+            score=0, score_pct=0, should_apply=True, reason=reason,
+            resume_variant=variant, level=level, reject_reason=reason,
         )
 
     # ── 1. Company blocklist ──

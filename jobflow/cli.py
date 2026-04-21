@@ -286,8 +286,10 @@ def scan(
                 "competition": filt.competition,
                 "variant": filt.resume_variant,
                 "reason": filt.reason,
+                "reject_reason": filt.reject_reason,
                 "description_preview": job.description[:2000],
                 "date_posted": getattr(job, "date_posted", ""),
+                "source": getattr(job, "source", "linkedin"),
             })
 
         results_path = config["output_dir"] / "scan_results.json"

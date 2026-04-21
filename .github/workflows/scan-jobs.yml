@@ -2,21 +2,13 @@ name: Scan LinkedIn Jobs
 
 on:
   # Times below are in UTC. User timezone: US/Eastern (EDT = UTC-4).
-  # Intent:
-  #   Weekdays 8AM-8PM EDT → hourly
-  #   Weekday nights (9PM-7AM EDT) → every 2 hours
-  #   Weekends → every 2 hours, all day
+  # Budget-tuned for GitHub Actions free tier (2000 min/month on private repo).
+  # Each scan costs ~5-6 billable min. 65 runs/week × 4.345 weeks × 6 min ≈ 1700 min/month.
   schedule:
-    # Mon-Fri 8AM-7PM EDT  (12:00-23:00 UTC) — hourly
+    # Mon-Fri 8AM-7PM EDT (12:00-23:00 UTC) — hourly during business hours
     - cron: '0 12-23 * * 1-5'
-    # Mon-Fri 8PM EDT      (00:00 UTC Tue-Sat) — last peak slot
+    # Mon-Fri 8PM EDT     (00:00 UTC Tue-Sat) — last peak slot
     - cron: '0 0 * * 2-6'
-    # Mon-Fri 9PM-7AM EDT  (01:00-11:00 UTC Tue-Sat) — every 2h
-    - cron: '0 1-11/2 * * 2-6'
-    # Saturday + Sunday    — every 2h, all day
-    - cron: '0 */2 * * 0,6'
-    # Sun 8PM EDT → Mon 7AM EDT (00:00-10:00 UTC Mon) — every 2h bridge
-    - cron: '0 0-10/2 * * 1'
   workflow_dispatch: # Manual trigger from Actions tab
 
 permissions:

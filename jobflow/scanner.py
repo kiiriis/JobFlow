@@ -391,7 +391,7 @@ def scan_linkedin_jobspy(max_age_hours: int = 0) -> list[JobPosting]:
                 search_term=term,
                 location="United States",
                 hours_old=hours,
-                results_wanted=200,
+                results_wanted=100,
                 linkedin_fetch_description=True,
             )
         except Exception as e:

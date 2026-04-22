@@ -710,10 +710,11 @@ def deduplicate_results(
     seen: dict[str, str],
 ) -> tuple[list[tuple[JobPosting, 'FilterResult']], dict[str, str]]:
     """Remove already-seen jobs. Returns (new_results, updated_seen_dict)."""
+    from .linkedin_store import normalize_url
     new_results = []
     now = datetime.now(EST).isoformat()
     for job, filt in results:
-        key = job.url if job.url else f"{job.company}_{job.title}"
+        key = normalize_url(job.url) if job.url else f"{job.company}_{job.title}"
         if key not in seen:
             seen[key] = now
             new_results.append((job, filt))

@@ -24,8 +24,30 @@ import json
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import urlparse, urlunparse
 
 USE_DB = bool(os.environ.get("DATABASE_URL"))
+
+
+def normalize_url(url: str) -> str:
+    """Canonicalize a job URL for use as a dedup key.
+
+    Strips query string, fragment, trailing slash, and lowercases scheme/host.
+    Every source we scan (LinkedIn, Greenhouse, Lever, Ashby, GitHub) carries
+    the job identity in the URL path — query strings only hold tracking tokens
+    (trk, utm_*, gh_src, refId, etc.), so dropping them collapses the same job
+    seen via email alerts, search results, and direct links onto one row.
+    """
+    if not url:
+        return url
+    try:
+        p = urlparse(url.strip())
+    except (ValueError, TypeError):
+        return url
+    if not p.scheme or not p.netloc:
+        return url
+    path = p.path.rstrip("/") or "/"
+    return urlunparse((p.scheme.lower(), p.netloc.lower(), path, "", "", ""))
 
 LINKEDIN_STATUSES = ["Applied", "Not Interested"]
 RECOMMENDED_THRESHOLD = 25  # score_pct >= this marks job as "recommended"
@@ -53,8 +75,8 @@ def save_store(path: Path, store: dict) -> None:
 
 
 def _dedup_key(entry: dict) -> str:
-    """Generate a dedup key: prefer URL, fall back to company+title normalized."""
-    url = entry.get("url", "")
+    """Generate a dedup key: prefer URL (canonicalized), fall back to company+title."""
+    url = normalize_url(entry.get("url", ""))
     if url:
         return url
     co = entry.get("company", "").lower().strip()
@@ -188,6 +210,36 @@ def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
     """
     now = datetime.now(timezone.utc).isoformat()
     jobs = store.get("jobs", {})
+
+    # Re-key URL-bearing entries whose stored key predates URL canonicalization
+    # (e.g. old keys with tracking params). Entries with empty/non-URL keys are
+    # left alone — their storage key may have been hand-assigned. When two keys
+    # canonicalize to the same URL, merge to preserve user status / AI scores.
+    def _score(j):
+        return (
+            1 if j.get("status") else 0,
+            1 if j.get("ai_score") is not None else 0,
+            len(j.get("description_preview") or ""),
+        )
+
+    rekeyed: dict = {}
+    for old_key, job in jobs.items():
+        stored_url = job.get("url", "")
+        new_key = normalize_url(stored_url) if stored_url else old_key
+        if not new_key:
+            new_key = old_key
+        existing = rekeyed.get(new_key)
+        if existing is None:
+            rekeyed[new_key] = job
+            continue
+        winner, loser = (job, existing) if _score(job) > _score(existing) else (existing, job)
+        if not winner.get("status") and loser.get("status"):
+            winner["status"] = loser["status"]
+        if winner.get("ai_score") is None and loser.get("ai_score") is not None:
+            winner["ai_score"] = loser["ai_score"]
+            winner["ai_reason"] = loser.get("ai_reason", "")
+        rekeyed[new_key] = winner
+    jobs = rekeyed
 
     # Pre-dedup scan results: group by company+title, keep best per group
     seen_combos: dict[str, dict] = {}

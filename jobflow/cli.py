@@ -478,5 +478,23 @@ def web(
     webapp.run(host="0.0.0.0", port=port, debug=True)
 
 
+@app.command("normalize-urls")
+def normalize_urls():
+    """Re-key existing DB rows to canonical (query-stripped) URLs. Run once."""
+    if not os.environ.get("DATABASE_URL"):
+        console.print("[red]DATABASE_URL not set — nothing to migrate.[/red]")
+        raise typer.Exit(1)
+    from .db import normalize_existing_urls
+    result = normalize_existing_urls()
+    console.print(Panel.fit(
+        f"jobs merged (duplicates collapsed): {result['jobs_merged']}\n"
+        f"jobs re-keyed (url rewritten):      {result['jobs_rekeyed']}\n"
+        f"seen_jobs re-keyed:                 {result['seen_rekeyed']}\n"
+        f"dismissed_jobs re-keyed:            {result['dismissed_rekeyed']}",
+        title="URL canonicalization complete",
+        border_style="green",
+    ))
+
+
 if __name__ == "__main__":
     app()

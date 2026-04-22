@@ -20,7 +20,7 @@ from .linkedin_store import (
     LINKEDIN_STATUSES, KEEP_STATUSES,
     _rescore_entry, _dedup_key, _parse_iso, format_recency,
     _bucket_minutes, _bucket_start, _bucket_label, _bucket_key,
-    backfill_job,
+    backfill_job, normalize_url,
 )
 
 TTL_DAYS = 3
@@ -218,14 +218,17 @@ def merge_scan_results(scan_results: list[dict]) -> int:
     new_count = 0
     try:
         with conn.cursor() as cur:
-            # Load dismissed URLs so deleted jobs never reappear
+            # Load dismissed URLs so deleted jobs never reappear.
+            # Normalize both stored and incoming URLs — the migration re-keys
+            # existing rows, but defending here also covers any stragglers.
             cur.execute("SELECT url FROM dismissed_jobs")
-            dismissed_urls = {row[0] for row in cur.fetchall()}
+            dismissed_urls = {normalize_url(row[0]) for row in cur.fetchall()}
 
             for entry in deduped:
-                url = entry.get("url", "")
+                url = normalize_url(entry.get("url", ""))
                 if not url or url in dismissed_urls:
                     continue
+                entry["url"] = url
 
                 # Re-score entry
                 scored = _rescore_entry(dict(entry))
@@ -338,6 +341,7 @@ def update_job_status(url: str, status: str) -> bool:
     if status not in LINKEDIN_STATUSES and status != "":
         return False
 
+    url = normalize_url(url)
     expires = _expires_at_for_status(status)
     conn = get_conn()
     try:
@@ -364,6 +368,7 @@ def update_job_status(url: str, status: str) -> bool:
 
 def delete_job(url: str) -> bool:
     """Permanently delete a job and record it as dismissed so it never reappears."""
+    url = normalize_url(url)
     conn = get_conn()
     try:
         with conn.cursor() as cur:
@@ -776,6 +781,7 @@ def get_search_terms(source: str = "") -> list[str]:
 
 def get_job(url: str) -> dict | None:
     """Get a single job by URL."""
+    url = normalize_url(url)
     conn = get_conn()
     try:
         with conn.cursor() as cur:
@@ -834,6 +840,7 @@ def load_seen_jobs() -> dict[str, str]:
 
 def save_seen_job(url: str) -> None:
     """Mark a job URL as seen."""
+    url = normalize_url(url)
     conn = get_conn()
     try:
         with conn.cursor() as cur:
@@ -858,7 +865,7 @@ def save_seen_jobs_bulk(seen: dict[str, str]) -> None:
     try:
         with conn.cursor() as cur:
             cur.execute("DELETE FROM seen_jobs WHERE seen_at < %s", (cutoff,))
-            args = [(url, ts) for url, ts in seen.items()]
+            args = [(normalize_url(url), ts) for url, ts in seen.items() if url]
             psycopg2.extras.execute_batch(cur, """
                 INSERT INTO seen_jobs (url, seen_at) VALUES (%s, %s)
                 ON CONFLICT (url) DO UPDATE SET seen_at = EXCLUDED.seen_at
@@ -881,6 +888,156 @@ def prune_seen_jobs() -> int:
             count = cur.rowcount
         conn.commit()
         return count
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
+# ---------------------------------------------------------------------------
+# One-time URL canonicalization
+# ---------------------------------------------------------------------------
+
+_STATUS_PRIORITY = {"Applied": 3, "Tracking": 2, "Not Interested": 1, "": 0}
+
+
+def _merge_job_rows(rows: list[dict], canonical_url: str) -> dict:
+    """Fold duplicate job rows into one, keyed by the canonical URL.
+
+    Precedence: strongest user status wins; within that, the row with an
+    AI score wins; within that, the longest description wins. Earliest
+    first_seen and latest last_seen are adopted across the group.
+    """
+    def rank(j: dict) -> tuple:
+        return (
+            _STATUS_PRIORITY.get(j.get("status") or "", 0),
+            1 if j.get("ai_score") is not None else 0,
+            len(j.get("description_preview") or ""),
+        )
+
+    rows = sorted(rows, key=rank, reverse=True)
+    best = dict(rows[0])
+    for other in rows[1:]:
+        if best.get("ai_score") is None and other.get("ai_score") is not None:
+            best["ai_score"] = other["ai_score"]
+            best["ai_reason"] = other.get("ai_reason") or ""
+            best["ai_model"] = other.get("ai_model")
+            best["recommended"] = other.get("recommended", False)
+        if len(other.get("description_preview") or "") > len(best.get("description_preview") or ""):
+            best["description_preview"] = other["description_preview"]
+        for field, cmp in (("first_seen", min), ("last_seen", max)):
+            a, b = best.get(field), other.get(field)
+            if a and b:
+                best[field] = cmp(a, b)
+            elif b:
+                best[field] = b
+    best["url"] = canonical_url
+    return best
+
+
+def normalize_existing_urls() -> dict:
+    """One-shot: rewrite stored URLs in their canonical form across all tables.
+
+    Groups rows by normalize_url(url); when a group has multiple rows they're
+    merged via _merge_job_rows() to preserve user status and AI scores before
+    the originals are deleted. Safe to run more than once — rows already in
+    canonical form are skipped.
+
+    Returns {"jobs_merged", "jobs_rekeyed", "seen_rekeyed", "dismissed_rekeyed"}.
+    """
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            # --- jobs ---
+            cur.execute(f"SELECT {', '.join(JOB_COLUMNS)} FROM jobs")
+            groups: dict[str, list[dict]] = {}
+            for row in cur.fetchall():
+                d = dict(zip(JOB_COLUMNS, row))
+                norm = normalize_url(d["url"] or "")
+                if not norm:
+                    continue
+                groups.setdefault(norm, []).append(d)
+
+            merged = 0
+            rekeyed = 0
+            for norm, rows in groups.items():
+                if len(rows) == 1 and rows[0]["url"] == norm:
+                    continue
+                best = _merge_job_rows(rows, norm)
+                old_urls = [r["url"] for r in rows]
+                cur.execute("DELETE FROM jobs WHERE url = ANY(%s)", (old_urls,))
+                cur.execute(f"""
+                    INSERT INTO jobs ({', '.join(JOB_COLUMNS)})
+                    VALUES ({', '.join(['%s'] * len(JOB_COLUMNS))})
+                    ON CONFLICT (url) DO NOTHING
+                """, tuple(best.get(c) for c in JOB_COLUMNS))
+                if len(rows) > 1:
+                    merged += 1
+                else:
+                    rekeyed += 1
+
+            # --- seen_jobs --- (keep latest seen_at per canonical URL)
+            cur.execute("SELECT url, seen_at FROM seen_jobs")
+            seen_map: dict[str, tuple[list[str], datetime]] = {}
+            for url, seen_at in cur.fetchall():
+                norm = normalize_url(url or "")
+                if not norm:
+                    continue
+                if norm not in seen_map:
+                    seen_map[norm] = ([url], seen_at)
+                else:
+                    urls, latest = seen_map[norm]
+                    urls.append(url)
+                    if seen_at > latest:
+                        latest = seen_at
+                    seen_map[norm] = (urls, latest)
+            seen_rekeyed = 0
+            for norm, (urls, seen_at) in seen_map.items():
+                if urls == [norm]:
+                    continue
+                cur.execute("DELETE FROM seen_jobs WHERE url = ANY(%s)", (urls,))
+                cur.execute(
+                    "INSERT INTO seen_jobs (url, seen_at) VALUES (%s, %s) "
+                    "ON CONFLICT (url) DO UPDATE SET seen_at = EXCLUDED.seen_at",
+                    (norm, seen_at),
+                )
+                seen_rekeyed += 1
+
+            # --- dismissed_jobs --- (keep earliest dismissed_at — first dismissal wins)
+            cur.execute("SELECT url, dismissed_at FROM dismissed_jobs")
+            dis_map: dict[str, tuple[list[str], datetime]] = {}
+            for url, dismissed_at in cur.fetchall():
+                norm = normalize_url(url or "")
+                if not norm:
+                    continue
+                if norm not in dis_map:
+                    dis_map[norm] = ([url], dismissed_at)
+                else:
+                    urls, earliest = dis_map[norm]
+                    urls.append(url)
+                    if dismissed_at < earliest:
+                        earliest = dismissed_at
+                    dis_map[norm] = (urls, earliest)
+            dismissed_rekeyed = 0
+            for norm, (urls, dismissed_at) in dis_map.items():
+                if urls == [norm]:
+                    continue
+                cur.execute("DELETE FROM dismissed_jobs WHERE url = ANY(%s)", (urls,))
+                cur.execute(
+                    "INSERT INTO dismissed_jobs (url, dismissed_at) VALUES (%s, %s) "
+                    "ON CONFLICT (url) DO NOTHING",
+                    (norm, dismissed_at),
+                )
+                dismissed_rekeyed += 1
+
+        conn.commit()
+        return {
+            "jobs_merged": merged,
+            "jobs_rekeyed": rekeyed,
+            "seen_rekeyed": seen_rekeyed,
+            "dismissed_rekeyed": dismissed_rekeyed,
+        }
     except Exception:
         conn.rollback()
         raise

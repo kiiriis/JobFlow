@@ -366,6 +366,8 @@ LINKEDIN_SEARCH_TERMS = [
     "Associate Software Engineer",
     "Entry Level Software Engineer",
     "Entry Level Jobs 2026",
+    "New Grad Machine Learning Engineer",
+    "Entry Level AI Engineer",
 ]
 
 
@@ -391,7 +393,7 @@ def scan_linkedin_jobspy(max_age_hours: int = 0) -> list[JobPosting]:
                 search_term=term,
                 location="United States",
                 hours_old=hours,
-                results_wanted=100,
+                results_wanted=200,
                 linkedin_fetch_description=True,
             )
         except Exception as e:

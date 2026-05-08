@@ -376,7 +376,7 @@ def get_filtered_jobs(
     search_term: str = "",
     time_range: str = "",
     bucket_filter: str = "",
-    sort_col: str = "last_seen",
+    sort_col: str = "first_seen",
     sort_dir: str = "desc",
     tz_offset: int = 0,
     source: str = "",
@@ -480,25 +480,28 @@ def get_filtered_jobs(
 
         result.append(entry)
 
-    # Sort with secondary key: when primary is equal, sort by ai_score desc (then score_pct)
-    def sort_key(j):
+    def primary_key(j):
         val = j.get(sort_col, "")
         if sort_col in ("score", "score_pct", "competition", "min_exp", "ai_score"):
-            primary = int(val) if val is not None and val != "" else -1
-        else:
-            primary = str(val or "")
-        # Tiebreaker: AI score first, then algo score
-        ai = int(j.get("ai_score") or 0)
-        algo = int(j.get("score_pct", 0) or 0)
-        return (primary, ai, algo)
-
-    reverse = sort_dir == "desc"
+            return int(val) if val is not None and val != "" else -1
+        return str(val or "")
 
     # Applied / Not Interested always at bottom, then custom sort
     bottom = [j for j in result if j.get("status") in ("Applied", "Not Interested")]
     rest = [j for j in result if j.get("status") not in ("Applied", "Not Interested")]
-    rest.sort(key=sort_key, reverse=reverse)
-    bottom.sort(key=sort_key, reverse=reverse)
+
+    # Stable layered sort: primary respects requested direction, while quality
+    # tie-breakers always prefer better/newer jobs regardless of primary direction.
+    def apply_sort(items):
+        items.sort(key=lambda j: int(j.get("score_pct", 0) or 0), reverse=True)
+        if sort_col == "ai_score":
+            items.sort(key=lambda j: str(j.get("first_seen", "") or ""), reverse=True)
+        else:
+            items.sort(key=lambda j: int(j.get("ai_score") or 0), reverse=True)
+        items.sort(key=primary_key, reverse=(sort_dir == "desc"))
+
+    apply_sort(rest)
+    apply_sort(bottom)
     return rest + bottom
 
 

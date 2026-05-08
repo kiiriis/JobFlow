@@ -12,13 +12,15 @@ JobFlow scans multiple job board platforms and aggregates results into a unified
 
 Uses the [python-jobspy](https://github.com/Bunsly/JobSpy) library to scrape LinkedIn.
 
-**Search Terms** (6 queries, 200 results each):
-1. "new grad software engineer 2025 2026"
-2. "entry level software engineer"
-3. "junior software engineer"
-4. "new grad machine learning engineer"
-5. "entry level AI engineer"
-6. "SDE I new grad"
+**Search Terms** (8 queries, 200 results each):
+1. "New Grad Software Engineer"
+2. "Junior Software Engineer"
+3. "Associate Software Engineer"
+4. "Entry Level Software Engineer"
+5. "Entry Level Jobs 2026"
+6. "New Grad Machine Learning Engineer"
+7. "Entry Level AI Engineer"
+8. "Software engineer new grad posted in the past 24 hours"
 
 **Configuration:**
 - Location: "United States"

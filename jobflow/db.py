@@ -414,7 +414,7 @@ def get_filtered_jobs(
     search_term: str = "",
     time_range: str = "",
     bucket_filter: str = "",
-    sort_col: str = "last_seen",
+    sort_col: str = "first_seen",
     sort_dir: str = "desc",
     tz_offset: int = 0,
     source: str = "",
@@ -483,13 +483,25 @@ def get_filtered_jobs(
         "competition", "min_exp", "level", "company", "title",
     }
     if sort_col not in allowed_sorts:
-        sort_col = "last_seen"
+        sort_col = "first_seen"
     direction = "ASC" if sort_dir == "asc" else "DESC"
+
+    # Paired primary/secondary: when sorting by recency, AI score breaks ties;
+    # when sorting by AI score, recency breaks ties. score_pct is the final fallback.
+    if sort_col == "ai_score":
+        primary_sql = "COALESCE(ai_score, 0)"
+        secondary_sql = "first_seen DESC NULLS LAST"
+    elif sort_col == "first_seen":
+        primary_sql = "first_seen"
+        secondary_sql = "COALESCE(ai_score, 0) DESC"
+    else:
+        primary_sql = sort_col
+        secondary_sql = "COALESCE(ai_score, 0) DESC"
 
     order = f"""
         CASE WHEN status IN ('Applied', 'Not Interested') THEN 1 ELSE 0 END,
-        {sort_col} {direction} NULLS LAST,
-        COALESCE(ai_score, 0) DESC,
+        {primary_sql} {direction} NULLS LAST,
+        {secondary_sql},
         score_pct DESC
     """
 

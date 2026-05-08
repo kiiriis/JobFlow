@@ -10,7 +10,7 @@ Automated job scanner + resume tailoring system for new grad / entry-level softw
 GitHub Actions (hourly cron)
     |
     v
-Scan LinkedIn (5 search terms x 100 results)
+Scan LinkedIn (8 search terms x 200 results)
     |
     v
 Score & filter (multi-signal engine: keywords, synergy, level, experience)
@@ -65,7 +65,7 @@ jobflow scan --platform greenhouse --hours 24
 ```
 
 **Sources:**
-- **LinkedIn** — 5 search terms via python-jobspy (new grad, junior, associate, entry level, 2026)
+- **LinkedIn** — 8 search terms via python-jobspy (new grad, junior, associate, entry level, AI/ML, recent-posted phrasing)
 - **Lever API** — 11 companies (Spotify, Palantir, Plaid, etc.)
 - **Greenhouse API** — 40 companies (Stripe, Airbnb, Databricks, etc.)
 - **Ashby API** — 31 companies (OpenAI, Ramp, Figma, etc.)

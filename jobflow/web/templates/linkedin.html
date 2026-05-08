@@ -327,7 +327,7 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
             <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('')" data-time="">All Time</button>
         </div>
         <div class="sort-tabs" role="tablist" aria-label="Sort order">
-            <button class="sort-tab" role="tab" onclick="quickSort('score_pct')" data-qsort="score_pct">★ Score</button>
+            <button class="sort-tab" role="tab" onclick="quickSort('ai_score')" data-qsort="ai_score">★ Best Match</button>
             <button class="sort-tab active" role="tab" onclick="quickSort('first_seen')" data-qsort="first_seen">↓ Recent</button>
         </div>
     </div>
@@ -389,7 +389,7 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
                             <tr>
                                 <th width="28"></th>
                                 <th class="th-sort" onclick="toggleSort('title')">Role <span class="sort-i" data-col="title"></span></th>
-                                <th class="th-sort s-desc" onclick="toggleSort('score_pct')" width="70">Match <span class="sort-i" data-col="score_pct"></span></th>
+                                <th class="th-sort" onclick="toggleSort('score_pct')" width="70">Match <span class="sort-i" data-col="score_pct"></span></th>
                                 <th class="th-sort" onclick="toggleSort('level')" width="80">Level <span class="sort-i" data-col="level"></span></th>
                                 <th width="75">Apply</th>
                             </tr>

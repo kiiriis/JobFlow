@@ -558,7 +558,7 @@ def create_app():
         search_term = request.args.get("search_term", "")
         time_range = request.args.get("time", "")
         bucket_filter = request.args.get("bucket", "")
-        sort_col = request.args.get("sort", "last_seen")
+        sort_col = request.args.get("sort", "first_seen")
         sort_dir = request.args.get("dir", "desc")
         tz_offset = int(request.args.get("tz", "0") or "0")
 

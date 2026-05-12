@@ -365,6 +365,7 @@ LINKEDIN_SEARCH_TERMS = [
     "Junior Software Engineer",
     "Associate Software Engineer",
     "Entry Level Software Engineer",
+    "Entry Level Jobs 2026",
     "New Grad Machine Learning Engineer",
     "Entry Level AI Engineer",
     "Software engineer new grad posted in the past 24 hours",

@@ -107,6 +107,7 @@
 .li-table tbody tr { border-bottom: 1px solid var(--border-subtle); }
 .li-table tbody tr:last-child { border-bottom: none; }
 .li-table tbody tr:hover { background: var(--bg-hover); }
+.li-table tbody.is-loading { opacity: 0.55; transition: opacity 120ms ease; }
 .li-table td { padding: 10px 12px; font-size: 0.82rem; vertical-align: middle; color: var(--text-primary); }
 
 /* ── Row entrance animation ── */
@@ -308,7 +309,7 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
                     hx-post="{{ api_base }}/refresh"
                     hx-target="#last-updated"
                     hx-swap="innerHTML"
-                    hx-on::after-request="triggerFilter(); showToast('Refreshed')">
+                    hx-on::after-request="triggerFilter({timeMeta: true}); showToast('Refreshed')">
                 Refresh
             </button>
             <button class="li-refresh li-scan-btn" id="scan-btn" onclick="scanNow(this)"
@@ -321,9 +322,9 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
     <!-- Time tabs + sort -->
     <div class="time-bar">
         <div class="time-tabs" role="tablist" aria-label="Time range">
-            <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('hour')" data-time="hour">This Hour <span class="t-count" id="tc-hour">--</span></button>
-            <button class="time-tab active" role="tab" aria-selected="true" onclick="setTime('today')" data-time="today">Today <span class="t-count" id="tc-today">--</span></button>
-            <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('yesterday')" data-time="yesterday">Yesterday <span class="t-count" id="tc-yesterday">--</span></button>
+            <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('hour')" data-time="hour">This Hour <span class="t-count" id="tc-hour">{{ time_counts.get('this_hour', 0) }}</span></button>
+            <button class="time-tab active" role="tab" aria-selected="true" onclick="setTime('today')" data-time="today">Today <span class="t-count" id="tc-today">{{ time_counts.get('today', 0) }}</span></button>
+            <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('yesterday')" data-time="yesterday">Yesterday <span class="t-count" id="tc-yesterday">{{ time_counts.get('yesterday', 0) }}</span></button>
             <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('')" data-time="">All Time</button>
         </div>
         <div class="sort-tabs" role="tablist" aria-label="Sort order">
@@ -339,7 +340,7 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
         <button class="hourly-nav" aria-label="Scroll right" onclick="document.getElementById('hourly-scroll').scrollBy({left:200,behavior:'smooth'})">&#8250;</button>
     </div>
     <script>
-    var BUCKET_DATA = [];
+    var BUCKET_DATA = {{ time_counts.get('buckets', [])|tojson }};
     </script>
 
     <div class="li-layout">
@@ -408,6 +409,8 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
 var API_BASE = "{{ api_base }}";
 var _debounceTimer = null;
 var _autoRefreshInterval = null;
+var _filterController = null;
+var _filterSeq = 0;
 var AVATAR_COLORS = ['#e06060','#f5b85a','#52d98a','#5b9bd5','#a78bfa','#34d3c4','#ff7eb3','#ff9f43','#6c5ce7','#00b894'];
 
 // ── Theme icon sync ──
@@ -461,7 +464,7 @@ function setTime(val) {
         t.setAttribute('aria-selected', isActive);
     });
     document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.remove('active'); });
-    triggerFilter();
+    triggerFilter({timeMeta: true});
 }
 
 function scanNow(btn) {
@@ -482,7 +485,7 @@ function pollScanStatus(btn) {
                 clearInterval(poll);
                 btn.disabled = false;
                 btn.innerHTML = 'Scan Now';
-                triggerFilter();
+                triggerFilter({timeMeta: true});
                 showToast('Scan complete \u2014 new jobs loaded');
             }
         });
@@ -504,7 +507,7 @@ function dismissJob(btn, key) {
         setTimeout(function() {
             row.remove();
             showToast('Deleted');
-            triggerFilter();
+            refreshCounts({timeMeta: true});
         }, 300);
     }).catch(function() {
         row.classList.remove('dismissing');
@@ -516,7 +519,7 @@ function setBucket(key) {
     var current = document.getElementById('filter-bucket').value;
     document.getElementById('filter-bucket').value = (current === key) ? '' : key;
     document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.toggle('active', c.dataset.bucket === document.getElementById('filter-bucket').value); });
-    triggerFilter();
+    triggerFilter({timeMeta: true});
 }
 
 function quickSort(col) {
@@ -534,7 +537,7 @@ function debounceFilter() {
     _debounceTimer = setTimeout(triggerFilter, 250);
 }
 
-function triggerFilter() {
+function currentParams(includeTimeMeta) {
     var params = new URLSearchParams();
     params.set('status', document.getElementById('filter-status').value);
     params.set('level', document.getElementById('filter-level').value);
@@ -544,85 +547,153 @@ function triggerFilter() {
     params.set('time', document.getElementById('filter-time').value);
     params.set('bucket', document.getElementById('filter-bucket').value);
     params.set('tz', getUserTzOffset().toString());
+    params.set('limit', '250');
+    params.set('meta', includeTimeMeta ? '1' : '0');
     var termEl = document.getElementById('filter-search-term');
     if (termEl) params.set('search_term', termEl.value);
+    return params;
+}
 
-    fetch(API_BASE + '/jobs?' + params.toString()).then(function(resp) {
-        var countsStr = resp.headers.get('X-Counts');
-        var parsedCounts = null;
-        if (countsStr) {
-            try {
-                parsedCounts = JSON.parse(countsStr);
-                document.querySelectorAll('.li-chip').forEach(function(c) {
-                    if (c.dataset.status === undefined) return;
-                    var key = c.dataset.status === '' ? 'All' : c.dataset.status;
-                    var badge = c.querySelector('.li-chip-count');
-                    if (badge && parsedCounts[key] !== undefined) badge.textContent = parsedCounts[key];
-                });
-            } catch(e) {}
+function applyFeedMeta(meta) {
+    var counts = meta.counts || {};
+    var levelCounts = meta.level_counts || {};
+    document.querySelectorAll('.li-chip').forEach(function(c) {
+        var badge = c.querySelector('.li-chip-count');
+        if (!badge) return;
+        if (c.dataset.status !== undefined) {
+            var key = c.dataset.status === '' ? 'All' : c.dataset.status;
+            if (counts[key] !== undefined) badge.textContent = counts[key];
         }
-        var levelStr = resp.headers.get('X-Level-Counts');
-        if (levelStr) {
-            try {
-                var lc = JSON.parse(levelStr);
-                document.querySelectorAll('.li-chip').forEach(function(c) {
-                    if (c.dataset.level === undefined) return;
-                    var badge = c.querySelector('.li-chip-count');
-                    if (badge && lc[c.dataset.level] !== undefined) badge.textContent = lc[c.dataset.level];
-                });
-            } catch(e) {}
+        if (c.dataset.level !== undefined && levelCounts[c.dataset.level] !== undefined) {
+            badge.textContent = levelCounts[c.dataset.level];
         }
-        var totalStr = resp.headers.get('X-Total');
-        var summaryEl = document.getElementById('li-summary');
-        if (summaryEl && totalStr !== null) {
-            var rec = (parsedCounts && parsedCounts.Recommended) || 0;
-            var applied = (parsedCounts && parsedCounts.Applied) || 0;
-            var html_parts = '<b>' + totalStr + '</b> jobs';
-            if (rec > 0) html_parts += ' &middot; <b>' + rec + '</b> recommended';
-            if (applied > 0) html_parts += ' &middot; Applied: <b>' + applied + '</b>';
-            summaryEl.innerHTML = html_parts;
-        }
+    });
+
+    var summaryEl = document.getElementById('li-summary');
+    if (summaryEl && meta.total !== undefined) {
+        var rec = counts.Recommended || 0;
+        var applied = counts.Applied || 0;
+        var displayed = meta.displayed || meta.total;
+        var html_parts = '<b>' + meta.total + '</b> jobs';
+        if (displayed < meta.total) html_parts += ' &middot; showing <b>' + displayed + '</b>';
+        if (rec > 0) html_parts += ' &middot; <b>' + rec + '</b> recommended';
+        if (applied > 0) html_parts += ' &middot; Applied: <b>' + applied + '</b>';
+        summaryEl.innerHTML = html_parts;
+    }
+
+    if (meta.time_counts) {
+        var tc = meta.time_counts;
+        var el;
+        el = document.getElementById('tc-hour'); if (el) el.textContent = tc.this_hour || 0;
+        el = document.getElementById('tc-today'); if (el) el.textContent = tc.today || 0;
+        el = document.getElementById('tc-yesterday'); if (el) el.textContent = tc.yesterday || 0;
+    }
+    if (meta.buckets) {
+        BUCKET_DATA = meta.buckets;
+        renderBucketCards();
+    }
+}
+
+function metaFromHeaders(resp) {
+    var meta = {};
+    try { meta.counts = JSON.parse(resp.headers.get('X-Counts') || '{}'); } catch(e) { meta.counts = {}; }
+    try { meta.level_counts = JSON.parse(resp.headers.get('X-Level-Counts') || '{}'); } catch(e) { meta.level_counts = {}; }
+    var totalStr = resp.headers.get('X-Total');
+    var displayedStr = resp.headers.get('X-Displayed');
+    if (totalStr !== null) meta.total = parseInt(totalStr, 10) || 0;
+    if (displayedStr !== null) meta.displayed = parseInt(displayedStr, 10) || 0;
+    try {
         var timeStr = resp.headers.get('X-Time-Counts');
-        if (timeStr) {
-            try {
-                var tc = JSON.parse(timeStr);
-                var el;
-                el = document.getElementById('tc-hour'); if (el) el.textContent = tc.this_hour || 0;
-                el = document.getElementById('tc-today'); if (el) el.textContent = tc.today || 0;
-                el = document.getElementById('tc-yesterday'); if (el) el.textContent = tc.yesterday || 0;
-            } catch(e) {}
-        }
+        if (timeStr) meta.time_counts = JSON.parse(timeStr);
+    } catch(e) {}
+    try {
         var bucketStr = resp.headers.get('X-Buckets');
-        if (bucketStr) {
-            try {
-                BUCKET_DATA = JSON.parse(bucketStr);
-                renderBucketCards();
-            } catch(e) {}
+        if (bucketStr) meta.buckets = JSON.parse(bucketStr);
+    } catch(e) {}
+    return meta;
+}
+
+function formatRecency(root) {
+    (root || document).querySelectorAll('.utc-recency').forEach(function(el) {
+        var utc = el.dataset.utc;
+        if (!utc) return;
+        var d = new Date(utc.includes('T') ? utc + (utc.includes('+') || utc.includes('Z') ? '' : 'Z') : utc);
+        if (isNaN(d)) return;
+        var diffMs = Date.now() - d.getTime();
+        var diffH = Math.floor(diffMs / 3600000);
+        var rel;
+        if (diffH < 1) rel = 'just now';
+        else if (diffH < 24) rel = diffH + 'h ago';
+        else { var days = Math.floor(diffH / 24); rel = days === 1 ? '1d ago' : days + 'd ago'; }
+        var clock = d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+        el.textContent = rel + ' (' + clock + ')';
+    });
+}
+
+function rowMatchesFilters(row) {
+    var status = document.getElementById('filter-status').value;
+    var level = document.getElementById('filter-level').value;
+    var q = document.getElementById('filter-q').value.trim().toLowerCase();
+    var termEl = document.getElementById('filter-search-term');
+    var term = termEl ? termEl.value : '';
+    if (status === 'Recommended' && !(row.dataset.recommended === '1' && row.dataset.status !== 'Not Interested')) return false;
+    if (status && status !== 'Recommended' && row.dataset.status !== status) return false;
+    if (level && row.dataset.level !== level) return false;
+    if (q && (row.dataset.search || '').indexOf(q) === -1) return false;
+    if (term && row.dataset.searchTerm !== term) return false;
+    return true;
+}
+
+function pruneMismatchedRows() {
+    document.querySelectorAll('#linkedin-body tr[data-search]').forEach(function(row) {
+        if (!rowMatchesFilters(row)) {
+            row.classList.add('dismissing');
+            setTimeout(function() { row.remove(); }, 180);
+        } else {
+            formatRecency(row);
         }
-        return resp.text();
-    }).then(function(html) {
-        document.getElementById('linkedin-body').innerHTML = html;
-        htmx.process(document.getElementById('linkedin-body'));
-        document.querySelectorAll('.utc-recency').forEach(function(el) {
-            var utc = el.dataset.utc;
-            if (!utc) return;
-            var d = new Date(utc.includes('T') ? utc + (utc.includes('+') || utc.includes('Z') ? '' : 'Z') : utc);
-            if (isNaN(d)) return;
-            var diffMs = Date.now() - d.getTime();
-            var diffH = Math.floor(diffMs / 3600000);
-            var rel;
-            if (diffH < 1) rel = 'just now';
-            else if (diffH < 24) rel = diffH + 'h ago';
-            else { var days = Math.floor(diffH / 24); rel = days === 1 ? '1d ago' : days + 'd ago'; }
-            var clock = d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
-            el.textContent = rel + ' (' + clock + ')';
+    });
+}
+
+function refreshCounts(options) {
+    options = options || {};
+    var params = currentParams(!!options.timeMeta);
+    fetch(API_BASE + '/meta?' + params.toString())
+        .then(function(resp) { return resp.json(); })
+        .then(applyFeedMeta)
+        .catch(function() {});
+}
+
+function triggerFilter(options) {
+    options = options || {};
+    if (_filterController) _filterController.abort();
+    _filterController = new AbortController();
+    var seq = ++_filterSeq;
+    var params = currentParams(!!options.timeMeta);
+    var body = document.getElementById('linkedin-body');
+    if (body) body.classList.add('is-loading');
+
+    fetch(API_BASE + '/jobs?' + params.toString(), {signal: _filterController.signal}).then(function(resp) {
+        var meta = metaFromHeaders(resp);
+        return resp.text().then(function(html) {
+            return {html: html, meta: meta};
         });
+    }).then(function(payload) {
+        if (seq !== _filterSeq) return;
+        applyFeedMeta(payload.meta);
+        document.getElementById('linkedin-body').innerHTML = payload.html;
+        htmx.process(document.getElementById('linkedin-body'));
+        formatRecency(document.getElementById('linkedin-body'));
         // Update last-updated timestamp
         var updEl = document.getElementById('last-updated');
         if (updEl) {
             var now = new Date();
             updEl.textContent = 'Updated ' + now.toLocaleString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
         }
+    }).catch(function(err) {
+        if (!err || err.name !== 'AbortError') showToast('Could not load jobs', 'error');
+    }).finally(function() {
+        if (seq === _filterSeq && body) body.classList.remove('is-loading');
     });
 }
 
@@ -675,6 +746,7 @@ document.addEventListener('visibilitychange', function() {
 
 document.addEventListener('DOMContentLoaded', function() {
     renderUtcTimes();
+    renderBucketCards();
     triggerFilter();
     startAutoRefresh();
 });

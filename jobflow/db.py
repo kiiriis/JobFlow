@@ -116,6 +116,12 @@ def init_db():
                     WHERE expires_at IS NOT NULL;
                 CREATE INDEX IF NOT EXISTS idx_jobs_company_title
                     ON jobs (LOWER(company), LOWER(title));
+                CREATE INDEX IF NOT EXISTS idx_jobs_source_first_seen
+                    ON jobs (source, first_seen DESC);
+                CREATE INDEX IF NOT EXISTS idx_jobs_source_status
+                    ON jobs (source, status);
+                CREATE INDEX IF NOT EXISTS idx_jobs_source_level
+                    ON jobs (source, level);
 
                 CREATE TABLE IF NOT EXISTS seen_jobs (
                     url     TEXT PRIMARY KEY,
@@ -132,6 +138,13 @@ def init_db():
             cur.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS ai_model TEXT")
             cur.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'linkedin'")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_jobs_source ON jobs (source)")
+            cur.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_jobs_search_trgm
+                    ON jobs USING GIN (
+                        (LOWER(company || ' ' || title || ' ' || location)) gin_trgm_ops
+                    )
+            """)
             # Retag jobs whose URL clearly isn't LinkedIn — handles pre-existing
             # rows that got the 'linkedin' default but came from GitHub / ATS scans.
             cur.execute(
@@ -418,6 +431,7 @@ def get_filtered_jobs(
     sort_dir: str = "desc",
     tz_offset: int = 0,
     source: str = "",
+    limit: int | None = 250,
 ) -> list[dict]:
     """Return filtered, sorted job list. Mirrors linkedin_store.get_filtered_jobs()."""
     now_utc = datetime.now(tz=timezone.utc)
@@ -464,9 +478,9 @@ def get_filtered_jobs(
         params.append(level)
 
     if query:
-        conditions.append("(LOWER(company) LIKE %s OR LOWER(title) LIKE %s OR LOWER(location) LIKE %s)")
+        conditions.append("LOWER(company || ' ' || title || ' ' || location) LIKE %s")
         q_like = f"%{query.lower().strip()}%"
-        params.extend([q_like, q_like, q_like])
+        params.append(q_like)
 
     if search_term:
         conditions.append("search_term = %s")
@@ -506,6 +520,9 @@ def get_filtered_jobs(
     """
 
     sql = f"SELECT {', '.join(JOB_COLUMNS)} FROM jobs WHERE {where} ORDER BY {order}"
+    if limit:
+        sql += " LIMIT %s"
+        params.append(limit)
 
     conn = get_conn()
     try:
@@ -626,9 +643,9 @@ def get_filtered_counts(
             pass
 
     if query:
-        conditions.append("(LOWER(company) LIKE %s OR LOWER(title) LIKE %s OR LOWER(location) LIKE %s)")
+        conditions.append("LOWER(company || ' ' || title || ' ' || location) LIKE %s")
         q_like = f"%{query.lower().strip()}%"
-        params.extend([q_like, q_like, q_like])
+        params.append(q_like)
 
     if search_term:
         conditions.append("search_term = %s")

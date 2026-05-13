@@ -380,6 +380,7 @@ def get_filtered_jobs(
     sort_dir: str = "desc",
     tz_offset: int = 0,
     source: str = "",
+    limit: int | None = 250,
 ) -> list[dict]:
     """Return jobs as a sorted list with multi-dimensional filtering.
 
@@ -502,7 +503,8 @@ def get_filtered_jobs(
 
     apply_sort(rest)
     apply_sort(bottom)
-    return rest + bottom
+    combined = rest + bottom
+    return combined[:limit] if limit else combined
 
 
 def get_status_counts(store: dict, source: str = "") -> dict[str, int]:

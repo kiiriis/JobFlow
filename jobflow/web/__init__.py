@@ -527,14 +527,14 @@ def create_app():
             counts = _db.get_status_counts(source=source)
             level_counts = _db.get_level_counts(source=source)
             search_terms = _db.get_search_terms(source=source)
-            time_counts = _db.get_time_counts(source=source)
+            time_counts = _db.get_time_counts(source=source, time_range="today")
             last_updated = _db.get_last_updated()
         else:
             store = load_store(linkedin_store_path)
             counts = get_status_counts(store, source=source)
             level_counts = get_level_counts(store, source=source)
             search_terms = get_search_terms(store, source=source)
-            time_counts = get_time_counts(store, source=source)
+            time_counts = get_time_counts(store, source=source, time_range="today")
             last_updated = store.get("last_updated", "")
         return render_template(
             "linkedin.html",
@@ -551,47 +551,94 @@ def create_app():
             source=source,
         )
 
+    def _feed_args():
+        try:
+            tz_offset = int(request.args.get("tz", "0") or "0")
+        except ValueError:
+            tz_offset = 0
+        try:
+            limit = int(request.args.get("limit", "250") or "250")
+        except ValueError:
+            limit = 250
+        limit = min(max(limit, 50), 500)
+        return {
+            "status_filter": request.args.get("status", ""),
+            "level_filter": request.args.get("level", ""),
+            "query": request.args.get("q", ""),
+            "search_term": request.args.get("search_term", ""),
+            "time_range": request.args.get("time", ""),
+            "bucket_filter": request.args.get("bucket", ""),
+            "sort_col": request.args.get("sort", "first_seen"),
+            "sort_dir": request.args.get("dir", "desc"),
+            "tz_offset": tz_offset,
+            "limit": limit,
+            "include_time_meta": request.args.get("meta", "1") == "1",
+        }
+
+    def _feed_counts(source: str, args: dict):
+        if USE_DB:
+            return _db.get_filtered_counts(
+                time_range=args["time_range"], bucket_filter=args["bucket_filter"],
+                tz_offset=args["tz_offset"], query=args["query"],
+                search_term=args["search_term"], source=source,
+            )
+
+        store = load_store(linkedin_store_path)
+        return get_filtered_counts(
+            store, time_range=args["time_range"], bucket_filter=args["bucket_filter"],
+            tz_offset=args["tz_offset"], query=args["query"],
+            search_term=args["search_term"], source=source,
+        )
+
+    def _feed_meta(source: str, args: dict):
+        fc = _feed_counts(source, args)
+        payload = {
+            "counts": fc["status"],
+            "level_counts": fc["level"],
+            "total": fc["status"].get("All", 0),
+        }
+        if args["include_time_meta"]:
+            if USE_DB:
+                time_counts = _db.get_time_counts(
+                    tz_offset=args["tz_offset"], time_range=args["time_range"], source=source,
+                )
+            else:
+                store = load_store(linkedin_store_path)
+                time_counts = get_time_counts(
+                    store, tz_offset=args["tz_offset"], time_range=args["time_range"], source=source,
+                )
+            payload["time_counts"] = {
+                "this_hour": time_counts["this_hour"],
+                "today": time_counts["today"],
+                "yesterday": time_counts["yesterday"],
+            }
+            payload["buckets"] = time_counts.get("buckets", [])
+        return payload
+
     def _render_feed_jobs(source: str, api_base: str):
-        status_filter = request.args.get("status", "")
-        level_filter = request.args.get("level", "")
-        query = request.args.get("q", "")
-        search_term = request.args.get("search_term", "")
-        time_range = request.args.get("time", "")
-        bucket_filter = request.args.get("bucket", "")
-        sort_col = request.args.get("sort", "first_seen")
-        sort_dir = request.args.get("dir", "desc")
-        tz_offset = int(request.args.get("tz", "0") or "0")
+        args = _feed_args()
 
         if USE_DB:
             jobs = _db.get_filtered_jobs(
-                status=status_filter, level=level_filter, query=query,
-                search_term=search_term, time_range=time_range,
-                bucket_filter=bucket_filter, sort_col=sort_col,
-                sort_dir=sort_dir, tz_offset=tz_offset, source=source,
+                status=args["status_filter"], level=args["level_filter"], query=args["query"],
+                search_term=args["search_term"], time_range=args["time_range"],
+                bucket_filter=args["bucket_filter"], sort_col=args["sort_col"],
+                sort_dir=args["sort_dir"], tz_offset=args["tz_offset"], source=source,
+                limit=args["limit"],
             )
-            fc = _db.get_filtered_counts(
-                time_range=time_range, bucket_filter=bucket_filter,
-                tz_offset=tz_offset, query=query, search_term=search_term,
-                source=source,
-            )
-            time_counts = _db.get_time_counts(tz_offset=tz_offset, time_range=time_range, source=source)
         else:
             store = load_store(linkedin_store_path)
             jobs = get_filtered_jobs(
-                store, status=status_filter, level=level_filter, query=query,
-                search_term=search_term, time_range=time_range,
-                bucket_filter=bucket_filter, sort_col=sort_col,
-                sort_dir=sort_dir, tz_offset=tz_offset, source=source,
+                store, status=args["status_filter"], level=args["level_filter"], query=args["query"],
+                search_term=args["search_term"], time_range=args["time_range"],
+                bucket_filter=args["bucket_filter"], sort_col=args["sort_col"],
+                sort_dir=args["sort_dir"], tz_offset=args["tz_offset"], source=source,
+                limit=args["limit"],
             )
-            fc = get_filtered_counts(
-                store, time_range=time_range, bucket_filter=bucket_filter,
-                tz_offset=tz_offset, query=query, search_term=search_term,
-                source=source,
-            )
-            time_counts = get_time_counts(store, tz_offset=tz_offset, time_range=time_range, source=source)
 
-        counts = fc["status"]
-        level_counts = fc["level"]
+        meta = _feed_meta(source, args)
+        counts = meta["counts"]
+        level_counts = meta["level_counts"]
         resp = make_response(render_template(
             "_partials/linkedin_tbody.html",
             jobs=jobs,
@@ -601,14 +648,16 @@ def create_app():
         ))
         resp.headers["X-Counts"] = json.dumps(counts)
         resp.headers["X-Level-Counts"] = json.dumps(level_counts)
-        resp.headers["X-Time-Counts"] = json.dumps({
-            "this_hour": time_counts["this_hour"],
-            "today": time_counts["today"],
-            "yesterday": time_counts["yesterday"],
-        })
-        resp.headers["X-Buckets"] = json.dumps(time_counts.get("buckets", []))
-        resp.headers["X-Total"] = str(len(jobs))
+        if "time_counts" in meta:
+            resp.headers["X-Time-Counts"] = json.dumps(meta["time_counts"])
+            resp.headers["X-Buckets"] = json.dumps(meta.get("buckets", []))
+        resp.headers["X-Total"] = str(meta["total"])
+        resp.headers["X-Displayed"] = str(len(jobs))
         return resp
+
+    def _render_feed_meta_json(source: str):
+        args = _feed_args()
+        return jsonify(_feed_meta(source, args))
 
     def _update_status_and_render(key: str, api_base: str):
         data = request.form or request.get_json(silent=True) or {}
@@ -666,6 +715,14 @@ def create_app():
     @app.route("/api/boards/jobs")
     def api_boards_jobs():
         return _render_feed_jobs(source="github", api_base="/api/boards")
+
+    @app.route("/api/linkedin/meta")
+    def api_linkedin_meta():
+        return _render_feed_meta_json(source="linkedin")
+
+    @app.route("/api/boards/meta")
+    def api_boards_meta():
+        return _render_feed_meta_json(source="github")
 
     @app.route("/api/linkedin/jobs/<path:key>/status", methods=["PATCH"])
     def api_linkedin_status(key):

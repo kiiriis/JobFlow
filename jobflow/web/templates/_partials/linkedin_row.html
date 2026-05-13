@@ -4,7 +4,13 @@
 {% set ai = job.ai_score|default(none) %}
 {% set match_pct = (ai * 10)|int if ai is not none else job.score_pct|default(0)|int %}
 {% set api_base = api_base|default("/api/linkedin") %}
-<tr role="row">
+{% set searchable = (job.company|default('') ~ ' ' ~ job.title|default('') ~ ' ' ~ job.location|default(''))|lower %}
+<tr role="row"
+    data-status="{{ job.status|default('') }}"
+    data-level="{{ job.level|default('Unknown') }}"
+    data-recommended="{{ 1 if job.recommended else 0 }}"
+    data-search="{{ searchable|e }}"
+    data-search-term="{{ job.search_term|default('')|e }}">
     <td class="td-n">{{ loop.index if loop is defined else '' }}</td>
     <td>
         <div class="role-cell">
@@ -52,7 +58,7 @@
                 hx-patch="{{ api_base }}/jobs/{{ job._key }}/status"
                 hx-target="closest tr"
                 hx-swap="outerHTML"
-                hx-on::after-request="showToast('Updated'); if(typeof triggerFilter==='function') setTimeout(triggerFilter, 400)"
+                hx-on::after-request="showToast('Updated'); setTimeout(function(){ if(typeof pruneMismatchedRows==='function') pruneMismatchedRows(); if(typeof refreshCounts==='function') refreshCounts(); }, 80)"
                 class="li-status-sel"
                 aria-label="Set status for {{ job.title }}">
             <option value="" {% if not job.status %}selected{% endif %}>--</option>
@@ -60,6 +66,6 @@
             <option value="{{ st }}" {% if st == job.status %}selected{% endif %}>{{ st }}</option>
             {% endfor %}
         </select>
-        <button class="dismiss-btn" title="Delete {{ job.title }}" aria-label="Delete {{ job.title }}" onclick="dismissJob(this, '{{ job._key }}')">✕</button>
+        <button class="dismiss-btn" title="Delete {{ job.title }}" aria-label="Delete {{ job.title }}" data-key="{{ job._key }}" onclick="dismissJob(this, this.dataset.key)">✕</button>
     </td>
 </tr>

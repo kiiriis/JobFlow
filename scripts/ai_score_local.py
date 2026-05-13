@@ -1,18 +1,25 @@
-"""Local AI scoring using Claude CLI (claude -p) with batching.
+"""Local AI scoring using signed-in Codex CLI with batching.
 
 Usage:
     python scripts/ai_score_local.py
+    python scripts/ai_score_local.py --limit 50
+    python scripts/ai_score_local.py --hours 12
+    python scripts/ai_score_local.py --hours 12 --limit 100
 
 Reads DATABASE_URL from .env, fetches unscored jobs, scores them in batches
-of 15 with Claude, and updates the DB directly. ~15 jobs per Claude call
-instead of 1 — roughly 10x faster.
+of 15 with the local Codex CLI session, and updates the DB directly. This uses
+the signed-in Codex app/CLI account instead of an API key.
 """
 
+import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # Add project root to path
@@ -71,26 +78,81 @@ Return ONLY a valid JSON array with one object per job, in the same order. Nothi
 [{{"id": 1, "score": <0-10>, "reason": "<one sentence>"}}, ...]"""
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Score recent/unscored JobFlow DB jobs with the signed-in Codex CLI.",
+    )
+    parser.add_argument(
+        "--limit",
+        "-n",
+        type=int,
+        default=0,
+        help="Score only the latest N eligible jobs by first_seen. Default: no limit.",
+    )
+    parser.add_argument(
+        "--hours",
+        type=float,
+        default=0,
+        help="Score only eligible jobs first seen in the past H hours. Example: --hours 12.",
+    )
+    args = parser.parse_args()
+    if args.limit < 0:
+        parser.error("--limit must be 0 or greater")
+    if args.hours < 0:
+        parser.error("--hours must be 0 or greater")
+    return args
+
+
 def build_jobs_block(batch):
-    """Format a batch of jobs for the prompt. Sends the full JD — Claude's
-    200K context easily handles 15 full descriptions per batch."""
+    """Format a batch of jobs for the prompt."""
     parts = []
     for i, (url, company, title, location, desc, *_) in enumerate(batch, 1):
         parts.append(f"### Job {i}\nTitle: {title}\nCompany: {company}\nLocation: {location}\nDescription: {desc or ''}\n")
     return "\n".join(parts)
 
 
-def score_batch_with_claude(batch):
-    """Score a batch of jobs using a single claude -p call."""
+def score_batch_with_codex(batch):
+    """Score a batch of jobs using one signed-in `codex exec` call."""
     jobs_block = build_jobs_block(batch)
     prompt = BATCH_PROMPT.format(profile=PROFILE, jobs_block=jobs_block)
 
+    if not shutil.which("codex"):
+        print("  Batch error: codex CLI not found on PATH")
+        return None
+
+    output_path = None
     try:
+        with tempfile.NamedTemporaryFile(
+            prefix="jobflow_codex_score_",
+            suffix=".txt",
+            delete=False,
+        ) as tmp:
+            output_path = Path(tmp.name)
+
         result = subprocess.run(
-            ["claude", "-p", prompt],
-            capture_output=True, text=True, timeout=120,
+            [
+                "codex", "exec",
+                "--cd", str(ROOT),
+                "--sandbox", "read-only",
+                "--ignore-rules",
+                "--output-last-message", str(output_path),
+                "-",
+            ],
+            input=prompt,
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
-        text = result.stdout.strip()
+        if result.returncode != 0:
+            err = (result.stderr or result.stdout or "").strip()
+            print(f"  Batch error: codex exited with code {result.returncode}: {err[:500]}")
+            return None
+
+        text = ""
+        if output_path and output_path.exists():
+            text = output_path.read_text(errors="replace").strip()
+        if not text:
+            text = result.stdout.strip()
         if not text:
             return None
 
@@ -111,25 +173,46 @@ def score_batch_with_claude(batch):
     except Exception as e:
         print(f"  Batch error: {e}")
         return None
+    finally:
+        if output_path:
+            try:
+                output_path.unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 def main():
+    args = parse_args()
+
     if not os.environ.get("DATABASE_URL"):
         print("ERROR: DATABASE_URL not set (check .env)")
         sys.exit(1)
 
     init_db()
 
-    # Fetch unscored + Groq-scored jobs (Claude rescores Groq, skips already-Claude-scored)
+    # Fetch unscored + Groq/Claude-scored jobs. Already-Codex-scored rows are
+    # skipped so repeated runs only process new or older-scored jobs.
+    conditions = ["(ai_score IS NULL OR ai_model IN ('groq', 'claude'))"]
+    params = []
+    if args.hours:
+        since = datetime.now(timezone.utc) - timedelta(hours=args.hours)
+        conditions.append("first_seen >= %s")
+        params.append(since)
+
+    sql = f"""
+        SELECT url, company, title, location, description_preview, ai_model
+        FROM jobs
+        WHERE {' AND '.join(conditions)}
+        ORDER BY first_seen DESC
+    """
+    if args.limit:
+        sql += " LIMIT %s"
+        params.append(args.limit)
+
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute("""
-                SELECT url, company, title, location, description_preview, ai_model
-                FROM jobs
-                WHERE ai_score IS NULL OR ai_model = 'groq'
-                ORDER BY first_seen DESC
-            """)
+            cur.execute(sql, params)
             rows = cur.fetchall()
     finally:
         put_conn(conn)
@@ -139,7 +222,12 @@ def main():
     groq_rescore = sum(1 for r in rows if r[5] == 'groq')
     batches = (total + BATCH_SIZE - 1) // BATCH_SIZE
     print(f"Found {total} jobs to score ({batches} batches of {BATCH_SIZE})")
-    print(f"  {unscored} unscored, {groq_rescore} Groq→Claude rescore")
+    if args.hours:
+        print(f"  Window: first_seen in past {args.hours:g} hours")
+    if args.limit:
+        print(f"  Limit: latest {args.limit} eligible jobs")
+    claude_rescore = sum(1 for r in rows if r[5] == 'claude')
+    print(f"  {unscored} unscored, {groq_rescore} Groq→Codex rescore, {claude_rescore} Claude→Codex rescore")
     if not rows:
         print("Nothing to score!")
         return
@@ -153,7 +241,7 @@ def main():
         total_batches = (total + BATCH_SIZE - 1) // BATCH_SIZE
         print(f"\n--- Batch {batch_num}/{total_batches} ({len(batch)} jobs) ---")
 
-        scores = score_batch_with_claude(batch)
+        scores = score_batch_with_codex(batch)
         if not scores or len(scores) != len(batch):
             # Fallback: if batch fails or count mismatch, mark as failed
             for url, company, title, *_ in batch:
@@ -174,7 +262,7 @@ def main():
                         UPDATE jobs
                         SET ai_score = %s, ai_reason = %s,
                             score_pct = %s, recommended = %s,
-                            ai_model = 'claude'
+                            ai_model = 'codex'
                         WHERE url = %s
                     """, (ai_score, ai_reason, score_pct, recommended, url))
 

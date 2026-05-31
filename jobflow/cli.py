@@ -481,7 +481,8 @@ def web(
 @app.command("normalize-urls")
 def normalize_urls():
     """Re-key existing DB rows to canonical (query-stripped) URLs. Run once."""
-    if not os.environ.get("DATABASE_URL"):
+    from .linkedin_store import is_db_enabled
+    if not is_db_enabled():
         console.print("[red]DATABASE_URL not set — nothing to migrate.[/red]")
         raise typer.Exit(1)
     from .db import normalize_existing_urls

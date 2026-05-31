@@ -72,7 +72,7 @@ from ..linkedin_store import (
     normalize_url,
     LINKEDIN_STATUSES,
     STORE_LOCK,
-    USE_DB,
+    is_db_enabled,
 )
 
 
@@ -479,15 +479,45 @@ def create_app():
     linkedin_store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
     scan_results_path = config["_root"] / "data" / "ci" / "scan_results.json"
 
-    # Initialize DB if available
-    if USE_DB:
-        from ..db import init_db as _init_db
-        from .. import db as _db
-        _init_db()
+    db_state = {"module": None, "last_attempt": 0.0, "last_error": ""}
+
+    def _get_db():
+        """Return the DB module when configured and reachable, else None."""
+        if not is_db_enabled():
+            db_state["module"] = None
+            return None
+        if db_state["module"] is not None:
+            return db_state["module"]
+        now = time.time()
+        if db_state["last_attempt"] and now - db_state["last_attempt"] < 60:
+            return None
+        db_state["last_attempt"] = now
+        try:
+            from .. import db as db_module
+            db_module.init_db()
+            db_state["module"] = db_module
+            db_state["last_error"] = ""
+            return db_module
+        except Exception as e:
+            db_state["last_error"] = str(e)
+            db_state["module"] = None
+            return None
+
+    def _try_db(fn):
+        db = _get_db()
+        if db is None:
+            return False, None
+        try:
+            return True, fn(db)
+        except Exception as e:
+            db_state["last_error"] = str(e)
+            db_state["module"] = None
+            db_state["last_attempt"] = time.time()
+            return False, None
 
     def _do_linkedin_merge():
         """Merge scan_results.json into linkedin_jobs.json (JSON backend only)."""
-        if USE_DB:
+        if _get_db() is not None:
             return  # DB backend handles merges directly
         if not scan_results_path.exists():
             return
@@ -504,8 +534,7 @@ def create_app():
             save_store(linkedin_store_path, store)
 
     # Merge once on startup (JSON backend only)
-    if not USE_DB:
-        _do_linkedin_merge()
+    _do_linkedin_merge()
 
     # Auto-pull thread (JSON backend, local dev only)
     def _auto_pull_loop():
@@ -522,17 +551,20 @@ def create_app():
             except Exception:
                 pass
 
-    if not USE_DB and not os.environ.get("RENDER"):
+    if not is_db_enabled() and not os.environ.get("RENDER"):
         pull_thread = threading.Thread(target=_auto_pull_loop, daemon=True)
         pull_thread.start()
 
     def _render_feed_page(source: str, page_title: str, page_subtitle: str, api_base: str):
-        if USE_DB:
-            counts = _db.get_status_counts(source=source)
-            level_counts = _db.get_level_counts(source=source)
-            search_terms = _db.get_search_terms(source=source)
-            time_counts = _db.get_time_counts(source=source, time_range="today")
-            last_updated = _db.get_last_updated()
+        ok, payload = _try_db(lambda db: (
+            db.get_status_counts(source=source),
+            db.get_level_counts(source=source),
+            db.get_search_terms(source=source),
+            db.get_time_counts(source=source, time_range="today"),
+            db.get_last_updated(),
+        ))
+        if ok:
+            counts, level_counts, search_terms, time_counts, last_updated = payload
         else:
             store = load_store(linkedin_store_path)
             counts = get_status_counts(store, source=source)
@@ -580,12 +612,13 @@ def create_app():
         }
 
     def _feed_counts(source: str, args: dict):
-        if USE_DB:
-            return _db.get_filtered_counts(
-                time_range=args["time_range"], bucket_filter=args["bucket_filter"],
-                tz_offset=args["tz_offset"], query=args["query"],
-                search_term=args["search_term"], source=source,
-            )
+        ok, counts = _try_db(lambda db: db.get_filtered_counts(
+            time_range=args["time_range"], bucket_filter=args["bucket_filter"],
+            tz_offset=args["tz_offset"], query=args["query"],
+            search_term=args["search_term"], source=source,
+        ))
+        if ok:
+            return counts
 
         store = load_store(linkedin_store_path)
         return get_filtered_counts(
@@ -602,11 +635,10 @@ def create_app():
             "total": fc["status"].get("All", 0),
         }
         if args["include_time_meta"]:
-            if USE_DB:
-                time_counts = _db.get_time_counts(
-                    tz_offset=args["tz_offset"], time_range=args["time_range"], source=source,
-                )
-            else:
+            ok, time_counts = _try_db(lambda db: db.get_time_counts(
+                tz_offset=args["tz_offset"], time_range=args["time_range"], source=source,
+            ))
+            if not ok:
                 store = load_store(linkedin_store_path)
                 time_counts = get_time_counts(
                     store, tz_offset=args["tz_offset"], time_range=args["time_range"], source=source,
@@ -622,15 +654,14 @@ def create_app():
     def _render_feed_jobs(source: str, api_base: str):
         args = _feed_args()
 
-        if USE_DB:
-            jobs = _db.get_filtered_jobs(
-                status=args["status_filter"], level=args["level_filter"], query=args["query"],
-                search_term=args["search_term"], time_range=args["time_range"],
-                bucket_filter=args["bucket_filter"], sort_col=args["sort_col"],
-                sort_dir=args["sort_dir"], tz_offset=args["tz_offset"], source=source,
-                limit=args["limit"],
-            )
-        else:
+        ok, jobs = _try_db(lambda db: db.get_filtered_jobs(
+            status=args["status_filter"], level=args["level_filter"], query=args["query"],
+            search_term=args["search_term"], time_range=args["time_range"],
+            bucket_filter=args["bucket_filter"], sort_col=args["sort_col"],
+            sort_dir=args["sort_dir"], tz_offset=args["tz_offset"], source=source,
+            limit=args["limit"],
+        ))
+        if not ok:
             store = load_store(linkedin_store_path)
             jobs = get_filtered_jobs(
                 store, status=args["status_filter"], level=args["level_filter"], query=args["query"],
@@ -666,10 +697,11 @@ def create_app():
     def _update_status_and_render(key: str, api_base: str):
         data = request.form or request.get_json(silent=True) or {}
         new_status = data.get("status", "")
-        if USE_DB:
-            _db.update_job_status(key, new_status)
-            job = _db.get_job(key) or {"_key": key}
-        else:
+        ok, job = _try_db(lambda db: (
+            db.update_job_status(key, new_status),
+            db.get_job(key) or {"_key": key},
+        )[1])
+        if not ok:
             with STORE_LOCK:
                 store = load_store(linkedin_store_path)
                 if update_job_status(store, key, new_status):
@@ -686,9 +718,8 @@ def create_app():
         )
 
     def _delete_job(key: str):
-        if USE_DB:
-            _db.delete_job(key)
-        else:
+        ok, _ = _try_db(lambda db: db.delete_job(key))
+        if not ok:
             with STORE_LOCK:
                 store = load_store(linkedin_store_path)
                 delete_json_job(store, key)
@@ -702,18 +733,25 @@ def create_app():
             keys = []
 
         deleted = 0
-        if USE_DB:
-            for key in keys:
-                if key and _db.delete_job(key):
-                    deleted += 1
-        else:
-            with STORE_LOCK:
-                store = load_store(linkedin_store_path)
+        db = _get_db()
+        if db is not None:
+            try:
                 for key in keys:
-                    if key and delete_json_job(store, key):
+                    if key and db.delete_job(key):
                         deleted += 1
-                if keys:
-                    save_store(linkedin_store_path, store)
+                return jsonify({"requested": len(keys), "deleted": deleted})
+            except Exception as e:
+                db_state["last_error"] = str(e)
+                db_state["module"] = None
+                db_state["last_attempt"] = time.time()
+
+        with STORE_LOCK:
+            store = load_store(linkedin_store_path)
+            for key in keys:
+                if key and delete_json_job(store, key):
+                    deleted += 1
+            if keys:
+                save_store(linkedin_store_path, store)
 
         return jsonify({"requested": len(keys), "deleted": deleted})
 
@@ -778,13 +816,9 @@ def create_app():
     @app.route("/api/linkedin/refresh", methods=["POST"])
     @app.route("/api/boards/refresh", methods=["POST"])
     def api_linkedin_refresh():
-        if USE_DB:
-            # DB is always fresh — just prune expired jobs
-            try:
-                _db.prune_expired_jobs()
-                return '<span style="color:#5cb85c;">Refreshed!</span>'
-            except Exception as e:
-                return f'<span style="color:#d9534f;">Error: {e}</span>'
+        ok, _ = _try_db(lambda db: db.prune_expired_jobs())
+        if ok:
+            return '<span style="color:#5cb85c;">Refreshed!</span>'
         try:
             subprocess.run(
                 ["git", "pull", "--rebase", "origin", "main"],
@@ -859,21 +893,25 @@ def _run_scan(config, platforms, hours, new_only):
 
         scan_state["results"] = output
 
-        # Merge into store so new jobs appear in the feed
+        # Merge into store so new jobs appear in the feed. Prefer DB when it is
+        # configured and reachable, then fall back to JSON.
         try:
-            if USE_DB:
-                from ..db import merge_scan_results as db_merge
-                scan_state["new_jobs"] = db_merge(output)
-            else:
-                store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
-                with STORE_LOCK:
-                    store = load_store(store_path)
-                    store = merge_scan_results(store, output)
-                    store = prune_old_jobs(store)
-                    for key in store.get("jobs", {}):
-                        store["jobs"][key] = backfill_job(store["jobs"][key])
-                    save_store(store_path, store)
-                scan_state["new_jobs"] = len(output)
+            if is_db_enabled():
+                try:
+                    from ..db import merge_scan_results as db_merge
+                    scan_state["new_jobs"] = db_merge(output)
+                    return
+                except Exception:
+                    pass
+            store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
+            with STORE_LOCK:
+                store = load_store(store_path)
+                store = merge_scan_results(store, output)
+                store = prune_old_jobs(store)
+                for key in store.get("jobs", {}):
+                    store["jobs"][key] = backfill_job(store["jobs"][key])
+                save_store(store_path, store)
+            scan_state["new_jobs"] = len(output)
         except Exception:
             pass
 

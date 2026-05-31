@@ -27,7 +27,16 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
-USE_DB = bool(os.environ.get("DATABASE_URL"))
+_DISABLE_DB_VALUES = {"1", "true", "yes", "on"}
+
+
+def is_db_enabled() -> bool:
+    """Return whether PostgreSQL should be used instead of JSON storage."""
+    disabled = os.environ.get("JOBFLOW_DISABLE_DB", "").lower() in _DISABLE_DB_VALUES
+    return bool(os.environ.get("DATABASE_URL")) and not disabled
+
+
+USE_DB = is_db_enabled()
 STORE_LOCK = threading.RLock()
 
 

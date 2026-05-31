@@ -10,6 +10,6 @@ services:
       - key: PYTHON_VERSION
         value: "3.12"
       - key: DATABASE_URL
-        sync: false  # Set manually in Render dashboard (Neon connection string)
+        sync: false  # Optional. Falls back to JSON when unavailable.
     plan: free
     autoDeploy: true

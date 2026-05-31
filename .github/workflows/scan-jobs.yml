@@ -1,7 +1,7 @@
 name: Scan LinkedIn Jobs
 
 on:
-  # Public repo → unlimited GH Actions minutes. Scan every 30 min, 24/7.
+  # Public repo -> unlimited GH Actions minutes. Scan every 30 min, 24/7.
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch: # Manual trigger from Actions tab
@@ -40,7 +40,9 @@ jobs:
           echo "Scan finished at $(date -u)"
 
       - name: Merge into database
+        id: db_merge
         if: ${{ env.DATABASE_URL != '' }}
+        continue-on-error: true
         run: |
           python -c "
           from pathlib import Path
@@ -60,7 +62,7 @@ jobs:
           "
 
       - name: Merge into linkedin_jobs.json (fallback)
-        if: ${{ env.DATABASE_URL == '' }}
+        if: ${{ env.DATABASE_URL == '' || steps.db_merge.outcome == 'failure' }}
         run: |
           python -c "
           from pathlib import Path
@@ -86,7 +88,7 @@ jobs:
           "
 
       - name: Commit results
-        if: ${{ env.DATABASE_URL == '' }}
+        if: ${{ env.DATABASE_URL == '' || steps.db_merge.outcome == 'failure' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

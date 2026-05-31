@@ -39,6 +39,7 @@ from rich.console import Console
 from rich.table import Table
 
 from .filter import evaluate_job
+from .linkedin_store import is_db_enabled
 from .models import JobPosting
 
 console = Console()
@@ -671,14 +672,14 @@ def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
 SEEN_TTL_HOURS = 48
 EST = ZoneInfo("US/Eastern")
 
-_USE_DB = bool(os.environ.get("DATABASE_URL"))
-
-
 def load_seen_jobs(config: dict) -> dict[str, str]:
     """Load previously seen job URLs, pruning entries older than 48h."""
-    if _USE_DB:
-        from .db import load_seen_jobs as db_load
-        return db_load()
+    if is_db_enabled():
+        try:
+            from .db import load_seen_jobs as db_load
+            return db_load()
+        except Exception:
+            pass
     path = config["output_dir"] / "seen_jobs.json"
     if not path.exists():
         return {}
@@ -698,10 +699,13 @@ def load_seen_jobs(config: dict) -> dict[str, str]:
 
 def save_seen_jobs(config: dict, seen: dict[str, str]) -> None:
     """Save seen job URLs with timestamps."""
-    if _USE_DB:
-        from .db import save_seen_jobs_bulk as db_save
-        db_save(seen)
-        return
+    if is_db_enabled():
+        try:
+            from .db import save_seen_jobs_bulk as db_save
+            db_save(seen)
+            return
+        except Exception:
+            pass
     path = config["output_dir"] / "seen_jobs.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:

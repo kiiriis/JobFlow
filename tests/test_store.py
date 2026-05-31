@@ -160,17 +160,23 @@ class TestGetFilteredJobs:
 
     def test_sort_by_score(self, sample_store):
         jobs = get_filtered_jobs(sample_store, sort_col="score_pct", sort_dir="desc")
-        # Not Interested should be at bottom regardless
-        non_ni = [j for j in jobs if j["status"] != "Not Interested"]
-        for i in range(len(non_ni) - 1):
-            assert non_ni[i]["score_pct"] >= non_ni[i + 1]["score_pct"]
+        # Applied / Not Interested are terminal statuses and sink below active jobs.
+        active = [j for j in jobs if j["status"] not in ("Applied", "Not Interested")]
+        for i in range(len(active) - 1):
+            assert active[i]["score_pct"] >= active[i + 1]["score_pct"]
 
     def test_not_interested_at_bottom(self, sample_store):
         jobs = get_filtered_jobs(sample_store)
-        ni_indices = [i for i, j in enumerate(jobs) if j["status"] == "Not Interested"]
-        non_ni_indices = [i for i, j in enumerate(jobs) if j["status"] != "Not Interested"]
-        if ni_indices and non_ni_indices:
-            assert min(ni_indices) > max(non_ni_indices)
+        bottom_indices = [
+            i for i, j in enumerate(jobs)
+            if j["status"] in ("Applied", "Not Interested")
+        ]
+        active_indices = [
+            i for i, j in enumerate(jobs)
+            if j["status"] not in ("Applied", "Not Interested")
+        ]
+        if bottom_indices and active_indices:
+            assert min(bottom_indices) > max(active_indices)
 
 
 class TestStatusCounts:

@@ -1,8 +1,42 @@
 """Tests for jobflow/web — Flask routes and API endpoints."""
 
 import json
+import os
 import re
+from datetime import datetime, timezone
+from pathlib import Path
+
 import pytest
+
+
+def _test_store_path() -> Path:
+    config_path = Path(os.environ["JOBFLOW_CONFIG"])
+    return config_path.parent.parent / "data" / "ci" / "linkedin_jobs.json"
+
+
+def _job(url: str, title: str, source: str = "linkedin") -> dict:
+    now = datetime.now(timezone.utc).isoformat()
+    return {
+        "url": url,
+        "company": "ExampleCo",
+        "title": title,
+        "location": "New York, NY",
+        "score_pct": 82,
+        "level": "Entry",
+        "recommended": True,
+        "status": "",
+        "first_seen": now,
+        "last_seen": now,
+        "search_term": "software engineer",
+        "source": source,
+    }
+
+
+def _write_store(jobs: list[dict]) -> None:
+    _test_store_path().write_text(json.dumps({
+        "jobs": {job["url"]: job for job in jobs},
+        "last_updated": datetime.now(timezone.utc).isoformat(),
+    }))
 
 
 class TestPageRoutes:
@@ -17,6 +51,9 @@ class TestPageRoutes:
         r = client.get("/linkedin")
         assert r.status_code == 200
         assert b"LinkedIn Feed" in r.data
+        assert b"bulk-actions" in r.data
+        assert b"Open top 10" in r.data
+        assert b"Delete top 10" in r.data
 
     def test_boards_page(self, client):
         r = client.get("/boards")
@@ -84,6 +121,46 @@ class TestLinkedInAPI:
     def test_combined_filters(self, client):
         r = client.get("/api/linkedin/jobs?level=Entry&q=python&sort=score_pct&dir=desc&tz=240")
         assert r.status_code == 200
+
+    def test_rows_include_bulk_selection_metadata(self, client):
+        _write_store([_job("https://example.com/1", "Software Engineer")])
+        r = client.get("/api/linkedin/jobs?time=")
+        assert r.status_code == 200
+        assert b'class="job-select"' in r.data
+        assert b'data-key="https://example.com/1"' in r.data
+
+    def test_bulk_delete_json_jobs(self, client):
+        _write_store([
+            _job("https://example.com/1", "Software Engineer One"),
+            _job("https://example.com/2", "Software Engineer Two"),
+            _job("https://example.com/3", "Software Engineer Three"),
+        ])
+
+        r = client.post(
+            "/api/linkedin/jobs/bulk-delete",
+            json={"keys": ["https://example.com/1", "https://example.com/2"]},
+        )
+        assert r.status_code == 200
+        assert r.get_json() == {"requested": 2, "deleted": 2}
+
+        feed = client.get("/api/linkedin/jobs?time=")
+        assert b"Software Engineer One" not in feed.data
+        assert b"Software Engineer Two" not in feed.data
+        assert b"Software Engineer Three" in feed.data
+
+    def test_bulk_delete_empty_keys_is_noop(self, client):
+        r = client.post("/api/linkedin/jobs/bulk-delete", json={})
+        assert r.status_code == 200
+        assert r.get_json() == {"requested": 0, "deleted": 0}
+
+    def test_boards_bulk_delete_endpoint(self, client):
+        _write_store([_job("https://github.com/example/job", "Repo Job", source="github")])
+        r = client.post(
+            "/api/boards/jobs/bulk-delete",
+            json={"keys": ["https://github.com/example/job"]},
+        )
+        assert r.status_code == 200
+        assert r.get_json() == {"requested": 1, "deleted": 1}
 
 
 class TestLinkedInStatusUpdate:

@@ -138,7 +138,7 @@ else:
 
 ---
 
-### C. `scan_results.json` Accumulation Prevents Job Pruning — HIGH
+### C. ~~`scan_results.json` Accumulation Prevents Job Pruning~~ — FIXED
 
 **Files:** `cli.py:296-308`, `scan-jobs.yml:47-68`
 
@@ -146,11 +146,11 @@ The pipeline works as follows:
 1. The CLI scan command **appends** new jobs to `scan_results.json` and caps at 500.
 2. The CI merge step processes **all 500 entries** every run.
 3. `merge_scan_results` updates `last_seen = now` for every existing job it encounters.
-4. `prune_old_jobs` keeps jobs where `last_seen >= cutoff` (7 days ago).
+4. `prune_old_jobs` now uses `expires_at` with the same 3-day TTL semantics as the PostgreSQL backend.
 
-Since all 500 jobs in `scan_results.json` get their `last_seen` refreshed every CI run, they **never expire**. The 7-day retention window is effectively infinite for any job that ever entered the top 500 by score.
+Previously, all 500 jobs in `scan_results.json` had their `last_seen` refreshed every CI run, so they never expired. JSON rows now carry `expires_at`; Tracking/Applied jobs are kept, and untracked jobs expire by TTL.
 
-**Fix:** Either truncate `scan_results.json` after merging into the store, or only merge newly-added entries (tracked by a timestamp or index watermark).
+**Fix:** Add DB-equivalent `expires_at` behavior to the JSON backend and keep `scan_results.json` ephemeral in CI.
 
 ---
 
@@ -215,7 +215,7 @@ Time range filtering (This Hour, Today, Yesterday) uses `first_seen`, which is s
 
 **File:** `jobflow/web/__init__.py`
 
-Three threads access the store file concurrently with no locking:
+The JSON backend now uses a shared `STORE_LOCK` around web read-modify-write paths and an atomic temp-file replace in `save_store`. Before that, three threads accessed the store file concurrently with no locking:
 
 | Thread | Operation | Lines |
 |---|---|---|
@@ -225,7 +225,7 @@ Three threads access the store file concurrently with no locking:
 
 Two threads calling `save_store` simultaneously causes one to overwrite the other's changes. A status update made between another thread's `load_store` and `save_store` is silently lost.
 
-**Fix:** Add a `threading.Lock` around all store read-modify-write operations.
+**Fix:** Add a lock around JSON store read-modify-write operations and make writes atomic.
 
 ---
 

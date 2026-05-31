@@ -40,6 +40,20 @@ from jobflow.db import get_conn, put_conn, init_db
 PROFILE = (ROOT / "config" / "profile.txt").read_text().strip()
 
 BATCH_SIZE = 15
+STAFFING_BLOCK_REASON = "Blocked staffing/spam source."
+STAFFING_SOURCE_BLOCKLIST = (
+    "jobright.ai",
+    "remotehunter",
+    "quik hire staffing",
+    "beacon fire",
+    "helic & co.",
+    "helic and co",
+    "jobs via dice",
+)
+STAFFING_SOURCE_BLOCKLIST_COMPACT = tuple(
+    re.sub(r"[^a-z0-9]+", "", source.lower())
+    for source in STAFFING_SOURCE_BLOCKLIST
+)
 
 BATCH_PROMPT = """You are a job relevance scorer for a new grad / entry-level software engineer on F1 OPT visa looking for their first full-time role in the US.
 
@@ -47,7 +61,7 @@ BATCH_PROMPT = """You are a job relevance scorer for a new grad / entry-level so
 {profile}
 
 ## HARD REJECT — score MUST be 0
-Give a score of 0 ONLY if ANY of these are true. Be strict — only these 5 conditions warrant a 0:
+Give a score of 0 ONLY if ANY of these are true. Be strict — only these 6 conditions warrant a 0:
 
 1. **Explicit no sponsorship**: The posting explicitly says "no sponsorship", "will not sponsor", "cannot sponsor", "must be authorized to work without sponsorship", "US citizen only", "permanent resident only", "green card required". Also score 0 if it requires security clearance (TS/SCI, Secret, DoD). NOTE: "Must be authorized to work in the US" ALONE is NOT a rejection — OPT holders ARE authorized.
 
@@ -58,6 +72,8 @@ Give a score of 0 ONLY if ANY of these are true. Be strict — only these 5 cond
 4. **Not a software engineering role at all**: QA-only, technical writing, product management, sales engineering, IT support. NOTE: Frontend, Full-Stack, iOS, Android, Data Science WITH coding, DevOps WITH development — these ARE software engineering. Score them low (2-4) if poor fit, but NOT 0.
 
 5. **Not US-based**: Located outside the US with no remote-US option.
+
+6. **Blocked staffing/spam source**: The job is from jobright.ai, Remotehunter, Quik Hire Staffing, Beacon Fire, Helic & Co., or Jobs Via Dice.
 
 IMPORTANT: The candidate's "Avoid" preferences (e.g., "Avoid: Frontend-only") should LOWER the score (2-4) but NEVER cause a score of 0. A frontend SWE role is still a software engineering role — it's just a weak fit, not a hard reject.
 
@@ -109,6 +125,19 @@ def build_jobs_block(batch):
     for i, (url, company, title, location, desc, *_) in enumerate(batch, 1):
         parts.append(f"### Job {i}\nTitle: {title}\nCompany: {company}\nLocation: {location}\nDescription: {desc or ''}\n")
     return "\n".join(parts)
+
+
+def is_blocked_staffing_source(row):
+    """Return True if a DB job row came from a blocked staffing/spam source."""
+    url, company, title, location, desc, *_ = row
+    haystack = " ".join(
+        str(value or "")
+        for value in (url, company, title, location, desc)
+    ).lower()
+    compact_haystack = re.sub(r"[^a-z0-9]+", "", haystack)
+    return any(source in haystack for source in STAFFING_SOURCE_BLOCKLIST) or any(
+        source in compact_haystack for source in STAFFING_SOURCE_BLOCKLIST_COMPACT
+    )
 
 
 def score_batch_with_codex(batch):
@@ -241,10 +270,43 @@ def main():
         total_batches = (total + BATCH_SIZE - 1) // BATCH_SIZE
         print(f"\n--- Batch {batch_num}/{total_batches} ({len(batch)} jobs) ---")
 
-        scores = score_batch_with_codex(batch)
-        if not scores or len(scores) != len(batch):
+        blocked_rows = []
+        codex_batch = []
+        for row in batch:
+            if is_blocked_staffing_source(row):
+                blocked_rows.append(row)
+            else:
+                codex_batch.append(row)
+
+        if blocked_rows:
+            conn = get_conn()
+            try:
+                with conn.cursor() as cur:
+                    for url, company, title, *_ in blocked_rows:
+                        cur.execute("""
+                            UPDATE jobs
+                            SET ai_score = 0, ai_reason = %s,
+                                score_pct = 0, recommended = false,
+                                ai_model = 'codex'
+                            WHERE url = %s
+                        """, (STAFFING_BLOCK_REASON, url))
+                        scored += 1
+                        print(f"    0 | {company} — {title} ({STAFFING_BLOCK_REASON})")
+                conn.commit()
+            except Exception as e:
+                conn.rollback()
+                print(f"  DB error: {e}")
+                failed += len(blocked_rows)
+            finally:
+                put_conn(conn)
+
+        if not codex_batch:
+            continue
+
+        scores = score_batch_with_codex(codex_batch)
+        if not scores or len(scores) != len(codex_batch):
             # Fallback: if batch fails or count mismatch, mark as failed
-            for url, company, title, *_ in batch:
+            for url, company, title, *_ in codex_batch:
                 print(f"  SKIP | {company} — {title}")
                 failed += 1
             continue
@@ -252,7 +314,7 @@ def main():
         conn = get_conn()
         try:
             with conn.cursor() as cur:
-                for (url, company, title, *_), score_data in zip(batch, scores):
+                for (url, company, title, *_), score_data in zip(codex_batch, scores):
                     ai_score = max(0, min(10, int(score_data.get("score", 5))))
                     ai_reason = str(score_data.get("reason", ""))[:200]
                     score_pct = ai_score * 10

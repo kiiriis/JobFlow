@@ -68,7 +68,10 @@ from ..linkedin_store import (
     get_level_counts, get_filtered_counts, get_search_terms,
     get_time_counts,
     backfill_job,
+    delete_job as delete_json_job,
+    normalize_url,
     LINKEDIN_STATUSES,
+    STORE_LOCK,
     USE_DB,
 )
 
@@ -492,12 +495,13 @@ def create_app():
             scan_data = json.loads(scan_results_path.read_text())
         except (json.JSONDecodeError, ValueError):
             return
-        store = load_store(linkedin_store_path)
-        store = merge_scan_results(store, scan_data)
-        store = prune_old_jobs(store)
-        for key in store.get("jobs", {}):
-            store["jobs"][key] = backfill_job(store["jobs"][key])
-        save_store(linkedin_store_path, store)
+        with STORE_LOCK:
+            store = load_store(linkedin_store_path)
+            store = merge_scan_results(store, scan_data)
+            store = prune_old_jobs(store)
+            for key in store.get("jobs", {}):
+                store["jobs"][key] = backfill_job(store["jobs"][key])
+            save_store(linkedin_store_path, store)
 
     # Merge once on startup (JSON backend only)
     if not USE_DB:
@@ -666,11 +670,14 @@ def create_app():
             _db.update_job_status(key, new_status)
             job = _db.get_job(key) or {"_key": key}
         else:
-            store = load_store(linkedin_store_path)
-            if update_job_status(store, key, new_status):
-                save_store(linkedin_store_path, store)
-            job = store.get("jobs", {}).get(key, {})
-            job["_key"] = key
+            with STORE_LOCK:
+                store = load_store(linkedin_store_path)
+                if update_job_status(store, key, new_status):
+                    save_store(linkedin_store_path, store)
+                jobs = store.get("jobs", {})
+                stored_key = key if key in jobs else normalize_url(key)
+                job = store.get("jobs", {}).get(stored_key, {})
+                job["_key"] = stored_key
         return render_template(
             "_partials/linkedin_row.html",
             job=job,
@@ -682,13 +689,33 @@ def create_app():
         if USE_DB:
             _db.delete_job(key)
         else:
-            store = load_store(linkedin_store_path)
-            jobs = store.get("jobs", {})
-            if key in jobs:
-                del jobs[key]
-            store.setdefault("dismissed", []).append(key)
-            save_store(linkedin_store_path, store)
+            with STORE_LOCK:
+                store = load_store(linkedin_store_path)
+                delete_json_job(store, key)
+                save_store(linkedin_store_path, store)
         return "", 204
+
+    def _bulk_delete_jobs():
+        data = request.get_json(silent=True) or {}
+        keys = data.get("keys") or []
+        if not isinstance(keys, list):
+            keys = []
+
+        deleted = 0
+        if USE_DB:
+            for key in keys:
+                if key and _db.delete_job(key):
+                    deleted += 1
+        else:
+            with STORE_LOCK:
+                store = load_store(linkedin_store_path)
+                for key in keys:
+                    if key and delete_json_job(store, key):
+                        deleted += 1
+                if keys:
+                    save_store(linkedin_store_path, store)
+
+        return jsonify({"requested": len(keys), "deleted": deleted})
 
     @app.route("/linkedin")
     def linkedin_page():
@@ -739,6 +766,14 @@ def create_app():
     @app.route("/api/boards/jobs/<path:key>", methods=["DELETE"])
     def api_boards_delete(key):
         return _delete_job(key)
+
+    @app.route("/api/linkedin/jobs/bulk-delete", methods=["POST"])
+    def api_linkedin_bulk_delete():
+        return _bulk_delete_jobs()
+
+    @app.route("/api/boards/jobs/bulk-delete", methods=["POST"])
+    def api_boards_bulk_delete():
+        return _bulk_delete_jobs()
 
     @app.route("/api/linkedin/refresh", methods=["POST"])
     @app.route("/api/boards/refresh", methods=["POST"])
@@ -831,12 +866,13 @@ def _run_scan(config, platforms, hours, new_only):
                 scan_state["new_jobs"] = db_merge(output)
             else:
                 store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
-                store = load_store(store_path)
-                store = merge_scan_results(store, output)
-                store = prune_old_jobs(store)
-                for key in store.get("jobs", {}):
-                    store["jobs"][key] = backfill_job(store["jobs"][key])
-                save_store(store_path, store)
+                with STORE_LOCK:
+                    store = load_store(store_path)
+                    store = merge_scan_results(store, output)
+                    store = prune_old_jobs(store)
+                    for key in store.get("jobs", {}):
+                        store["jobs"][key] = backfill_job(store["jobs"][key])
+                    save_store(store_path, store)
                 scan_state["new_jobs"] = len(output)
         except Exception:
             pass

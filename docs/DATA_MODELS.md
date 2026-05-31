@@ -88,6 +88,7 @@ Persistent storage for LinkedIn jobs with user status tracking.
 | `status` | string | User status: "", "Tracking", "Applied", "Not Interested" |
 | `first_seen` | ISO string | When job was first discovered (used for sorting/filtering) |
 | `last_seen` | ISO string | Last time job appeared in a scan |
+| `expires_at` | ISO string/null | TTL expiry for untracked jobs; null for keep-status jobs |
 | `date_posted` | ISO string | LinkedIn post date (usually empty — LinkedIn doesn't expose this) |
 | `search_term` | string | The search query that found this job |
 
@@ -96,17 +97,17 @@ Persistent storage for LinkedIn jobs with user status tracking.
 | Status | Meaning |
 |--------|---------|
 | `""` (empty) | Default — no user action taken |
-| `"Tracking"` | User is watching this job (survives 7-day prune) |
-| `"Applied"` | User has applied (survives 7-day prune) |
+| `"Tracking"` | User is watching this job (does not expire) |
+| `"Applied"` | User has applied (does not expire) |
 | `"Not Interested"` | User dismissed (sinks to bottom of list) |
 
 ### Deduplication
 
-Jobs are deduplicated by **company+title** (case-insensitive). Same role posted in multiple locations is collapsed to one entry. The best entry is kept (prefers: user status > has URL > newest).
+New scan batches are deduplicated by **company+title** (case-insensitive). Same role posted in multiple locations within one scan is collapsed to one entry before storage. Stored jobs are keyed by canonical URL, matching the PostgreSQL backend.
 
 ### Pruning
 
-Jobs older than 7 days (based on `last_seen`) are automatically removed, **unless** their status is "Tracking" or "Applied".
+Untracked jobs expire after 3 days via `expires_at`, matching the PostgreSQL backend. Jobs marked "Tracking" or "Applied" have `expires_at: null` and are kept.
 
 ## JSON: `data/ci/scan_results.json`
 

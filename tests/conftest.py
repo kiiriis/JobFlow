@@ -257,8 +257,30 @@ def sample_store():
 # ── Flask App Fixture ───────────────────────────────────────────────────────
 
 @pytest.fixture
-def app():
-    """Flask test app."""
+def app(tmp_path, monkeypatch):
+    """Flask test app backed by an isolated temp JSON store."""
+    config_dir = tmp_path / "config"
+    data_dir = tmp_path / "data" / "ci"
+    config_dir.mkdir(parents=True)
+    data_dir.mkdir(parents=True)
+    (data_dir / "linkedin_jobs.json").write_text('{"jobs": {}, "last_updated": ""}')
+    (data_dir / "scan_results.json").write_text("[]")
+    (config_dir / "config.yaml").write_text(
+        "\n".join([
+            "resumes:",
+            "  se: resumes/base/SE.tex",
+            "  ml: resumes/base/ML.tex",
+            "  appdev: resumes/base/AppDev.tex",
+            "output_dir: data/ci",
+            "csv_path: data/ci/applications.csv",
+            "job_boards: config/job_boards.json",
+            "resume_prompt: resumes/prompt.md",
+            "",
+        ])
+    )
+    monkeypatch.setenv("JOBFLOW_CONFIG", str(config_dir / "config.yaml"))
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+
     from jobflow.web import create_app
     app = create_app()
     app.config["TESTING"] = True

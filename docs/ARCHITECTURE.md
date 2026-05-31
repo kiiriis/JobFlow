@@ -74,7 +74,7 @@ JobFlow/
 1. On startup, Flask merges `scan_results.json` into `linkedin_jobs.json`
 2. Deduplication by company+title (keeps best entry per combo)
 3. All jobs re-scored with current filter logic
-4. Jobs older than 7 days pruned (unless Tracking/Applied)
+4. Untracked jobs past their 3-day `expires_at` TTL are pruned; Tracking/Applied jobs are kept
 5. Background thread (local only) does `git pull` every hour for fresh data
 6. On Render: data updates via auto-redeploy on GitHub push
 

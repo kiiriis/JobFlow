@@ -6,11 +6,20 @@
 {% set api_base = api_base|default("/api/linkedin") %}
 {% set searchable = (job.company|default('') ~ ' ' ~ job.title|default('') ~ ' ' ~ job.location|default(''))|lower %}
 <tr role="row"
+    data-key="{{ job._key|default('')|e }}"
+    data-url="{{ job.url|default('')|e }}"
     data-status="{{ job.status|default('') }}"
     data-level="{{ job.level|default('Unknown') }}"
     data-recommended="{{ 1 if job.recommended else 0 }}"
     data-search="{{ searchable|e }}"
     data-search-term="{{ job.search_term|default('')|e }}">
+    <td class="td-select">
+        <input type="checkbox"
+               class="job-select"
+               value="{{ job._key|default('')|e }}"
+               aria-label="Select {{ job.title|default('job') }}"
+               onchange="updateBulkSelectionState()">
+    </td>
     <td class="td-n">{{ loop.index if loop is defined else '' }}</td>
     <td>
         <div class="role-cell">
@@ -58,7 +67,7 @@
                 hx-patch="{{ api_base }}/jobs/{{ job._key }}/status"
                 hx-target="closest tr"
                 hx-swap="outerHTML"
-                hx-on::after-request="showToast('Updated'); setTimeout(function(){ if(typeof pruneMismatchedRows==='function') pruneMismatchedRows(); if(typeof refreshCounts==='function') refreshCounts(); }, 80)"
+                hx-on::after-request="showToast('Updated'); setTimeout(function(){ if(typeof pruneMismatchedRows==='function') pruneMismatchedRows(); if(typeof updateBulkSelectionState==='function') updateBulkSelectionState({restore:true,sync:false,prune:true}); if(typeof refreshCounts==='function') refreshCounts(); }, 80)"
                 class="li-status-sel"
                 aria-label="Set status for {{ job.title }}">
             <option value="" {% if not job.status %}selected{% endif %}>--</option>

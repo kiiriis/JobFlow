@@ -6,27 +6,29 @@ Render + CI use persistent storage.
 
 When DATABASE_URL is set:
     - All public functions delegate to jobflow.db
-    - TTL: jobs auto-expire after 2 days unless status is Tracking/Applied
+    - TTL: jobs auto-expire after 3 days unless status is Tracking/Applied
     - No file I/O — all data lives in PostgreSQL
 
 When DATABASE_URL is NOT set:
-    - Original JSON file behavior (data/ci/linkedin_jobs.json)
-    - 7-day prune for old jobs
+    - JSON file behavior (data/ci/linkedin_jobs.json)
+    - Same 3-day TTL semantics as PostgreSQL using expires_at
 
 Key operations:
     - merge_scan_results(): Integrates new scan results with deduplication
-    - prune_old_jobs(): Removes old jobs (TTL in DB, 7-day in JSON)
+    - prune_old_jobs(): Removes expired jobs using DB-equivalent TTL semantics
     - get_filtered_jobs(): Returns sorted, filtered job list for the dashboard
     - get_time_counts(): Computes dynamic time buckets for the sidebar
 """
 
 import json
 import os
+import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
 USE_DB = bool(os.environ.get("DATABASE_URL"))
+STORE_LOCK = threading.RLock()
 
 
 def normalize_url(url: str) -> str:
@@ -49,12 +51,12 @@ def normalize_url(url: str) -> str:
     path = p.path.rstrip("/") or "/"
     return urlunparse((p.scheme.lower(), p.netloc.lower(), path, "", "", ""))
 
-LINKEDIN_STATUSES = ["Applied", "Not Interested"]
+LINKEDIN_STATUSES = ["Tracking", "Applied", "Not Interested"]
 RECOMMENDED_THRESHOLD = 25  # score_pct >= this marks job as "recommended"
-RETENTION_DAYS = 7
-# Jobs with these statuses survive the 7-day prune — the user explicitly
+RETENTION_DAYS = 3
+# Jobs with these statuses survive TTL pruning — the user explicitly
 # marked them as important, so we keep them regardless of age.
-KEEP_STATUSES = {"Applied"}
+KEEP_STATUSES = {"Tracking", "Applied"}
 
 
 def load_store(path: Path) -> dict:
@@ -71,7 +73,40 @@ def save_store(path: Path, store: dict) -> None:
     """Write linkedin_jobs.json."""
     store["last_updated"] = datetime.now(timezone.utc).isoformat()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(store, indent=2))
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(store, indent=2))
+    tmp.replace(path)
+
+
+def _parse_iso(ts: str) -> datetime | None:
+    """Parse an ISO timestamp string to datetime."""
+    if not ts:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except (ValueError, TypeError):
+        return None
+
+
+def _expires_at_for_status(status: str, base: datetime | None = None) -> str | None:
+    """Return JSON expires_at value using the same status policy as the DB."""
+    if status in KEEP_STATUSES:
+        return None
+    base = base or datetime.now(timezone.utc)
+    return (base + timedelta(days=RETENTION_DAYS)).isoformat()
+
+
+def _lookup_key(jobs: dict, key: str) -> str | None:
+    """Resolve a UI/API key to the stored JSON key, accepting canonical URLs."""
+    if key in jobs:
+        return key
+    normalized = normalize_url(key)
+    if normalized in jobs:
+        return normalized
+    return None
 
 
 def _dedup_key(entry: dict) -> str:
@@ -197,13 +232,12 @@ def _rescore_entry(entry: dict) -> dict:
 def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
     """Merge new jobs into the store with deduplication and re-scoring.
 
-    Three-phase merge:
+    Two-phase merge:
     1. Pre-dedup scan results by company+title (LinkedIn often returns the same
        job in multiple locations — keep the one with a URL)
     2. Merge each job into the store:
        - Existing job: update last_seen, carry AI scores, preserve user status
        - New job: create entry with first_seen = date_posted (or merge time)
-    3. Post-dedup the store itself to clean up historical duplicates
 
     All jobs are re-scored using _rescore_entry() so filter improvements
     apply retroactively.
@@ -256,6 +290,7 @@ def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
     deduped_results = list(seen_combos.values())
 
     dismissed = set(store.get("dismissed", []))
+    dismissed = {normalize_url(k) for k in dismissed if k}
 
     for entry in deduped_results:
         key = _dedup_key(entry)
@@ -264,6 +299,9 @@ def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
 
         if key in jobs:
             jobs[key]["last_seen"] = now
+            # Migrate old statuses
+            if jobs[key].get("status") in ("Should Apply", "New"):
+                jobs[key]["status"] = ""
             # Keep user status, update description if better
             if entry.get("description_preview") and len(entry.get("description_preview", "")) > len(jobs[key].get("description_preview", "")):
                 jobs[key]["description_preview"] = entry["description_preview"]
@@ -274,13 +312,11 @@ def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
             # Fill in source if missing (older rows pre-source field)
             if entry.get("source") and not jobs[key].get("source"):
                 jobs[key]["source"] = entry["source"]
-            # Migrate old statuses
-            if jobs[key].get("status") in ("Should Apply", "New"):
-                jobs[key]["status"] = ""
             # Carry AI scores from new scan if not already present
             if entry.get("ai_score") and not jobs[key].get("ai_score"):
                 jobs[key]["ai_score"] = entry["ai_score"]
                 jobs[key]["ai_reason"] = entry.get("ai_reason", "")
+            jobs[key]["expires_at"] = _expires_at_for_status(jobs[key].get("status", ""))
             # Re-score with latest logic (preserves ai_score/ai_reason)
             jobs[key] = _rescore_entry(jobs[key])
         else:
@@ -297,6 +333,7 @@ def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
                 "status": "",
                 "first_seen": posted,
                 "last_seen": now,
+                "expires_at": _expires_at_for_status(""),
                 "date_posted": entry.get("date_posted", ""),
                 "search_term": entry.get("search_term", ""),
                 "source": entry.get("source", "linkedin"),
@@ -310,37 +347,33 @@ def merge_scan_results(store: dict, scan_results: list[dict]) -> dict:
             }
             jobs[key] = _rescore_entry(jobs[key])
 
-    # Also deduplicate existing store: remove jobs with same company+title (keep the one with user status or URL)
-    by_combo: dict[str, list[str]] = {}
-    for key, job in jobs.items():
-        combo = f"{job.get('company','').lower().strip()}|{job.get('title','').lower().strip()}"
-        by_combo.setdefault(combo, []).append(key)
-    for combo, keys in by_combo.items():
-        if len(keys) <= 1:
-            continue
-        # Keep the best: prefer one with user status, then URL, then newest
-        def rank(k):
-            j = jobs[k]
-            has_status = 1 if j.get("status") else 0
-            has_url = 1 if j.get("url") else 0
-            return (has_status, has_url, j.get("first_seen", ""))
-        keys.sort(key=rank, reverse=True)
-        for k in keys[1:]:  # remove all but the best
-            del jobs[k]
-
     store["jobs"] = jobs
     return store
 
 
 def prune_old_jobs(store: dict, days: int = RETENTION_DAYS) -> dict:
-    """Remove jobs older than `days` unless they have a keep-status."""
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    """Remove expired jobs unless they have a keep-status.
+
+    New JSON rows carry expires_at, matching the Postgres backend. Older JSON
+    rows are interpreted from last_seen + days so legacy stores still prune.
+    """
+    now = datetime.now(timezone.utc)
     jobs = store.get("jobs", {})
     pruned = {}
     for key, job in jobs.items():
         if job.get("status") in KEEP_STATUSES:
+            job["expires_at"] = None
             pruned[key] = job
-        elif job.get("last_seen", "") >= cutoff:
+            continue
+
+        expires_at = _parse_iso(job.get("expires_at", ""))
+        if expires_at is None:
+            last_seen = _parse_iso(job.get("last_seen", ""))
+            if last_seen is None:
+                last_seen = now
+            expires_at = last_seen + timedelta(days=days)
+            job["expires_at"] = expires_at.isoformat()
+        if expires_at >= now:
             pruned[key] = job
     store["jobs"] = pruned
     return store
@@ -349,23 +382,27 @@ def prune_old_jobs(store: dict, days: int = RETENTION_DAYS) -> dict:
 def update_job_status(store: dict, key: str, status: str) -> bool:
     """Update a job's status. Returns True if found."""
     jobs = store.get("jobs", {})
-    if key in jobs and (status in LINKEDIN_STATUSES or status == ""):
-        jobs[key]["status"] = status
+    stored_key = _lookup_key(jobs, key)
+    if stored_key and (status in LINKEDIN_STATUSES or status == ""):
+        jobs[stored_key]["status"] = status
+        jobs[stored_key]["expires_at"] = _expires_at_for_status(status)
         return True
     return False
 
 
-def _parse_iso(ts: str) -> datetime | None:
-    """Parse an ISO timestamp string to datetime."""
-    if not ts:
-        return None
-    try:
-        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt
-    except (ValueError, TypeError):
-        return None
+def delete_job(store: dict, key: str) -> bool:
+    """Delete a JSON job and remember its canonical key so it does not reappear."""
+    jobs = store.get("jobs", {})
+    stored_key = _lookup_key(jobs, key)
+    dismissed_key = normalize_url(key)
+    if dismissed_key:
+        dismissed = {normalize_url(k) for k in store.get("dismissed", []) if k}
+        dismissed.add(dismissed_key)
+        store["dismissed"] = sorted(dismissed)
+    if stored_key:
+        del jobs[stored_key]
+        return True
+    return False
 
 
 def get_filtered_jobs(
@@ -857,6 +894,12 @@ def backfill_job(job: dict) -> dict:
     if not job.get("source"):
         url = job.get("url") or ""
         job["source"] = "linkedin" if "linkedin.com" in url else "github"
+
+    if job.get("status") in KEEP_STATUSES:
+        job["expires_at"] = None
+    elif "expires_at" not in job:
+        last_seen = _parse_iso(job.get("last_seen", ""))
+        job["expires_at"] = _expires_at_for_status("", base=last_seen)
 
     # Always re-score to ensure consistency
     return _rescore_entry(job)

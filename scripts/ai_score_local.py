@@ -5,10 +5,13 @@ Usage:
     python scripts/ai_score_local.py --limit 50
     python scripts/ai_score_local.py --hours 12
     python scripts/ai_score_local.py --hours 12 --limit 100
+    python scripts/ai_score_local.py --backend json --hours 24
+    python scripts/ai_score_local.py --backend json --hours 24 --rescore
 
-Reads DATABASE_URL from .env, fetches unscored jobs, scores them in batches
-of 15 with the local Codex CLI session, and updates the DB directly. This uses
-the signed-in Codex app/CLI account instead of an API key.
+Reads DATABASE_URL from .env when available, fetches unscored jobs, scores
+them in batches of 15 with the local Codex CLI session, and updates Postgres
+or data/ci/linkedin_jobs.json. This uses the signed-in Codex app/CLI account
+instead of an API key.
 """
 
 import argparse
@@ -36,8 +39,11 @@ if env_path.exists():
             os.environ.setdefault(key.strip(), val.strip())
 
 from jobflow.db import get_conn, put_conn, init_db
+from jobflow.linkedin_store import save_store
 
-PROFILE = (ROOT / "config" / "profile.txt").read_text().strip()
+PROFILE_PATH = ROOT / "config" / "profile.txt"
+PROFILE_EXAMPLE_PATH = ROOT / "config" / "profile.example.txt"
+JSON_STORE_PATH = ROOT / "data" / "ci" / "linkedin_jobs.json"
 
 BATCH_SIZE = 15
 STAFFING_BLOCK_REASON = "Blocked staffing/spam source."
@@ -96,7 +102,7 @@ Return ONLY a valid JSON array with one object per job, in the same order. Nothi
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Score recent/unscored JobFlow DB jobs with the signed-in Codex CLI.",
+        description="Score recent/unscored JobFlow jobs with the signed-in Codex CLI.",
     )
     parser.add_argument(
         "--limit",
@@ -110,6 +116,17 @@ def parse_args():
         type=float,
         default=0,
         help="Score only eligible jobs first seen in the past H hours. Example: --hours 12.",
+    )
+    parser.add_argument(
+        "--backend",
+        choices=("auto", "db", "json"),
+        default="auto",
+        help="Storage backend to score. Default: auto tries DB, then JSON.",
+    )
+    parser.add_argument(
+        "--rescore",
+        action="store_true",
+        help="Include jobs already scored by Codex. Default only scores unscored/Groq/Claude rows.",
     )
     args = parser.parse_args()
     if args.limit < 0:
@@ -127,6 +144,33 @@ def build_jobs_block(batch):
     return "\n".join(parts)
 
 
+def parse_iso(ts: str) -> datetime | None:
+    """Parse an ISO timestamp into an aware datetime."""
+    if not ts:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def eligible_ai_model(model: str | None, rescore: bool = False) -> bool:
+    """Return True when a job should be scored or rescored by Codex."""
+    return rescore or model is None or model in ("groq", "claude")
+
+
+def normalize_row_score(score_data: dict) -> tuple[int, str, int, bool]:
+    """Convert model output into stored scoring fields."""
+    ai_score = max(0, min(10, int(score_data.get("score", 5))))
+    ai_reason = str(score_data.get("reason", ""))[:200]
+    score_pct = ai_score * 10
+    recommended = ai_score >= 7
+    return ai_score, ai_reason, score_pct, recommended
+
+
 def is_blocked_staffing_source(row):
     """Return True if a DB job row came from a blocked staffing/spam source."""
     url, company, title, location, desc, *_ = row
@@ -140,10 +184,20 @@ def is_blocked_staffing_source(row):
     )
 
 
-def score_batch_with_codex(batch):
+def load_profile() -> str:
+    """Load the local candidate profile used for AI scoring."""
+    if PROFILE_PATH.exists():
+        return PROFILE_PATH.read_text().strip()
+    print(f"ERROR: {PROFILE_PATH} not found")
+    print(f"Create it with: cp {PROFILE_EXAMPLE_PATH} {PROFILE_PATH}")
+    print("Then edit it with your real skills, target roles, visa needs, and preferences.")
+    sys.exit(1)
+
+
+def score_batch_with_codex(batch, profile: str):
     """Score a batch of jobs using one signed-in `codex exec` call."""
     jobs_block = build_jobs_block(batch)
-    prompt = BATCH_PROMPT.format(profile=PROFILE, jobs_block=jobs_block)
+    prompt = BATCH_PROMPT.format(profile=profile, jobs_block=jobs_block)
 
     if not shutil.which("codex"):
         print("  Batch error: codex CLI not found on PATH")
@@ -210,28 +264,34 @@ def score_batch_with_codex(batch):
                 pass
 
 
-def main():
-    args = parse_args()
-
+def connect_db():
+    """Initialize and return True when Postgres is reachable."""
     if not os.environ.get("DATABASE_URL"):
-        print("ERROR: DATABASE_URL not set (check .env)")
-        sys.exit(1)
+        return False
+    try:
+        init_db()
+        return True
+    except Exception as e:
+        print(f"DB unavailable, using JSON fallback: {e}")
+        return False
 
-    init_db()
 
-    # Fetch unscored + Groq/Claude-scored jobs. Already-Codex-scored rows are
-    # skipped so repeated runs only process new or older-scored jobs.
-    conditions = ["(ai_score IS NULL OR ai_model IN ('groq', 'claude'))"]
+def fetch_db_rows(args):
+    """Fetch eligible rows from Postgres."""
+    conditions = []
     params = []
+    if not args.rescore:
+        conditions.append("(ai_score IS NULL OR ai_model IN ('groq', 'claude'))")
     if args.hours:
         since = datetime.now(timezone.utc) - timedelta(hours=args.hours)
         conditions.append("first_seen >= %s")
         params.append(since)
 
+    where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     sql = f"""
         SELECT url, company, title, location, description_preview, ai_model
         FROM jobs
-        WHERE {' AND '.join(conditions)}
+        {where_clause}
         ORDER BY first_seen DESC
     """
     if args.limit:
@@ -242,21 +302,180 @@ def main():
     try:
         with conn.cursor() as cur:
             cur.execute(sql, params)
-            rows = cur.fetchall()
+            return cur.fetchall()
     finally:
         put_conn(conn)
 
+
+def load_json_store() -> dict:
+    """Load the JSON fallback store."""
+    if not JSON_STORE_PATH.exists():
+        print(f"ERROR: {JSON_STORE_PATH} not found")
+        sys.exit(1)
+    try:
+        return json.loads(JSON_STORE_PATH.read_text())
+    except json.JSONDecodeError as e:
+        print(f"ERROR: Could not parse {JSON_STORE_PATH}: {e}")
+        sys.exit(1)
+
+
+def fetch_json_rows(store: dict, args):
+    """Fetch eligible rows from data/ci/linkedin_jobs.json."""
+    rows = []
+    cutoff = None
+    if args.hours:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=args.hours)
+
+    for key, job in store.get("jobs", {}).items():
+        ai_model = job.get("ai_model")
+        if not eligible_ai_model(ai_model, args.rescore):
+            continue
+        if cutoff:
+            first_seen = parse_iso(job.get("first_seen", ""))
+            if not first_seen or first_seen < cutoff:
+                continue
+        url = job.get("url") or key
+        rows.append((
+            url,
+            job.get("company", ""),
+            job.get("title", ""),
+            job.get("location", ""),
+            job.get("description_preview", ""),
+            ai_model,
+            key,
+        ))
+
+    rows.sort(
+        key=lambda row: parse_iso(store.get("jobs", {}).get(row[6], {}).get("first_seen", ""))
+        or datetime.min.replace(tzinfo=timezone.utc),
+        reverse=True,
+    )
+    if args.limit:
+        rows = rows[:args.limit]
+    return rows
+
+
+def update_db_blocked(blocked_rows):
+    """Persist blocked-source scores to Postgres."""
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            for url, *_ in blocked_rows:
+                cur.execute("""
+                    UPDATE jobs
+                    SET ai_score = 0, ai_reason = %s,
+                        score_pct = 0, recommended = false,
+                        ai_model = 'codex'
+                    WHERE url = %s
+                """, (STAFFING_BLOCK_REASON, url))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
+def update_db_scores(codex_batch, scores):
+    """Persist Codex scores to Postgres."""
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            for (url, *_), score_data in zip(codex_batch, scores):
+                ai_score, ai_reason, score_pct, recommended = normalize_row_score(score_data)
+                cur.execute("""
+                    UPDATE jobs
+                    SET ai_score = %s, ai_reason = %s,
+                        score_pct = %s, recommended = %s,
+                        ai_model = 'codex'
+                    WHERE url = %s
+                """, (ai_score, ai_reason, score_pct, recommended, url))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
+def update_json_blocked(store: dict, blocked_rows):
+    """Persist blocked-source scores to the JSON store in memory."""
+    jobs = store.get("jobs", {})
+    for url, *rest in blocked_rows:
+        key = rest[5] if len(rest) > 5 else url
+        job = jobs.get(key)
+        if not job:
+            continue
+        job["ai_score"] = 0
+        job["ai_reason"] = STAFFING_BLOCK_REASON
+        job["score_pct"] = 0
+        job["recommended"] = False
+        job["ai_model"] = "codex"
+
+
+def update_json_scores(store: dict, codex_batch, scores):
+    """Persist Codex scores to the JSON store in memory."""
+    jobs = store.get("jobs", {})
+    for (url, *rest), score_data in zip(codex_batch, scores):
+        key = rest[5] if len(rest) > 5 else url
+        job = jobs.get(key)
+        if not job:
+            continue
+        ai_score, ai_reason, score_pct, recommended = normalize_row_score(score_data)
+        job["ai_score"] = ai_score
+        job["ai_reason"] = ai_reason
+        job["score_pct"] = score_pct
+        job["recommended"] = recommended
+        job["ai_model"] = "codex"
+
+
+def print_summary(rows, args, backend: str):
+    """Print scoring summary for either backend."""
     total = len(rows)
     unscored = sum(1 for r in rows if r[5] is None)
-    groq_rescore = sum(1 for r in rows if r[5] == 'groq')
+    groq_rescore = sum(1 for r in rows if r[5] == "groq")
+    claude_rescore = sum(1 for r in rows if r[5] == "claude")
     batches = (total + BATCH_SIZE - 1) // BATCH_SIZE
+    print(f"Backend: {backend}")
     print(f"Found {total} jobs to score ({batches} batches of {BATCH_SIZE})")
     if args.hours:
         print(f"  Window: first_seen in past {args.hours:g} hours")
     if args.limit:
         print(f"  Limit: latest {args.limit} eligible jobs")
-    claude_rescore = sum(1 for r in rows if r[5] == 'claude')
-    print(f"  {unscored} unscored, {groq_rescore} Groq→Codex rescore, {claude_rescore} Claude→Codex rescore")
+    print(f"  {unscored} unscored, {groq_rescore} Groq->Codex rescore, {claude_rescore} Claude->Codex rescore")
+
+
+def save_json_store(store: dict):
+    """Write the JSON store using the same atomic helper as the dashboard."""
+    save_store(JSON_STORE_PATH, store)
+
+
+def main():
+    args = parse_args()
+    profile = load_profile()
+
+    store = None
+    if args.backend == "json":
+        backend = "json"
+        store = load_json_store()
+        rows = fetch_json_rows(store, args)
+    elif args.backend == "db":
+        if not connect_db():
+            print("ERROR: DB backend requested, but DATABASE_URL is missing or unavailable.")
+            sys.exit(1)
+        backend = "db"
+        rows = fetch_db_rows(args)
+    else:
+        if connect_db():
+            backend = "db"
+            rows = fetch_db_rows(args)
+        else:
+            backend = "json"
+            store = load_json_store()
+            rows = fetch_json_rows(store, args)
+
+    total = len(rows)
+    print_summary(rows, args, backend)
     if not rows:
         print("Nothing to score!")
         return
@@ -279,31 +498,22 @@ def main():
                 codex_batch.append(row)
 
         if blocked_rows:
-            conn = get_conn()
             try:
-                with conn.cursor() as cur:
-                    for url, company, title, *_ in blocked_rows:
-                        cur.execute("""
-                            UPDATE jobs
-                            SET ai_score = 0, ai_reason = %s,
-                                score_pct = 0, recommended = false,
-                                ai_model = 'codex'
-                            WHERE url = %s
-                        """, (STAFFING_BLOCK_REASON, url))
-                        scored += 1
-                        print(f"    0 | {company} — {title} ({STAFFING_BLOCK_REASON})")
-                conn.commit()
+                if backend == "db":
+                    update_db_blocked(blocked_rows)
+                else:
+                    update_json_blocked(store, blocked_rows)
+                for _, company, title, *_ in blocked_rows:
+                    scored += 1
+                    print(f"    0 | {company} — {title} ({STAFFING_BLOCK_REASON})")
             except Exception as e:
-                conn.rollback()
-                print(f"  DB error: {e}")
+                print(f"  {backend.upper()} error: {e}")
                 failed += len(blocked_rows)
-            finally:
-                put_conn(conn)
 
         if not codex_batch:
             continue
 
-        scores = score_batch_with_codex(codex_batch)
+        scores = score_batch_with_codex(codex_batch, profile)
         if not scores or len(scores) != len(codex_batch):
             # Fallback: if batch fails or count mismatch, mark as failed
             for url, company, title, *_ in codex_batch:
@@ -311,33 +521,23 @@ def main():
                 failed += 1
             continue
 
-        conn = get_conn()
         try:
-            with conn.cursor() as cur:
-                for (url, company, title, *_), score_data in zip(codex_batch, scores):
-                    ai_score = max(0, min(10, int(score_data.get("score", 5))))
-                    ai_reason = str(score_data.get("reason", ""))[:200]
-                    score_pct = ai_score * 10
-                    recommended = ai_score >= 7
-
-                    cur.execute("""
-                        UPDATE jobs
-                        SET ai_score = %s, ai_reason = %s,
-                            score_pct = %s, recommended = %s,
-                            ai_model = 'codex'
-                        WHERE url = %s
-                    """, (ai_score, ai_reason, score_pct, recommended, url))
-
-                    scored += 1
-                    tag = "REC" if recommended else f"  {ai_score}"
-                    print(f"  {tag} | {company} — {title}")
-            conn.commit()
+            if backend == "db":
+                update_db_scores(codex_batch, scores)
+            else:
+                update_json_scores(store, codex_batch, scores)
+            for (_, company, title, *_), score_data in zip(codex_batch, scores):
+                ai_score, _, _, recommended = normalize_row_score(score_data)
+                scored += 1
+                tag = "REC" if recommended else f"  {ai_score}"
+                print(f"  {tag} | {company} — {title}")
         except Exception as e:
-            conn.rollback()
-            print(f"  DB error: {e}")
-            failed += len(batch)
-        finally:
-            put_conn(conn)
+            print(f"  {backend.upper()} error: {e}")
+            failed += len(codex_batch)
+
+    if backend == "json":
+        save_json_store(store)
+        print(f"Saved JSON scores to {JSON_STORE_PATH}")
 
     print(f"\nDone: {scored} scored, {failed} failed out of {total} total")
 

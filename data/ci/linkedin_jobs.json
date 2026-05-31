@@ -38,16 +38,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 100,
-      "score_pct": 100,
+      "score_pct": 0,
       "level": "New Grad",
       "min_exp": 0,
       "max_exp": 2,
       "competition": 0,
       "keyword_hits": 12,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422577548": {
       "company": "Jobright.ai",
@@ -64,16 +65,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 100,
-      "score_pct": 100,
+      "score_pct": 0,
       "level": "New Grad",
       "min_exp": 0,
       "max_exp": 2,
       "competition": 0,
       "keyword_hits": 18,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4371309552": {
       "company": "Goldman Sachs",
@@ -90,16 +92,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong match for AI/RAG, Python, LLM APIs, cloud, and applied engineering at an associate level with no stated sponsorship denial or 3+ year requirement.",
       "score": 100,
-      "score_pct": 100,
+      "score_pct": 80,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 13,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412412352": {
       "company": "Amazon Web Services (AWS)",
@@ -116,16 +119,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires 3+ years of non-internship professional software development experience.",
       "score": 100,
-      "score_pct": 93,
+      "score_pct": 0,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 5,
       "keyword_hits": 9,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422563722": {
       "company": "Jobright.ai",
@@ -142,16 +146,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 100,
-      "score_pct": 100,
+      "score_pct": 0,
       "level": "New Grad",
       "min_exp": 0,
       "max_exp": 2,
       "competition": 0,
       "keyword_hits": 18,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421621382": {
       "company": "Blueridge Global Partners Inc.",
@@ -168,16 +173,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 10,
+      "ai_reason": "Excellent new-grad fit with explicit OPT/CPT eligibility, strong C++/Python systems requirements, AI compute focus, and deep overlap with systems, performance, and ML infrastructure.",
       "score": 98,
-      "score_pct": 75,
+      "score_pct": 100,
       "level": "New Grad",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 9,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4363130447": {
       "company": "Synechron",
@@ -194,16 +200,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because it requires 4+ years of software engineering experience.",
       "score": 92,
-      "score_pct": 71,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 10,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421612629": {
       "company": "Aventis Solutions",
@@ -220,16 +227,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 6,
+      "ai_reason": "Relevant AI/backend/cloud role with good stack overlap, but the posting is vague, recruiter-mediated, not clearly entry-level, and lacks sponsorship or level clarity.",
       "score": 87,
-      "score_pct": 67,
+      "score_pct": 60,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 9,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422569452": {
       "company": "Jobright.ai",
@@ -246,16 +254,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 92,
-      "score_pct": 71,
+      "score_pct": 0,
       "level": "New Grad",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 7,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422575353": {
       "company": "Jack & Jill",
@@ -272,16 +281,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong new-grad full-stack/backend startup role with scalable systems, APIs, and Python/Go/Java overlap, though company anonymity and sponsorship ambiguity add some risk.",
       "score": 70,
-      "score_pct": 54,
+      "score_pct": 80,
       "level": "New Grad",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 5,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422579548": {
       "company": "Jobright.ai",
@@ -298,16 +308,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 90,
-      "score_pct": 69,
+      "score_pct": 0,
       "level": "New Grad",
       "min_exp": 0,
       "max_exp": 2,
       "competition": 0,
       "keyword_hits": 6,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4363921544": {
       "company": "Esri",
@@ -324,16 +335,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires US citizenship and ability to maintain a US Security Clearance.",
       "score": 67,
-      "score_pct": 52,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 8,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4333152741": {
       "company": "Ramp",
@@ -350,16 +362,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires 3+ years of backend engineering experience.",
       "score": 66,
-      "score_pct": 51,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 7,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4321363979": {
       "company": "Epic",
@@ -376,16 +389,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires eligibility to work in the United States without visa sponsorship.",
       "score": 65,
-      "score_pct": 50,
+      "score_pct": 0,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4417981316": {
       "company": "BeaconFire Inc.",
@@ -402,16 +416,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 59,
-      "score_pct": 45,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 7,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4409296431": {
       "company": "Infused Solutions",
@@ -428,16 +443,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires 4-7+ years of institutional finance analyst experience.",
       "score": 58,
-      "score_pct": 45,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 5,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4371600272": {
       "company": "Amazon",
@@ -454,16 +470,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Strong AI/ML infrastructure fit with LLM platforms, distributed model training, and software development, but it requires 2+ years of non-internship professional experience.",
       "score": 57,
-      "score_pct": 44,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 5,
       "keyword_hits": 5,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422582427": {
       "company": "Jobright.ai",
@@ -480,16 +497,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 75,
-      "score_pct": 58,
+      "score_pct": 0,
       "level": "New Grad",
       "min_exp": 0,
       "max_exp": 2,
       "competition": 0,
       "keyword_hits": 3,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/3986117151": {
       "company": "Epic",
@@ -506,16 +524,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires eligibility to work in the United States without visa sponsorship.",
       "score": 54,
-      "score_pct": 42,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4392764830": {
       "company": "Hinge Health",
@@ -532,16 +551,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 6,
+      "ai_reason": "Relevant full-stack SWE role with Node.js, TypeScript, React, AWS, and scalable services, but Software Engineer II and 2+ years professional experience make it a stretch for a new grad.",
       "score": 52,
-      "score_pct": 40,
+      "score_pct": 60,
       "level": "Mid",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 5,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422575558": {
       "company": "FetchJobs.co",
@@ -558,16 +578,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires at least four years of software development experience.",
       "score": 69,
-      "score_pct": 53,
+      "score_pct": 0,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 6,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412302722": {
       "company": "PUMA Group",
@@ -584,16 +605,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 3,
+      "ai_reason": "Junior and US-based, but it is RPA/UIPath automation-heavy with limited overlap with backend, distributed systems, cloud infrastructure, or AI engineering.",
       "score": 48,
-      "score_pct": 37,
+      "score_pct": 30,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 3,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309699522": {
       "company": "DataAnnotation",
@@ -610,16 +632,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 2,
+      "ai_reason": "Very poor fit because it is independent contract AI coding evaluation work rather than a full-time software engineering role, though it uses Python/JavaScript and is US-based.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 20,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309699503": {
       "company": "DataAnnotation",
@@ -636,16 +659,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 2,
+      "ai_reason": "Very poor fit because it is independent contract AI coding evaluation work rather than a full-time software engineering role, though it uses Python/JavaScript and is US-based.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 20,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309807062": {
       "company": "DataAnnotation",
@@ -662,16 +686,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 2,
+      "ai_reason": "Very poor fit because it is independent contract AI coding evaluation work rather than a full-time software engineering role, though it uses Python/JavaScript and is US-based.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 20,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309802200": {
       "company": "DataAnnotation",
@@ -688,16 +713,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 2,
+      "ai_reason": "Very poor fit because it is independent contract AI coding evaluation work rather than a real backend engineering role, despite the backend title and Python/JavaScript overlap.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 20,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309693710": {
       "company": "DataAnnotation",
@@ -714,16 +740,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 2,
+      "ai_reason": "Coding/AI-evaluation contract work uses Python or JavaScript but is not a strong full-time SWE role and has weak backend/infrastructure fit.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 20,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422562622": {
       "company": "Mercor",
@@ -740,16 +767,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong Python backend/API/Docker/MCP contract role with excellent AI tooling overlap and no stated sponsorship or experience blocker.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 80,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422043270": {
       "company": "Veridian Tech Solutions, Inc.",
@@ -766,16 +794,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 6,
+      "ai_reason": "Good Java/Python/GCP/Agentic AI full-stack overlap, but C2C/on-site FDE framing and likely contract nature make it less ideal for a new grad OPT search.",
       "score": 46,
-      "score_pct": 35,
+      "score_pct": 60,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4392022622": {
       "company": "Amazon Web Services (AWS)",
@@ -792,16 +821,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the posting requires 3+ years of non-internship professional software development experience.",
       "score": 46,
-      "score_pct": 35,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 5,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421617380": {
       "company": "Coastal Edge Systems",
@@ -818,16 +848,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Solid full-stack role with Python, JavaScript/TypeScript, backend APIs, and React Native, though mobile focus is less aligned than backend infrastructure.",
       "score": 46,
-      "score_pct": 35,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4372139489": {
       "company": "Motion",
@@ -844,16 +875,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because it explicitly requires eligibility to work in the US without visa sponsorship and also lists 3-5 years of experience.",
       "score": 44,
-      "score_pct": 34,
+      "score_pct": 0,
       "level": "Mid",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 2,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422562593": {
       "company": "Fabric Ventures",
@@ -870,16 +902,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 5,
+      "ai_reason": "Relevant full-stack TypeScript/React/Node role at a strong startup, but it appears high-agency and experience-heavy rather than entry-level.",
       "score": 43,
-      "score_pct": 33,
+      "score_pct": 50,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422574525": {
       "company": "FetchJobs.co",
@@ -896,16 +929,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 5,
+      "ai_reason": "General software developer role with React and broad language/cloud overlap, but the source and location details are vague and the fit is mostly frontend/generalist.",
       "score": 63,
-      "score_pct": 48,
+      "score_pct": 50,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 7,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421623629": {
       "company": "Craft Digital",
@@ -922,16 +956,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Junior US-remote AI/full-stack role with React, TypeScript, Supabase, APIs, MCP, and AI tooling that fits the candidate's early-career profile well.",
       "score": 58,
-      "score_pct": 45,
+      "score_pct": 80,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 5,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421616509": {
       "company": "xylo ai Studios",
@@ -948,16 +983,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 5,
+      "ai_reason": "Strong applied AI and deployment overlap, but it is an internship with equity-based/no guaranteed cash compensation rather than a first full-time role.",
       "score": 54,
-      "score_pct": 42,
+      "score_pct": 50,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422582393": {
       "company": "targetjobs UK",
@@ -974,16 +1010,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because it requires the right to work in the UK without current or future sponsorship and is effectively UK-based despite the listed PA location.",
       "score": 32,
-      "score_pct": 25,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 2,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422562573": {
       "company": "Jack & Jill",
@@ -1000,16 +1037,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 6,
+      "ai_reason": "Potentially relevant scalable web/backend software role in San Francisco, but anonymized details, unclear level, and no stack specifics limit confidence.",
       "score": 28,
-      "score_pct": 22,
+      "score_pct": 60,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 1,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422583495": {
       "company": "Knowledge Builders Inc",
@@ -1026,16 +1064,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 5,
+      "ai_reason": "Basic software design/development role with no hard blockers, but the description is too generic to show strong backend, AI, or new-grad fit.",
       "score": 24,
-      "score_pct": 18,
+      "score_pct": 50,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4391757105": {
       "company": "Jonas Software",
@@ -1052,16 +1091,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 6,
+      "ai_reason": "Legitimate SWE role with React/TypeScript, APIs, testing, reliability, and AI-assisted workflow, but it is primarily frontend/product web engineering.",
       "score": 43,
-      "score_pct": 33,
+      "score_pct": 60,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422579608": {
       "company": "HII",
@@ -1078,8 +1118,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the posting explicitly states US citizenship is required for the position.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1088,7 +1128,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4371828201": {
       "company": "Amazon",
@@ -1105,8 +1146,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role is explicitly limited to U.S. citizens who served in the U.S. Armed Forces or qualifying spouses.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1115,7 +1156,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Overqualified: high experience requirement"
+      "reject_reason": "Overqualified: high experience requirement",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4346721330": {
       "company": "Govini",
@@ -1132,8 +1174,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because U.S. citizenship is required and the role requires current or obtainable U.S. security clearance.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1142,7 +1184,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4310893560": {
       "company": "Hermeus",
@@ -1159,17 +1202,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 3,
+      "ai_reason": "Weak fit because it is embedded/HIL aerospace testing with hardware-heavy requirements, though it is open to fresh graduates and uses Python.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 30,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4391502683": {
       "company": "BAE Systems, Inc.",
@@ -1186,8 +1230,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the posting requires U.S. citizenship and an active Secret Clearance.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -1196,7 +1240,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4380630628": {
       "company": "Andiamo",
@@ -1213,17 +1258,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 6,
+      "ai_reason": "Decent fit because it is backend software work with cloud and database overlap, but the 2-5 year range and staffing-source framing make it less ideal for a new grad.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 60,
       "level": "Unknown",
       "min_exp": 2,
       "max_exp": 5,
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Overqualified: high experience requirement"
+      "reject_reason": "Overqualified: high experience requirement",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422581379": {
       "company": "Hyra",
@@ -1240,8 +1286,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires a minimum of 3 years of relevant professional experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1250,7 +1296,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422571552": {
       "company": "FetchJobs.co",
@@ -1267,8 +1314,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because it requires at least 3 years of experience, DOD Secret clearance eligibility requiring U.S. citizenship, and explicitly excludes recent graduates.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1277,7 +1324,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4403029861": {
       "company": "Microsoft",
@@ -1294,17 +1342,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong fit because it is AI platform and cloud service engineering with distributed systems overlap, and the 2+ year requirement is still within the allowed range.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 80,
       "level": "Mid",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "recommended": true,
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421609499": {
       "company": "HUG",
@@ -1321,17 +1370,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong fit because it focuses on AI agents, backend infrastructure, developer tools, and distributed systems without explicit seniority or sponsorship barriers.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 80,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Title disqualified: Member of Technical Staff (Agents)"
+      "recommended": true,
+      "reject_reason": "Title disqualified: Member of Technical Staff (Agents)",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4400878400": {
       "company": "Intrinsic",
@@ -1348,8 +1398,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires 3-5 years of professional software development experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1358,7 +1408,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Overqualified: high experience requirement"
+      "reject_reason": "Overqualified: high experience requirement",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4016406224": {
       "company": "Palantir Technologies",
@@ -1375,8 +1426,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires 3+ years of professional software development experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1385,7 +1436,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422577372": {
       "company": "Jack & Jill",
@@ -1402,17 +1454,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Strong fit for backend AI infrastructure with Python, cloud, PostgreSQL, and vector database overlap, but the 2-5 year ideal profile and elite-startup bar reduce new-grad fit.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": 5,
       "max_exp": 5,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Requires 5+ years experience"
+      "recommended": true,
+      "reject_reason": "Requires 5+ years experience",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412361590": {
       "company": "PwC",
@@ -1429,8 +1482,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because it requires at least 3 years of experience and states PwC does not intend to hire candidates needing future H-1B lottery sponsorship.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -1439,7 +1492,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: US Tech - AI Engineering Senior Associate"
+      "reject_reason": "Title disqualified: US Tech - AI Engineering Senior Associate",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4392001495": {
       "company": "SpaceX",
@@ -1456,8 +1510,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires obtaining and maintaining a Top Secret security clearance.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -1466,7 +1520,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4403503626": {
       "company": "Skydio",
@@ -1483,17 +1538,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Strong fit because it is infrastructure/platform engineering with Kubernetes, cloud, Python or Go, and product ownership, though the 2+ year requirement makes it less new-grad targeted.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "recommended": true,
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4239984024": {
       "company": "Figma",
@@ -1510,8 +1566,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: requires 4+ years of professional software engineering experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1520,7 +1576,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4343094907": {
       "company": "Amazon",
@@ -1537,8 +1594,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: export control requires U.S. citizen/national, permanent resident, refugee, or asylee, and also requires 3+ years experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1547,7 +1604,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4400859355": {
       "company": "Intrinsic",
@@ -1564,17 +1622,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Strong technical overlap in C++/Python, AI, robotics software, Kubernetes, gRPC, and real-time systems, with no hard reject signals.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "recommended": true,
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4371467245": {
       "company": "Concept Reply US",
@@ -1591,8 +1650,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: minimum requirements specify U.S. citizen or green card holder.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1601,7 +1660,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4371555694": {
       "company": "Moderna",
@@ -1618,8 +1678,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: explicitly says immigration sponsorship is unavailable and the role is document-control rather than software engineering.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1628,7 +1688,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4371317128": {
       "company": "Aires",
@@ -1645,8 +1706,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: explicitly says visa sponsorship is not available.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1655,7 +1716,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309905066": {
       "company": "Toyon Research Corporation",
@@ -1672,8 +1734,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: requires U.S. citizenship and ability to qualify for a DoD security clearance.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1682,7 +1744,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4402320974": {
       "company": "PrizePicks",
@@ -1699,8 +1762,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: explicitly says the company is unable to sponsor or take over visa sponsorship.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -1709,7 +1772,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4382171686": {
       "company": "Moloco",
@@ -1726,8 +1790,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: requires 5-12+ years of production ML experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1736,7 +1800,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4403085069": {
       "company": "PwC",
@@ -1753,8 +1818,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: requires 3 years of professional AI/ML experience and states PwC does not intend to hire candidates needing H-1B sponsorship.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -1763,7 +1828,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: CTIO-AI Engineer-Sr Associate"
+      "reject_reason": "Title disqualified: CTIO-AI Engineer-Sr Associate",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4392765335": {
       "company": "Invisible Technologies",
@@ -1780,8 +1846,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: Staff role requiring 8+ years of software engineering experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -1790,7 +1856,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Staff Software Engineer, Applied AI (Forward Deployed)"
+      "reject_reason": "Title disqualified: Staff Software Engineer, Applied AI (Forward Deployed)",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412307494": {
       "company": "PwC",
@@ -1807,8 +1874,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: Senior Manager role requiring 12 years of experience and significant healthcare leadership background.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -1817,7 +1884,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Applied AI Health Data System Engineer-Senior Manager"
+      "reject_reason": "Title disqualified: Applied AI Health Data System Engineer-Senior Manager",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422566545": {
       "company": "Jack & Jill",
@@ -1834,17 +1902,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong fit for AI/full-stack/backend work with agentic workflows and RAG, though the 2-5 year preference makes it slightly above ideal new-grad level.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 80,
       "level": "Unknown",
       "min_exp": 2,
       "max_exp": 5,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Overqualified: high experience requirement"
+      "recommended": true,
+      "reject_reason": "Overqualified: high experience requirement",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4333867793": {
       "company": "Scale AI",
@@ -1861,17 +1930,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong fit for GenAI, full-stack, backend, data infrastructure, and customer-facing engineering, with only 2 years preferred and no sponsorship denial stated.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 80,
       "level": "Unknown",
       "min_exp": 2,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "recommended": true,
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4402704817": {
       "company": "Citi",
@@ -1888,8 +1958,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: requires 5-8 years of product development experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -1898,7 +1968,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4380627846": {
       "company": "Andiamo",
@@ -1915,16 +1986,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong backend fit with Python, APIs, distributed systems, cloud, Kafka, databases, and infrastructure alignment, though level and sponsorship support are unclear.",
       "score": 100,
-      "score_pct": 100,
+      "score_pct": 80,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 19,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412601268": {
       "company": "American Express",
@@ -1941,16 +2013,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: requires 4+ years of professional software engineering experience despite excellent AI/backend stack alignment.",
       "score": 100,
-      "score_pct": 94,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 12,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4391748409": {
       "company": "Anduril Industries",
@@ -1967,16 +2040,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Requires eligibility to obtain and maintain an active U.S. Secret security clearance, which is a hard reject.",
       "score": 86,
-      "score_pct": 66,
+      "score_pct": 0,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 8,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4382154744": {
       "company": "BlackRock",
@@ -1993,16 +2067,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Requires 3+ years of experience developing web applications, which is a hard reject for this scoring rubric.",
       "score": 73,
-      "score_pct": 56,
+      "score_pct": 0,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 7,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422576467": {
       "company": "Jobright.ai",
@@ -2019,16 +2094,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 69,
-      "score_pct": 53,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 6,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4363468035": {
       "company": "Epic",
@@ -2045,16 +2121,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Explicitly requires eligibility to work in the United States without visa sponsorship, which is a hard reject.",
       "score": 65,
-      "score_pct": 50,
+      "score_pct": 0,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4392040110": {
       "company": "Amazon Web Services (AWS)",
@@ -2071,16 +2148,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong distributed systems and cloud database fit with Aurora Storage, C++/Java-scale systems, and no sponsorship denial, though it asks for 2+ years non-internship experience.",
       "score": 63,
-      "score_pct": 48,
+      "score_pct": 80,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 5,
       "keyword_hits": 7,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4406657073": {
       "company": "Kapitus",
@@ -2097,16 +2175,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Requires a minimum of 4-8 years of hands-on development experience, which is a hard reject.",
       "score": 82,
-      "score_pct": 63,
+      "score_pct": 0,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 9,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4417993010": {
       "company": "BeaconFire Inc.",
@@ -2123,16 +2202,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 59,
-      "score_pct": 45,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 7,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/3986116461": {
       "company": "Epic",
@@ -2149,16 +2229,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Explicitly requires eligibility to work in the United States without visa sponsorship, which is a hard reject.",
       "score": 54,
-      "score_pct": 42,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4337602384": {
       "company": "Amazon Web Services (AWS)",
@@ -2175,16 +2256,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Requires 3+ years of non-internship software development experience, which is a hard reject.",
       "score": 53,
-      "score_pct": 41,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 5,
       "keyword_hits": 6,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4334730110": {
       "company": "DataAnnotation",
@@ -2201,16 +2283,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 3,
+      "ai_reason": "Software-adjacent AI coding work with some programming overlap, but Android-focused, contract-like, and not a strong full-time backend/infrastructure fit.",
       "score": 52,
-      "score_pct": 40,
+      "score_pct": 30,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412322248": {
       "company": "NVIDIA",
@@ -2227,16 +2310,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Requires 3+ years of work experience in a software development or test organization, which is a hard reject.",
       "score": 50,
-      "score_pct": 38,
+      "score_pct": 0,
       "level": "Mid",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309808054": {
       "company": "DataAnnotation",
@@ -2253,16 +2337,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 4,
+      "ai_reason": "Backend/Python coding overlap exists, but the role is independent contract AI model evaluation rather than production backend engineering.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 40,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309692743": {
       "company": "DataAnnotation",
@@ -2279,16 +2364,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 3,
+      "ai_reason": "Some coding and AI evaluation overlap, but it is UI-focused independent contract work and weakly aligned with backend/distributed systems goals.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 30,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4391233158": {
       "company": "Metropolitan Transportation Authority",
@@ -2305,16 +2391,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 5,
+      "ai_reason": "Relevant software systems role in the US with no sponsorship denial, but level is broad/ambiguous and requires prior software/project experience rather than being clearly entry-level.",
       "score": 46,
-      "score_pct": 35,
+      "score_pct": 50,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 2,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422571496": {
       "company": "Jobright.ai",
@@ -2331,16 +2418,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 46,
-      "score_pct": 35,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/3864454418": {
       "company": "Epic",
@@ -2357,16 +2445,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the posting explicitly requires eligibility to work in the U.S. without visa sponsorship.",
       "score": 44,
-      "score_pct": 34,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 3,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421623796": {
       "company": "Agentio",
@@ -2383,16 +2472,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the description clearly seeks a senior software engineer rather than a new grad or entry-level candidate.",
       "score": 39,
-      "score_pct": 30,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 3,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4360745943": {
       "company": "iHeartMedia",
@@ -2409,16 +2499,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Strong platform/infrastructure fit with only 24 months required experience and good overlap in Node, React, CI/CD, monitoring, and scalable services.",
       "score": 39,
-      "score_pct": 30,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 3,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422582446": {
       "company": "Mercor",
@@ -2435,16 +2526,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 6,
+      "ai_reason": "Relevant systems/performance and AI-adjacent work with C++/Python overlap, but contract status and expert framing make it a moderate fit.",
       "score": 34,
-      "score_pct": 26,
+      "score_pct": 60,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 1,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4380636361": {
       "company": "Andiamo",
@@ -2461,16 +2553,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires 4+ years of frontend engineering experience.",
       "score": 32,
-      "score_pct": 25,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 2,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4400857817": {
       "company": "IBM",
@@ -2487,16 +2580,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires over 5 years of hands-on product development experience.",
       "score": 26,
-      "score_pct": 20,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 7,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422565535": {
       "company": "FetchJobs.co",
@@ -2513,16 +2607,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 1,
+      "ai_reason": "Very poor fit because the posting is generic, template-like, lacks a clear location, and provides no concrete software engineering stack or responsibilities.",
       "score": 35,
-      "score_pct": 27,
+      "score_pct": 10,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 2,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4311743614": {
       "company": "Snap Inc.",
@@ -2539,8 +2634,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because this is a Principal Software Engineer role requiring 10+ years of experience and technical leadership.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -2549,7 +2644,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Principal Software Engineer, Business Experience"
+      "reject_reason": "Title disqualified: Principal Software Engineer, Business Experience",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4343350743": {
       "company": "SpaceX",
@@ -2566,8 +2662,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the ITAR requirements restrict eligibility to U.S. citizens, permanent residents, refugees, asylees, or special authorization holders.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -2576,7 +2672,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4391714211": {
       "company": "Spotify",
@@ -2593,17 +2690,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong backend fit with scalable systems, Java/Python/data/ML-adjacent overlap, U.S./North America location flexibility, and no sponsorship denial.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 80,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "recommended": true,
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422583514": {
       "company": "Capstone Research Corporation",
@@ -2620,8 +2718,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because it requires U.S. citizenship, DoD clearance eligibility, and three or more years of professional software development experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -2630,7 +2728,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4381322238": {
       "company": "Odyssey",
@@ -2647,8 +2746,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because it requires U.S. citizenship, active Secret clearance, and 3-6 years of relevant experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -2657,7 +2756,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422576520": {
       "company": "FetchJobs.co",
@@ -2674,8 +2774,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because it requires at least three years of experience, U.S. citizenship, and eligibility for a DoD Secret clearance, and explicitly excludes recent graduates.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -2684,7 +2784,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4397745551": {
       "company": "Lightspeed Systems",
@@ -2701,8 +2802,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role says sponsorship is not available and also requires 3+ years of QA-related experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Mid",
@@ -2711,7 +2812,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Quality Assurance Engineer (User Acceptance Testing)"
+      "reject_reason": "Title disqualified: Quality Assurance Engineer (User Acceptance Testing)",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4372135667": {
       "company": "Vercel",
@@ -2728,8 +2830,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires at least 5+ years of relevant experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -2738,7 +2840,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4391123801": {
       "company": "BlackRock",
@@ -2755,8 +2858,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires 3-6 years of experience, which exceeds the entry-level threshold.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -2765,7 +2868,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Requires 6+ years experience"
+      "reject_reason": "Requires 6+ years experience",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4392304378": {
       "company": "L3Harris Technologies",
@@ -2782,8 +2886,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires an active Top Secret/TS-SCI clearance or ability to obtain one.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -2792,7 +2896,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Senior Associate, Software Engineer"
+      "reject_reason": "Title disqualified: Senior Associate, Software Engineer",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4324478525": {
       "company": "Wealthfront",
@@ -2809,17 +2914,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Strong backend/distributed systems fit with Java, SQL, production ownership, and fintech relevance, but it asks for 2-6 years of experience rather than true new grad.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": 6,
       "max_exp": 6,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Requires 6+ years experience"
+      "recommended": true,
+      "reject_reason": "Requires 6+ years experience",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4381322237": {
       "company": "Odyssey",
@@ -2836,8 +2942,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires US citizenship and an active Secret clearance with ability to obtain TS/SCI.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -2846,7 +2952,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421626718": {
       "company": "System One",
@@ -2863,8 +2970,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires an active Secret clearance.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -2873,7 +2980,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412344998": {
       "company": "PwC",
@@ -2890,8 +2998,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires at least 3 years of experience and states PwC generally will not hire candidates needing H-1B sponsorship.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -2900,7 +3008,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: US Tech - AI Engineering Senior Associate"
+      "reject_reason": "Title disqualified: US Tech - AI Engineering Senior Associate",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4391716648": {
       "company": "Addepar",
@@ -2917,8 +3026,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the posting explicitly requires work authorization without current or future visa sponsorship, including F-1/OPT or H-1B.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -2927,7 +3036,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4392018899": {
       "company": "Bloomreach",
@@ -2944,17 +3054,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong fit for backend/platform engineering with Python, Java/Spring, Go, cloud, Kubernetes, Kafka, and AI tooling, though Software Engineer II and 3+ ideal experience make it less entry-level.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 80,
       "level": "Mid",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "recommended": true,
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4390764917": {
       "company": "Mission Technologies, a division of HII",
@@ -2971,8 +3082,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role is senior-level, requires 5 years of relevant experience, and requires Secret clearance or ability to obtain it quickly.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -2981,7 +3092,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4417768292": {
       "company": "Capgemini",
@@ -2998,8 +3110,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires 3+ years of Guidewire integration experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -3008,7 +3120,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4336953828": {
       "company": "Scale AI",
@@ -3025,8 +3138,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role is senior-level and requires active security clearance or ability to obtain one.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -3035,7 +3148,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Senior Machine Learning Engineer - Model Evaluations, Public Sector"
+      "reject_reason": "Title disqualified: Senior Machine Learning Engineer - Model Evaluations, Public Sector",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412314344": {
       "company": "PwC",
@@ -3052,8 +3166,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: this is a Director role requiring 10 years of experience and PwC generally will not sponsor H-1B lottery candidates.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -3062,7 +3176,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: GenAI Python Systems Engineer-Director"
+      "reject_reason": "Title disqualified: GenAI Python Systems Engineer-Director",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4363267378": {
       "company": "Hearst Magazines",
@@ -3079,8 +3194,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: this is a Lead Engineer role requiring 10+ years of software engineering experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -3089,7 +3204,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Lead Engineer"
+      "reject_reason": "Title disqualified: Lead Engineer",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4365998820": {
       "company": "Citi",
@@ -3106,8 +3222,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: this is a Senior/Vice President role requiring 6-10 years of hands-on experience and technical leadership.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -3116,7 +3232,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Senior Full-Stack Application Engineer, Vice President"
+      "reject_reason": "Title disqualified: Senior Full-Stack Application Engineer, Vice President",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4371712466": {
       "company": "Cirrus",
@@ -3133,8 +3250,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: this is a Staff-level assurance role requiring 8+ years of experience and is not primarily a software engineering role.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -3143,7 +3260,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: AD&D System Development Assurance Engineer Staff"
+      "reject_reason": "Title disqualified: AD&D System Development Assurance Engineer Staff",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422568550": {
       "company": "Jobright.ai",
@@ -3160,8 +3278,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -3170,7 +3288,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412490762": {
       "company": "Excelacom",
@@ -3187,17 +3306,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 3,
+      "ai_reason": "US-based technical engineering role, but it is specialized video encoding/CDN operations with weak overlap for new-grad backend/distributed/AI SWE and no entry-level signal.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 30,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4403069989": {
       "company": "PwC",
@@ -3214,8 +3334,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because it requires 3 years of professional AI/ML experience and states PwC does not intend to hire candidates needing H-1B sponsorship.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -3224,7 +3344,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: CTIO-AI Engineer-Sr Associate"
+      "reject_reason": "Title disqualified: CTIO-AI Engineer-Sr Associate",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4381060290": {
       "company": "Andiamo",
@@ -3241,17 +3362,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Strong Python/ML/large-scale systems fit with only 1+ years required, though the 3-10 years preferred range and quant-finance focus make it less clearly new-grad targeted.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": 3,
       "max_exp": 10,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Overqualified: high experience requirement"
+      "recommended": true,
+      "reject_reason": "Overqualified: high experience requirement",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4380629839": {
       "company": "Andiamo",
@@ -3268,16 +3390,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires 3-7 years of professional ML/AI engineering experience.",
       "score": 100,
-      "score_pct": 99,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 14,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412387982": {
       "company": "American Express",
@@ -3294,16 +3417,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires 4+ years of professional software engineering experience.",
       "score": 100,
-      "score_pct": 94,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 12,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421630860": {
       "company": "AgileGrid Solutions",
@@ -3320,16 +3444,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 6,
+      "ai_reason": "Relevant Python AI/ML developer role with good backend/API overlap, but level and location are ambiguous and it is not clearly new-grad friendly.",
       "score": 95,
-      "score_pct": 73,
+      "score_pct": 60,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 11,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422565551": {
       "company": "Jobright.ai",
@@ -3346,16 +3471,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 94,
-      "score_pct": 72,
+      "score_pct": 0,
       "level": "New Grad",
       "min_exp": 0,
       "max_exp": 2,
       "competition": 0,
       "keyword_hits": 7,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421625152": {
       "company": "Cognichip",
@@ -3372,16 +3498,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 5,
+      "ai_reason": "Early-career ML role with Python and production-system overlap, but the silicon/EDA hardware domain makes it only a moderate fit.",
       "score": 68,
-      "score_pct": 52,
+      "score_pct": 50,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 5,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4363437668": {
       "company": "Epic",
@@ -3398,16 +3525,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the posting explicitly requires eligibility to work in the United States without visa sponsorship.",
       "score": 65,
-      "score_pct": 50,
+      "score_pct": 0,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4316276321": {
       "company": "Acquire Me",
@@ -3424,16 +3552,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 6,
+      "ai_reason": "Strong ML systems and Python/C++ overlap, but the GPU/CUDA quant-performance focus is specialized and not clearly entry-level.",
       "score": 85,
-      "score_pct": 65,
+      "score_pct": 60,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 8,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421622951": {
       "company": "talentpluto",
@@ -3450,16 +3579,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Good AI infrastructure and data-pipeline fit with Python, Docker, datasets, and LLM-adjacent work, though it is more QA/data-quality focused than core backend engineering.",
       "score": 62,
-      "score_pct": 48,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 6,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4418700661": {
       "company": "Anthony & Sylvan Pools",
@@ -3476,16 +3606,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires 5+ years of application development, systems integration, or solution engineering experience.",
       "score": 61,
-      "score_pct": 47,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 7,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421625707": {
       "company": "Capgemini",
@@ -3502,16 +3633,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Strong backend infrastructure fit with Kafka, Flink, Docker, Kubernetes, AWS/Azure, and command-line development, with no hard rejection signal.",
       "score": 59,
-      "score_pct": 45,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 7,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421625870": {
       "company": "evolv Consulting",
@@ -3528,16 +3660,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires 5+ years of overall application development experience.",
       "score": 58,
-      "score_pct": 45,
+      "score_pct": 0,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 5,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/3849815923": {
       "company": "Epic",
@@ -3554,16 +3687,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the posting explicitly requires eligibility to work in the United States without visa sponsorship.",
       "score": 54,
-      "score_pct": 42,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412318380": {
       "company": "NVIDIA",
@@ -3580,16 +3714,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires 3+ years of work experience in a software development or test organization.",
       "score": 50,
-      "score_pct": 38,
+      "score_pct": 0,
       "level": "Mid",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421625821": {
       "company": "Quik Hire Staffing",
@@ -3606,16 +3741,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 70,
-      "score_pct": 54,
+      "score_pct": 0,
       "level": "Entry",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 6,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421617892": {
       "company": "AgileGrid Solutions",
@@ -3632,16 +3768,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: the role requires a minimum of 3+ years of software development experience.",
       "score": 70,
-      "score_pct": 54,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 8,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309808226": {
       "company": "DataAnnotation",
@@ -3658,16 +3795,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 5,
+      "ai_reason": "Coding-focused AI evaluation role with Python/JavaScript overlap, but it is contractor-style model training work rather than a true full-time software engineering role.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 50,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309695719": {
       "company": "DataAnnotation",
@@ -3684,16 +3822,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 5,
+      "ai_reason": "Backend title and coding/AI overlap are relevant, but the work is mainly chatbot evaluation as an independent contractor rather than production backend engineering.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 50,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309804045": {
       "company": "DataAnnotation",
@@ -3710,16 +3849,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 5,
+      "ai_reason": "Relevant coding and AI evaluation work with no hard reject, but weak fit for a first full-time SWE role because it is independent contract model-training work.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 50,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309685964": {
       "company": "DataAnnotation",
@@ -3736,16 +3876,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 4,
+      "ai_reason": "UI title and contractor AI-evaluation nature make it a weaker fit, though it still involves coding and has no hard reject.",
       "score": 47,
-      "score_pct": 36,
+      "score_pct": 40,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 4,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/3955119895": {
       "company": "Epic",
@@ -3762,16 +3903,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the posting explicitly requires being eligible to work in the U.S. without visa sponsorship.",
       "score": 44,
-      "score_pct": 34,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 3,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422580649": {
       "company": "Green Key Resources",
@@ -3788,16 +3930,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires 7+ years of experience.",
       "score": 64,
-      "score_pct": 49,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 5,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421624887": {
       "company": "Quik Hire Staffing",
@@ -3814,16 +3957,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 59,
-      "score_pct": 45,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 6,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421617855": {
       "company": "Quik Hire Staffing",
@@ -3840,16 +3984,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 59,
-      "score_pct": 45,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 6,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421619818": {
       "company": "Quik Hire Staffing",
@@ -3866,16 +4011,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 59,
-      "score_pct": 45,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 6,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309513412": {
       "company": "onsemi",
@@ -3892,16 +4038,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because this is a Field Sales Engineer role, not a software engineering role.",
       "score": 39,
-      "score_pct": 30,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 3,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4373784096": {
       "company": "Acquire Me",
@@ -3918,16 +4065,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 6,
+      "ai_reason": "Strong C++ and high-performance systems overlap in a US-based software role, but level expectations are ambiguous and quant trading is not an ideal new-grad target.",
       "score": 34,
-      "score_pct": 26,
+      "score_pct": 60,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 2,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4384074559": {
       "company": "Acquire Me",
@@ -3944,16 +4092,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires 3+ years of core engineering experience.",
       "score": 45,
-      "score_pct": 35,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 3,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4350574697": {
       "company": "Acquire Me",
@@ -3970,16 +4119,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires 5+ years of hands-on software engineering experience.",
       "score": 45,
-      "score_pct": 35,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 3,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421628749": {
       "company": "Netrolynx AI",
@@ -3996,16 +4146,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the description is for a Program Coordinator role rather than software development.",
       "score": 42,
-      "score_pct": 32,
+      "score_pct": 0,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 3,
-      "recommended": false
+      "recommended": false,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4418398613": {
       "company": "AirOps",
@@ -4022,16 +4173,17 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Relevant software/product engineering role at an AI startup with acceptable 2+ year experience requirement, though growth engineering is less aligned than backend or infrastructure engineering.",
       "score": 35,
-      "score_pct": 27,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 2,
-      "recommended": false
+      "recommended": true,
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422580701": {
       "company": "TikTok",
@@ -4048,17 +4200,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 8,
+      "ai_reason": "Strong backend fit with Go/Java, APIs, databases, distributed systems, high concurrency, and no hard-reject sponsorship or experience requirement.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 80,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "recommended": true,
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422576695": {
       "company": "ByteDance",
@@ -4075,17 +4228,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Good platform/backend infrastructure fit with distributed systems and Python/Golang overlap, but required DICM/ITOM/ITSM experience makes it less aligned for a new grad.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "recommended": true,
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422568727": {
       "company": "TikTok",
@@ -4102,17 +4256,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 9,
+      "ai_reason": "Excellent infrastructure fit with CDN, multi-cloud, networking, distributed systems, Go/Python/Java/C++, Linux, and no stated experience or sponsorship blocker.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 90,
       "level": "Unknown",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "recommended": true,
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4309585988": {
       "company": "Toyon Research Corporation",
@@ -4129,8 +4284,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the posting explicitly requires U.S. citizenship and ability to qualify for a DoD security clearance.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4139,7 +4294,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4371068975": {
       "company": "Motorola Solutions",
@@ -4156,8 +4312,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires U.S. citizenship and ability to obtain a government security clearance.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4166,7 +4322,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4326509201": {
       "company": "Mission Technologies, a division of HII",
@@ -4183,8 +4340,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because it requires U.S. citizenship, ability to obtain a DoD security clearance, and 3+ years of experience for master's candidates.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -4193,7 +4350,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412364514": {
       "company": "PwC",
@@ -4210,8 +4368,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because it requires at least 3 years of experience and states PwC does not intend to hire candidates needing H-1B sponsorship.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -4220,7 +4378,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: US Tech - AI Engineering Senior Associate"
+      "reject_reason": "Title disqualified: US Tech - AI Engineering Senior Associate",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421607895": {
       "company": "Prescient Edge",
@@ -4237,8 +4396,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the posting requires U.S. citizenship and ability to obtain a clearance.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -4247,7 +4406,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412490315": {
       "company": "L3Harris Technologies",
@@ -4264,8 +4424,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires ability to obtain a security clearance, which the posting notes may only be granted to U.S. citizens.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -4274,7 +4434,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Sr. Associate, Application Desktop - Engineering Operations Tools & Application Development"
+      "reject_reason": "Title disqualified: Sr. Associate, Application Desktop - Engineering Operations Tools & Application Development",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4343108939": {
       "company": "SoFi",
@@ -4291,8 +4452,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because this is a Staff role requiring 8+ years of software engineering experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4301,7 +4462,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Staff Full Stack Engineer"
+      "reject_reason": "Title disqualified: Staff Full Stack Engineer",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422585666": {
       "company": "The Walt Disney Company",
@@ -4318,8 +4480,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the basic qualifications require 3+ years of software engineering experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Mid",
@@ -4328,7 +4490,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421620870": {
       "company": "Reflexive Concepts",
@@ -4345,8 +4508,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the role requires 7 years of relevant experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4355,7 +4518,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Requires 4+ years experience"
+      "reject_reason": "Requires 4+ years experience",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4409918644": {
       "company": "Microsoft",
@@ -4372,17 +4536,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 6,
+      "ai_reason": "Relevant Software Engineer II role with cloud, full-stack, Azure, CI/CD, Python, and AI/LLM overlap, but 2+ years required and C#/.NET/Azure focus make it only a decent fit.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 60,
       "level": "Mid",
       "min_exp": null,
       "max_exp": null,
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421631164": {
       "company": "Joblet-AI",
@@ -4399,17 +4564,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Strong backend and AI product fit with Python/Node/Go/Java, REST APIs, microservices, cloud, SQL/NoSQL, and remote availability, though the 2-5 years requirement is slightly above ideal new-grad level",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": 2,
       "max_exp": 5,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Overqualified: high experience requirement"
+      "recommended": true,
+      "reject_reason": "Overqualified: high experience requirement",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4403568944": {
       "company": "NinjaOne",
@@ -4426,8 +4592,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject because the posting explicitly says the position is not eligible for visa sponsorship.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4436,7 +4602,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4391289321": {
       "company": "Hologic, Inc.",
@@ -4453,8 +4620,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: requires 5-8 years of experience and is a service quality/process compliance role rather than an entry-level software engineering role.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4463,7 +4630,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Service Quality Engineer"
+      "reject_reason": "Title disqualified: Service Quality Engineer",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421621890": {
       "company": "Platinum Enterprise Solutions, Inc.",
@@ -4480,8 +4648,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: requires 5+ years of SAP testing experience and is QA/test-focused rather than a suitable entry-level SWE role.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4490,7 +4658,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: SAP S/4HANA Test Analyst / Test Engineer"
+      "reject_reason": "Title disqualified: SAP S/4HANA Test Analyst / Test Engineer",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422576665": {
       "company": "Confidential Careers",
@@ -4507,17 +4676,18 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 7,
+      "ai_reason": "Strong applied AI/full-stack/API fit with good startup alignment, but the 2-4 year expectation and customer-facing FDE/sales-adjacent scope make it less ideal for a first new-grad role.",
       "score": 0,
-      "score_pct": 0,
+      "score_pct": 70,
       "level": "Unknown",
       "min_exp": 2,
       "max_exp": 4,
       "competition": 0,
       "keyword_hits": 0,
-      "recommended": false,
-      "reject_reason": "Overqualified: high experience requirement"
+      "recommended": true,
+      "reject_reason": "Overqualified: high experience requirement",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421620912": {
       "company": "talentpluto",
@@ -4534,8 +4704,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: GTM/outbound pipeline ownership is not a software engineering role despite some automation/tooling overlap.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4544,7 +4714,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Senior-level salary with no entry-level signals"
+      "reject_reason": "Senior-level salary with no entry-level signals",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412313400": {
       "company": "PwC",
@@ -4561,8 +4732,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: Director-level role requiring 10 years of experience and includes restrictive PwC sponsorship language.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -4571,7 +4742,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: GenAI Python Systems Engineer-Director"
+      "reject_reason": "Title disqualified: GenAI Python Systems Engineer-Director",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4421608933": {
       "company": "State of Nebraska",
@@ -4588,8 +4760,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: explicitly states it does not sponsor or transfer non-immigrant visas and does not accept STEM OPT.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4598,7 +4770,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: IT Applications Developer/Senior - MMIS"
+      "reject_reason": "Title disqualified: IT Applications Developer/Senior - MMIS",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4422578738": {
       "company": "Jobs via Dice",
@@ -4615,8 +4788,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Blocked staffing/spam source.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4625,7 +4798,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Blocked company: Jobs via Dice"
+      "reject_reason": "Blocked company: Jobs via Dice",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4418149923": {
       "company": "PRI Technology",
@@ -4642,8 +4816,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: explicitly says no sponsorship and targets a senior observability engineer with 5-7+ years of experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4652,7 +4826,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Senior Observability Engineer (local candidates only)"
+      "reject_reason": "Title disqualified: Senior Observability Engineer (local candidates only)",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4403547485": {
       "company": "Carnival Corporation",
@@ -4669,8 +4844,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: requires 5-6 years of AI/ML engineering experience, exceeding the allowed experience threshold.",
       "score": 0,
       "score_pct": 0,
       "level": "Unknown",
@@ -4679,7 +4854,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Requires 6+ years experience"
+      "reject_reason": "Requires 6+ years experience",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4336714326": {
       "company": "Vantor",
@@ -4696,8 +4872,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: requires U.S. citizenship, active TS/SCI clearance with CI poly, and 3 years of experience.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -4706,7 +4882,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4403560481": {
       "company": "Kaleidoscope Innovation",
@@ -4723,8 +4900,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: explicitly says the company is unable to sponsor or take over visa sponsorship.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -4733,7 +4910,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "No visa sponsorship or requires citizenship/clearance"
+      "reject_reason": "No visa sponsorship or requires citizenship/clearance",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4403085856": {
       "company": "PwC",
@@ -4750,8 +4928,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: requires 3 years of professional AI/ML experience and includes restrictive PwC sponsorship language.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -4760,7 +4938,8 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: CTIO-AI Engineer-Sr Associate"
+      "reject_reason": "Title disqualified: CTIO-AI Engineer-Sr Associate",
+      "ai_model": "codex"
     },
     "https://www.linkedin.com/jobs/view/4412316329": {
       "company": "PwC",
@@ -4777,8 +4956,8 @@
       "date_posted": "",
       "search_term": "",
       "source": "linkedin",
-      "ai_score": null,
-      "ai_reason": "",
+      "ai_score": 0,
+      "ai_reason": "Hard reject: Senior Manager role requiring 12 years of experience and includes restrictive PwC sponsorship language.",
       "score": 0,
       "score_pct": 0,
       "level": "Entry",
@@ -4787,8 +4966,9 @@
       "competition": 0,
       "keyword_hits": 0,
       "recommended": false,
-      "reject_reason": "Title disqualified: Applied AI Health Data System Engineer-Senior Manager"
+      "reject_reason": "Title disqualified: Applied AI Health Data System Engineer-Senior Manager",
+      "ai_model": "codex"
     }
   },
-  "last_updated": "2026-05-31T20:22:40.540384+00:00"
+  "last_updated": "2026-05-31T21:03:06.801566+00:00"
 }

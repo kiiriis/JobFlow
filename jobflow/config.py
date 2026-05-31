@@ -23,6 +23,19 @@ DEFAULT_CONFIG_PATH = "config/config.yaml"
 FALLBACK_CONFIG_PATH = "config/config.ci.yaml"
 
 
+def load_dotenv(root: Path | None = None) -> None:
+    """Load simple KEY=VALUE pairs from .env without overriding shell env."""
+    env_path = (root or Path.cwd()) / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
+
+
 def load_config(path: str = "") -> dict:
     """Load and validate config, resolving all paths to absolute.
 
@@ -46,6 +59,9 @@ def load_config(path: str = "") -> dict:
             f"Config file not found: {config_path}. Run 'jobflow init' first."
         )
 
+    root = config_path.parent.parent
+    load_dotenv(root)
+
     with open(config_path) as f:
         config = yaml.safe_load(f)
 
@@ -55,7 +71,6 @@ def load_config(path: str = "") -> dict:
             raise ValueError(f"Missing required config key: {key}")
 
     # Project root = parent of config/ directory (e.g., JobFlow/)
-    root = config_path.parent.parent
     config["_root"] = root
     config["output_dir"] = root / config["output_dir"]
     config["csv_path"] = root / config["csv_path"]

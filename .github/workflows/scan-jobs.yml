@@ -61,8 +61,7 @@ jobs:
           print(f'Merged: {new_count} new jobs, pruned {pruned} expired')
           "
 
-      - name: Merge into linkedin_jobs.json (fallback)
-        if: ${{ env.DATABASE_URL == '' || steps.db_merge.outcome == 'failure' }}
+      - name: Merge into linkedin_jobs.json (backup replica)
         run: |
           python -c "
           from pathlib import Path
@@ -88,7 +87,6 @@ jobs:
           "
 
       - name: Commit results
-        if: ${{ env.DATABASE_URL == '' || steps.db_merge.outcome == 'failure' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

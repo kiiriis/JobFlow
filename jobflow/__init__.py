@@ -1,8 +1,8 @@
 """JobFlow — Automated job scanner and resume tailoring system.
 
 Scans LinkedIn and ATS job boards (Lever, Greenhouse, Ashby) on an hourly
-cron via GitHub Actions, scores each posting against a Python/ML/Backend
-tech stack, and surfaces results through a live Flask dashboard.
+cron via GitHub Actions, scores each posting against an ASIC/SoC/FPGA/GPU
+hardware profile, and surfaces results through a live Flask dashboard.
 
 Architecture overview:
     GitHub Actions (hourly)  ->  scanner.py  ->  filter.py  ->  linkedin_store.py

@@ -12,32 +12,32 @@ from jobflow.models import JobPosting, FilterResult
 
 @pytest.fixture
 def new_grad_ml_job():
-    """Perfect new grad ML job — should score very high."""
+    """Legacy fixture name: perfect new grad ASIC job."""
     return JobPosting(
         url="https://linkedin.com/jobs/view/123",
-        title="Machine Learning Engineer – New Grad",
-        company="Stripe",
-        location="San Francisco, CA",
+        title="ASIC Design Engineer - New Grad",
+        company="NVIDIA",
+        location="Santa Clara, CA",
         description=(
-            "We're hiring new graduate Machine Learning Engineers! "
-            "Requirements: Python, PyTorch, AWS, distributed systems, Docker, Kubernetes, FastAPI. "
+            "We're hiring new graduate ASIC Design Engineers! "
+            "Requirements: RTL, Verilog, SystemVerilog, synthesis, STA, Cadence, Synopsys. "
             "0-2 years experience. Will sponsor H1B visa. "
-            "Work on deep learning models, NLP, and LLM applications."
+            "Work on SoC and GPU ASIC design."
         ),
     )
 
 
 @pytest.fixture
 def entry_backend_job():
-    """Entry-level backend job — should score well."""
+    """Legacy fixture name: entry-level verification job."""
     return JobPosting(
         url="https://linkedin.com/jobs/view/456",
-        title="Junior Software Engineer",
-        company="Notion",
+        title="Junior ASIC Verification Engineer",
+        company="AMD",
         location="New York, NY",
         description=(
-            "Entry-level software engineering position. Python, PostgreSQL, Redis, Docker. "
-            "REST API development. 0-1 years experience preferred. "
+            "Entry-level design verification position. SystemVerilog, UVM, coverage, assertions. "
+            "0-1 years experience preferred. "
             "Great opportunity for recent graduates."
         ),
     )
@@ -48,10 +48,10 @@ def senior_job():
     """Senior role — should be hard rejected by title."""
     return JobPosting(
         url="https://linkedin.com/jobs/view/789",
-        title="Senior Software Engineer",
+        title="Senior ASIC Design Engineer",
         company="Google",
         location="Seattle, WA",
-        description="8+ years experience. Lead a team of engineers. Python, AWS, Kubernetes.",
+        description="8+ years experience. Lead a team of engineers. RTL, SystemVerilog, synthesis.",
     )
 
 
@@ -60,13 +60,12 @@ def overqualified_job():
     """Requires 4+ years — should be hard rejected by experience."""
     return JobPosting(
         url="https://linkedin.com/jobs/view/101",
-        title="ML Engineer",
+        title="ASIC Design Engineer",
         company="10a Labs",
         location="Remote, US",
         description=(
-            "At least 3–8+ years of professional working experience as a Machine Learning engineer. "
-            "Salary Range: $150K–$250K. Build and deploy ML systems. "
-            "Python, PyTorch, LLMs, fine-tuning, AWS."
+            "At least 3-8+ years of professional working experience as an ASIC engineer. "
+            "Salary Range: $150K-$250K. RTL, SystemVerilog, synthesis, STA."
         ),
     )
 
@@ -76,11 +75,11 @@ def no_sponsorship_job():
     """No visa sponsorship — should be hard rejected."""
     return JobPosting(
         url="https://linkedin.com/jobs/view/202",
-        title="Software Developer",
+        title="ASIC Design Engineer",
         company="Acme Corp",
         location="Austin, TX",
         description=(
-            "Software developer position. Python, React. "
+            "RTL design position. Verilog, SystemVerilog. "
             "Must be authorized to work in the United States without sponsorship."
         ),
     )
@@ -91,12 +90,12 @@ def clearance_job():
     """Requires security clearance — should be hard rejected."""
     return JobPosting(
         url="https://linkedin.com/jobs/view/303",
-        title="Software Engineer",
+        title="ASIC Design Engineer",
         company="Northrop Grumman",
         location="Virginia, US",
         description=(
             "Active Top Secret/SCI clearance required. "
-            "Python developer for defense systems."
+            "RTL design for defense systems."
         ),
     )
 
@@ -106,10 +105,10 @@ def spam_company_job():
     """Job aggregator spam — should be hard rejected."""
     return JobPosting(
         url="https://linkedin.com/jobs/view/404",
-        title="Software Developer",
+        title="ASIC Design Engineer",
         company="Jobs via Dice",
         location="Remote",
-        description="Python developer needed. Great opportunity.",
+        description="RTL design role. Great opportunity.",
     )
 
 
@@ -130,10 +129,10 @@ def non_us_job():
     """Non-US location — should be hard rejected."""
     return JobPosting(
         url="https://linkedin.com/jobs/view/606",
-        title="Software Engineer",
+        title="FPGA Design Engineer",
         company="Spotify",
         location="London, UK",
-        description="Python, microservices, Kubernetes. Great team.",
+        description="Verilog, Vivado, FPGA. Great team.",
     )
 
 
@@ -142,12 +141,11 @@ def mid_level_job():
     """Mid-level role — should pass but score lower."""
     return JobPosting(
         url="https://linkedin.com/jobs/view/707",
-        title="Software Engineer II",
+        title="ASIC Design Engineer II",
         company="Microsoft",
         location="Redmond, WA",
         description=(
-            "SDE II position. 2-3 years experience preferred. Python, distributed systems, AWS. "
-            "Build scalable backend services."
+            "Engineer II position. 2-3 years experience preferred. RTL, SystemVerilog, synthesis."
         ),
     )
 
@@ -157,10 +155,10 @@ def ambiguous_job():
     """No clear level signals — tests Unknown handling."""
     return JobPosting(
         url="https://linkedin.com/jobs/view/808",
-        title="Software Engineer",
+        title="ASIC Design Engineer",
         company="StartupCo",
         location="Remote, US",
-        description="Python, Docker, PostgreSQL. Build features for our platform.",
+        description="RTL, Verilog, SystemVerilog. Build chip features.",
     )
 
 
@@ -169,12 +167,12 @@ def high_salary_no_entry_signals():
     """High salary ($180K) with no entry signals — should be rejected."""
     return JobPosting(
         url="https://linkedin.com/jobs/view/909",
-        title="Software Engineer",
+        title="ASIC Design Engineer",
         company="FinTechCo",
         location="New York, NY",
         description=(
             "Compensation: $180,000 - $220,000 base salary. "
-            "Python, Kafka, distributed systems. Build trading platform."
+            "RTL, SystemVerilog, synthesis. Build trading hardware."
         ),
     )
 
@@ -208,47 +206,47 @@ def sample_store():
         "last_updated": now.isoformat(),
         "jobs": {
             "https://example.com/1": {
-                "company": "Stripe", "title": "SWE New Grad",
+                "company": "Stripe", "title": "ASIC Design Engineer New Grad",
                 "location": "SF, CA", "url": "https://example.com/1",
                 "score": 45, "score_pct": 35, "level": "New Grad",
                 "min_exp": 0, "max_exp": 2, "competition": 5,
                 "recommended": True, "status": "",
                 "first_seen": now.isoformat(), "last_seen": now.isoformat(),
-                "search_term": "new grad software engineer",
-                "variant": "se", "reason": "", "description_preview": "",
+                "search_term": "New Grad ASIC Design Engineer",
+                "variant": "se", "reason": "", "description_preview": "RTL Verilog",
             },
             "https://example.com/2": {
-                "company": "Google", "title": "Junior Backend Engineer",
+                "company": "Google", "title": "Junior ASIC Verification Engineer",
                 "location": "Seattle, WA", "url": "https://example.com/2",
                 "score": 35, "score_pct": 27, "level": "Entry",
                 "min_exp": None, "max_exp": None, "competition": 7,
                 "recommended": True, "status": "Tracking",
                 "first_seen": (now - timedelta(hours=6)).isoformat(),
                 "last_seen": now.isoformat(),
-                "search_term": "entry level software engineer",
-                "variant": "se", "reason": "", "description_preview": "",
+                "search_term": "Entry Level ASIC Verification Engineer",
+                "variant": "se", "reason": "", "description_preview": "SystemVerilog UVM",
             },
             "https://example.com/3": {
-                "company": "StartupCo", "title": "Python Developer",
+                "company": "StartupCo", "title": "FPGA Design Engineer",
                 "location": "Remote", "url": "https://example.com/3",
                 "score": 20, "score_pct": 15, "level": "Unknown",
                 "min_exp": None, "max_exp": None, "competition": 0,
                 "recommended": False, "status": "Not Interested",
                 "first_seen": (now - timedelta(days=5)).isoformat(),
                 "last_seen": (now - timedelta(days=2)).isoformat(),
-                "search_term": "python developer",
-                "variant": "se", "reason": "", "description_preview": "",
+                "search_term": "Entry Level FPGA Design Engineer",
+                "variant": "se", "reason": "", "description_preview": "Verilog Vivado",
             },
             "https://example.com/4": {
-                "company": "Meta", "title": "ML Engineer",
+                "company": "Meta", "title": "SoC Physical Design Engineer",
                 "location": "Menlo Park, CA", "url": "https://example.com/4",
                 "score": 40, "score_pct": 31, "level": "Entry",
                 "min_exp": 0, "max_exp": 2, "competition": 5,
                 "recommended": True, "status": "Applied",
                 "first_seen": (now - timedelta(days=10)).isoformat(),
                 "last_seen": (now - timedelta(days=8)).isoformat(),
-                "search_term": "ml engineer",
-                "variant": "ml", "reason": "", "description_preview": "",
+                "search_term": "New Grad Physical Design Engineer",
+                "variant": "se", "reason": "", "description_preview": "STA timing closure",
             },
         },
     }

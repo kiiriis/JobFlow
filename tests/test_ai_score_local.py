@@ -3,7 +3,7 @@
 from scripts.ai_score_local import is_blocked_staffing_source
 
 
-def _row(url="", company="", title="Software Engineer", location="US", desc="Python role"):
+def _row(url="", company="", title="ASIC Design Engineer", location="US", desc="RTL role"):
     return (url, company, title, location, desc, None)
 
 
@@ -19,4 +19,4 @@ def test_blocked_staffing_sources_match_company_and_url():
 
 
 def test_legitimate_company_is_not_blocked():
-    assert not is_blocked_staffing_source(_row(company="Stripe", url="https://stripe.com/jobs/123"))
+    assert not is_blocked_staffing_source(_row(company="NVIDIA", url="https://nvidia.com/jobs/123"))

@@ -18,8 +18,8 @@ Phase 1 — Hard Reject (instant score=0, should_apply=False):
 
 Phase 2 — Scoring (if all hard filters pass):
     Additive scoring across multiple signals, normalized to 0-100%:
-    - keyword_score:    Tech stack matches (Python=10, PyTorch=8, AWS=7, etc.)
-    - synergy_bonus:    Extra points for common stack combos (Python+FastAPI+AWS = +10)
+    - keyword_score:    Hardware stack matches (ASIC=10, SystemVerilog=10, etc.)
+    - synergy_bonus:    Extra points for common hardware role combos
     - level_points:     New Grad=+20, Entry=+15, Mid=+5, Unknown=+4
     - experience_score: Sweet spot is 0-2 years (+10), penalty for 3+ years
     - recency_score:    Freshly posted jobs get +10, >48h old gets -5
@@ -32,9 +32,7 @@ Phase 2 — Scoring (if all hard filters pass):
 
 Variant Selection:
     select_variant() picks which base resume to use:
-    - "ml"     if 2+ ML keywords (pytorch, tensorflow, llm, etc.)
-    - "appdev" if 2+ frontend keywords (react, angular, full-stack, etc.)
-    - "se"     default (backend/infra/general SWE)
+    - "se"     default; Milan's branch keeps existing resume config compatible
 """
 
 import re
@@ -69,13 +67,9 @@ DISQUALIFYING_PHRASES = [
     "united states citizenship required", "citizenship is required",
     "gc holder", "green card holder", "green card only",
     "permanent resident only", "lawful permanent resident",
-    "must be authorized to work", "must have authorization to work",
-    "authorization to work in the us",
-    "authorization to work in the united states",
     "authorized to work in the us without sponsorship",
     "authorized to work in the united states without sponsorship",
     "eligible to work in the us without sponsorship",
-    "legally authorized to work",
     # Security clearance
     "security clearance required", "clearance required",
     "active clearance", "active secret clearance", "active top secret",
@@ -107,13 +101,43 @@ OVERQUALIFIED_PATTERNS = [
 # from phrases like "work with senior engineers" in JD body text.
 TITLE_REJECT_PATTERNS = [
     r"\bsenior\b", r"\bsr\.?\s", r"\bstaff\b", r"\bprincipal\b",
-    r"\blead\s+(?:engineer|developer|software)\b",
+    r"\blead\s+(?:engineer|developer|software|rtl|asic|soc|fpga)\b",
     r"\bmanager\b", r"\bdirector\b",
     r"\barchitect\b", r"\bvp\b", r"\bvice\s+president\b", r"\bhead\s+of\b",
     # QA / Testing roles
     r"\bsdet\b", r"\bqa\s+engineer\b", r"\bquality\s+assurance\b",
     r"\bquality\s+engineer\b",
     r"\btest\s+(?:automation|engineer)\b", r"\btesting\s+engineer\b",
+]
+
+# ── Milan target role guard ─────────────────────────────────────────────────
+# Applied to the title only. Descriptions often mention non-target teams or
+# collaborators, so title gating avoids rejecting good ASIC/SoC/FPGA roles
+# because they mention firmware, software, or lab partners in the body.
+TARGET_HARDWARE_TITLE_PATTERNS = [
+    r"\basic\b", r"\bsoc\b", r"\bsystem\s+on\s+chip\b", r"\bfpga\b",
+    r"\brtl\b", r"\bvlsi\b", r"\bgpu\s+asic\b", r"\bgpu\s+hardware\b",
+    r"\bdesign\s+verification\b", r"\bverification\s+engineer\b",
+    r"\bdv\s+engineer\b", r"\bphysical\s+design\b", r"\bpd\s+engineer\b",
+    r"\bplace\s+(?:and|&)\s+route\b", r"\bp&r\b",
+    r"\bsta\b", r"\bstatic\s+timing\b", r"\btiming\s+closure\b",
+    r"\bsynthesis\b", r"\bdft\b", r"\bcdc\b",
+    r"\bsilicon\s+(?:design|verification|engineer)\b",
+    r"\bsemiconductor\b", r"\bhardware\s+(?:design|verification)\b",
+    r"\bdigital\s+design\b", r"\blogic\s+design\b",
+    r"\bchip\s+(?:design|verification)\b",
+]
+
+NON_TARGET_TITLE_PATTERNS = [
+    r"\bembedded\b", r"\bfirmware\b", r"\bsoftware\b",
+    r"\bbackend\b", r"\bfrontend\b", r"\bfront[\s-]*end\b",
+    r"\bfull[\s-]*stack\b", r"\bweb\s+developer\b",
+    r"\bdata\s+(?:scientist|engineer|analyst)\b",
+    r"\bmachine\s+learning\b", r"\bml\s+engineer\b", r"\bai\s+engineer\b",
+    r"\bdevops\b", r"\bsite\s+reliability\b", r"\bsre\b",
+    r"\bcloud\s+engineer\b", r"\bit\s+support\b",
+    r"\btechnical\s+support\b", r"\bproduct\s+manager\b",
+    r"\bsales\s+engineer\b",
 ]
 
 # ── Company blocklist (job aggregators / spam) ──────────────────────────────
@@ -146,6 +170,7 @@ ENTRY_LEVEL_SIGNALS = [
     r"\brecent\s+graduate?\b", r"\brecent\s+grad\b",
     r"\buniversity\s+grad",
     r"\bsde[\s-]*[i1]\b", r"\bswe[\s-]*[i1]\b", r"\beng[\s-]*[i1]\b",
+    r"\bengineer[\s-]*(?:i|1)\b",
     r"\blevel[\s-]*[i1]\b", r"\blevel[\s-]*1\b",
     r"\bassociate\b",
     r"\bfirst\s+opportunity\b",
@@ -164,65 +189,54 @@ SENIOR_DESC_SIGNALS = [
     r"\blead\b", r"\bmanager\b", r"\bdirector\b",
 ]
 
-# ── ML/AI keywords for variant selection ────────────────────────────────────
-ML_KEYWORDS = [
-    r"\bmachine\s+learning\b", r"\bdeep\s+learning\b", r"\bml\s+engineer\b",
-    r"\bdata\s+scien", r"\bcomputer\s+vision\b", r"\bnlp\b", r"\bllm\b",
-    r"\bpytorch\b", r"\btensorflow\b", r"\bmodel\s+training\b",
-]
+# Milan does not have hardware-specific resume variants in this repo yet.
+ML_KEYWORDS = []
+APPDEV_KEYWORDS = []
 
-# ── Full-stack / AppDev keywords ────────────────────────────────────────────
-APPDEV_KEYWORDS = [
-    r"\bfull[\s-]*stack\b", r"\bfrontend\b", r"\bfront[\s-]*end\b",
-    r"\breact\b", r"\bangular\b", r"\bvue\b", r"\bnext\.?js\b",
-    r"\bweb\s+developer\b", r"\bui/ux\b",
-]
-
-# ── Personal tech stack (categorized) ───────────────────────────────────────
-# Weights reflect how central each technology is to the user's skill set.
-# Higher weight = stronger match signal. Categories are used for organization
-# only — scoring sums across all categories.
-#
-# Scoring is binary presence: if "python" appears anywhere in title+description,
-# add 10 points. No frequency weighting — mentioning Python 5 times doesn't
-# score higher than mentioning it once.
 STACK_CATEGORIES = {
-    "core": {
-        "python": 10, "c++": 6, "java": 4, "sql": 5, "go": 4,
+    "design": {
+        "asic": 10, "soc": 10, "rtl": 10, "vlsi": 9,
+        "verilog": 9, "systemverilog": 10, "digital design": 8,
+        "logic design": 8, "microarchitecture": 7, "computer architecture": 6,
+        "synthesis": 8,
     },
-    "ml_ai": {
-        "machine learning": 10, "deep learning": 8, "pytorch": 8, "tensorflow": 7,
-        "llm": 8, "rag": 7, "langchain": 6, "hugging face": 5,
-        "computer vision": 5, "nlp": 6, "transformers": 6,
+    "verification": {
+        "verification": 9, "design verification": 10, "uvm": 10,
+        "testbench": 8, "coverage": 7, "assertions": 7,
+        "constrained random": 7, "simulation": 6, "regression": 5,
+        "formal verification": 7,
     },
-    "backend": {
-        "distributed systems": 8, "rest": 4, "api": 4, "fastapi": 7,
-        "flask": 5, "microservices": 5, "grpc": 5,
+    "physical": {
+        "physical design": 10, "sta": 9, "static timing analysis": 9,
+        "timing closure": 9, "place and route": 8, "place & route": 8,
+        "p&r": 8, "floorplanning": 7, "floorplan": 7, "drc": 6,
+        "lvs": 6, "drc/lvs": 8, "power analysis": 6, "clock tree": 6,
     },
-    "cloud": {
-        "aws": 7, "gcp": 4, "azure": 3, "lambda": 3, "ec2": 3,
+    "fpga_gpu": {
+        "fpga": 10, "gpu": 7, "gpu asic": 10, "xilinx": 6,
+        "amd": 4, "intel": 4, "altera": 5, "vivado": 7, "quartus": 7,
     },
-    "devops": {
-        "docker": 5, "kubernetes": 6, "ci/cd": 4, "terraform": 4, "linux": 4,
+    "eda_tools": {
+        "cadence": 8, "synopsys": 8, "primetime": 7, "innovus": 7,
+        "vcs": 6, "questa": 6, "modelsim": 5, "dc compiler": 6,
+        "design compiler": 6, "genus": 6, "tempus": 6,
     },
-    "data": {
-        "postgresql": 5, "mongodb": 4, "redis": 5, "kafka": 5,
-        "spark": 4, "airflow": 4, "elasticsearch": 4,
+    "scripting": {
+        "c++": 5, "c": 4, "python": 5, "perl": 4, "tcl": 5,
+        "linux": 4, "shell scripting": 4, "matlab": 3,
+        "git": 3,
     },
 }
 
-# Bonus when full tech combos appear together.
-# Synergy rewards jobs that match the user's actual project experience
-# (e.g., "Python + FastAPI + AWS" = a real stack the user has built with).
-# All keywords in the combo must be present to earn the bonus.
 SYNERGY_COMBOS = [
-    ({"python", "fastapi", "aws"}, 10),
-    ({"python", "pytorch", "aws"}, 10),
-    ({"machine learning", "python", "docker"}, 8),
-    ({"llm", "python", "aws"}, 10),
-    ({"python", "docker", "kubernetes"}, 8),
-    ({"python", "kafka", "distributed systems"}, 8),
-    ({"postgresql", "redis", "api"}, 6),
+    ({"systemverilog", "uvm", "coverage"}, 10),
+    ({"rtl", "verilog", "synthesis"}, 10),
+    ({"physical design", "sta", "timing closure"}, 10),
+    ({"fpga", "verilog", "vivado"}, 8),
+    ({"fpga", "verilog", "quartus"}, 8),
+    ({"soc", "rtl", "verification"}, 10),
+    ({"gpu", "asic", "rtl"}, 10),
+    ({"dft", "cdc", "rtl"}, 8),
 ]
 
 # Maximum theoretical raw score. Used to normalize to 0-100%.
@@ -259,12 +273,26 @@ def has_match(text: str, patterns: list[str]) -> bool:
     return count_matches(text, patterns) > 0
 
 
+def is_target_hardware_role(title: str) -> bool:
+    title_lower = title.lower()
+    if not has_match(title_lower, TARGET_HARDWARE_TITLE_PATTERNS):
+        return False
+    if has_match(title_lower, NON_TARGET_TITLE_PATTERNS):
+        return False
+    return True
+
+
 def _has_phrase(text_lower: str, phrases: list[str]) -> bool:
     """Fast plain-string match for disqualifying phrases."""
     for phrase in phrases:
         if phrase in text_lower:
             return True
     return False
+
+
+def _keyword_present(text_lower: str, keyword: str) -> bool:
+    pattern = re.escape(keyword.lower()).replace(r"\ ", r"\s+")
+    return re.search(rf"(?<![a-z0-9+]){pattern}(?![a-z0-9+])", text_lower) is not None
 
 
 def select_variant(description: str) -> str:
@@ -291,7 +319,7 @@ def keyword_score(text: str) -> tuple[int, int]:
     hits = 0
     for category in STACK_CATEGORIES.values():
         for keyword, weight in category.items():
-            if keyword in lower:
+            if _keyword_present(lower, keyword):
                 score += weight
                 hits += 1
     return score, hits
@@ -301,7 +329,7 @@ def synergy_bonus(text: str) -> int:
     lower = text.lower()
     bonus = 0
     for keywords, points in SYNERGY_COMBOS:
-        if all(k in lower for k in keywords):
+        if all(_keyword_present(lower, k) for k in keywords):
             bonus += points
     return bonus
 
@@ -322,6 +350,7 @@ def level_tag(title: str, description: str = "") -> str:
         r"\bentry[\s-]*level\b", r"\bjunior\b", r"\bjr\.?\s",
         r"\bassociate\b", r"\bearly\s+career\b", r"\bfirst\s+opportunity\b",
         r"\bsde[\s-]*[i1]\b", r"\bswe[\s-]*[i1]\b", r"\beng[\s-]*[i1]\b",
+        r"\bengineer[\s-]*(?:i|1)\b",
         r"\blevel[\s-]*[i1]\b", r"\blevel[\s-]*1\b",
         r"\b0[\s-]*(?:to[\s-]*)?2\s*(?:years?|yrs?)\b",
         r"\bintern\b",
@@ -333,7 +362,8 @@ def level_tag(title: str, description: str = "") -> str:
     # Mid
     mid = [
         r"\bsde[\s-]*(?:ii|2)\b", r"\bswe[\s-]*(?:ii|2)\b", r"\beng[\s-]*(?:ii|2)\b",
-        r"\bsoftware\s+engineer\s*(?:ii|2)\b", r"\bmid[\s-]*level\b",
+        r"\bsoftware\s+engineer\s*(?:ii|2)\b", r"\bengineer\s*(?:ii|2)\b",
+        r"\bmid[\s-]*level\b",
         r"\blevel[\s-]*(?:ii|2)\b",
         r"\b2[\s-]*(?:to[\s-]*)?5\s*(?:years?|yrs?)\b",
         r"\b3[\s-]*(?:to[\s-]*)?5\s*(?:years?|yrs?)\b",
@@ -442,11 +472,8 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     level = level_tag(job.title, job.description)
 
     def _reject(reason: str) -> FilterResult:
-        # Keep the job in the pipeline with score=0 so the AI rescorer
-        # (scripts/ai_score_local.py) can correct false positives. The AI
-        # handles sponsorship/seniority nuance better than regex phrase matching.
         return FilterResult(
-            score=0, score_pct=0, should_apply=True, reason=reason,
+            score=0, score_pct=0, should_apply=False, reason=reason,
             resume_variant=variant, level=level, reject_reason=reason,
         )
 
@@ -459,11 +486,15 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
         if re.search(pattern, title_lower):
             return _reject(f"Title disqualified: {job.title}")
 
-    # ── 3. Sponsorship / citizenship / clearance ──
+    # ── 3. Milan target role guard ──
+    if not is_target_hardware_role(job.title):
+        return _reject(f"Not a target ASIC/SoC/FPGA hardware role: {job.title}")
+
+    # ── 4. Sponsorship / citizenship / clearance ──
     if _has_phrase(text_lower, DISQUALIFYING_PHRASES):
         return _reject("No visa sponsorship or requires citizenship/clearance")
 
-    # ── 4. Non-US location ──
+    # ── 5. Non-US location ──
     # Allowlist approach: if location doesn't match any US signal, reject it.
     # This catches Peru, Brazil, Canada, etc. without needing to enumerate them.
     US_STATE_ABBREVS = {
@@ -502,7 +533,7 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     if loc_lower and not has_match(loc_lower, us_location_patterns) and not has_state_abbrev:
         return _reject(f"Non-US location: {job.location}")
 
-    # ── 5. Overqualified experience (hard reject) ──
+    # ── 6. Overqualified experience (hard reject) ──
     min_exp, max_exp = extract_experience(text_lower)
     if min_exp is not None and min_exp >= 4:
         return _reject(f"Requires {min_exp}+ years experience")
@@ -510,7 +541,7 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
         if re.search(pattern, text_lower):
             return _reject("Overqualified: high experience requirement")
 
-    # ── 6. Senior salary signal (hard reject if no entry signals) ──
+    # ── 7. Senior salary signal (hard reject if no entry signals) ──
     has_senior_salary = bool(re.search(SENIOR_SALARY_PATTERN, text))
     has_entry_signals = has_match(text_lower, ENTRY_LEVEL_SIGNALS)
     if has_senior_salary and not has_entry_signals:

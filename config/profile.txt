@@ -1,0 +1,22 @@
+I am a new grad / entry-level ASIC, SoC, FPGA, and GPU hardware engineering candidate.
+
+Skills: Verilog, SystemVerilog, UVM, RTL design, design verification,
+ASIC, SoC, FPGA, VLSI, digital logic, computer architecture, synthesis,
+static timing analysis, timing closure, physical design, DFT, CDC,
+Cadence, Synopsys, PrimeTime, Innovus, VCS, Questa, Vivado, Quartus,
+C, C++, Python, Tcl, Perl, Linux, and shell scripting.
+
+Looking for: ASIC Design Engineer, ASIC Verification Engineer, ASIC Physical
+Design Engineer, SoC Design Engineer, SoC Verification Engineer, SoC Physical
+Design Engineer, FPGA Design Engineer, RTL Design Engineer, VLSI Engineer,
+Silicon Design Engineer, Silicon Verification Engineer, or GPU ASIC Engineer
+roles.
+
+Must have: US-based, visa sponsorship friendly (OPT/H1B/CPT).
+Prefer: new grad, entry-level, junior, associate, university graduate, or early
+career roles in semiconductor, chip design, EDA, big tech hardware, or hardware
+startups.
+Avoid: embedded-only, firmware-only, generic software engineering, web/backend/
+frontend, data science, ML/AI, DevOps/SRE, IT/support, software QA/testing,
+product, sales, management, senior-level, citizenship-only, clearance-required,
+or no-sponsorship roles.

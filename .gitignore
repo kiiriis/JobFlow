@@ -2,6 +2,7 @@
 *.pyc
 __pycache__/
 *.egg-info/
+.pytest_cache/
 dist/
 build/
 .eggs/
@@ -20,8 +21,11 @@ build/
 .DS_Store
 
 # IDE / tools
+.claude/
+.codex/
 .mcp.json
 .playwright-mcp/
+tmux-*.log
 
 # JobFlow data (local only)
 data/output/
@@ -36,7 +40,6 @@ resumes/
 
 # Personal config (copy from .example versions)
 config/config.yaml
-config/profile.txt
 
 # Local screenshots / UI captures
 *.png

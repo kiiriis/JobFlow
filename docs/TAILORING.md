@@ -8,11 +8,11 @@ JobFlow tailors LaTeX resumes to specific job descriptions using Claude AI. It s
 
 | Variant | Focus | File |
 |---------|-------|------|
-| `se` | Software Engineering (default) | `resumes/base/SE.tex` |
+| `se` | Default resume variant | `resumes/base/SE.tex` |
 | `ml` | Machine Learning / AI | `resumes/base/ML.tex` |
 | `appdev` | Full-Stack / App Development | `resumes/base/AppDev.tex` |
 
-Variant is auto-selected based on JD keywords (ML keywords → ml, React/Vue/frontend → appdev, else → se).
+Milan's hardware branch defaults scanned roles to `se` until hardware-specific resume variants are added.
 
 ## Tailoring Flow
 
@@ -54,10 +54,10 @@ User can submit feedback (e.g., "emphasize AWS experience"):
 
 ```bash
 # Process a job
-jobflow apply "https://..." --paste -t "SWE" -c "Stripe" -l "SF"
+jobflow apply "https://..." --paste -t "ASIC Design Engineer" -c "NVIDIA" -l "Santa Clara, CA"
 
 # Save tailored resume
-jobflow save --dir data/output/Stripe_SWE_2026-04-08
+jobflow save --dir data/output/NVIDIA_ASIC_Design_Engineer_2026-04-08
 ```
 
 ## Key Functions

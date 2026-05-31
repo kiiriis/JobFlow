@@ -99,26 +99,42 @@ def _matches_keywords(text: str, keywords: list[str]) -> bool:
     return any(kw.lower() in lower for kw in keywords)
 
 
-# Role must be software/engineering related.
-# This is a pre-filter applied BEFORE evaluate_job() to reduce noise. It's
-# intentionally broad — we'd rather let a borderline role through to the
-# scoring engine than miss a valid job. The scoring engine handles the
-# fine-grained filtering (senior, sponsorship, etc.).
-SWE_ROLE_KEYWORDS = [
-    "software", "engineer", "developer", "sde", "swe", "backend",
-    "frontend", "full stack", "fullstack", "full-stack", "platform",
-    "infrastructure", "devops", "systems engineer", "data engineer",
-    "machine learning", "ml engineer", "ai engineer", "applied scientist",
-    "research engineer", "security engineer", "site reliability",
-    "cloud engineer", "distributed systems",
-    "member of technical staff", "mts", "data scientist", "data analyst",
+# Role must be semiconductor hardware related.
+# This pre-filter runs before evaluate_job() to keep Milan's LinkedIn feed
+# focused on ASIC/SoC/FPGA/GPU hardware design, verification, and physical
+# design roles.
+HARDWARE_ROLE_KEYWORDS = [
+    "asic", "soc", "system on chip", "fpga", "rtl", "vlsi", "gpu asic",
+    "gpu hardware", "design verification", "verification engineer",
+    "dv engineer", "physical design", "pd engineer", "place and route",
+    "place & route", "p&r", "sta", "static timing", "timing closure",
+    "synthesis", "dft", "cdc", "silicon design", "silicon verification",
+    "semiconductor", "hardware design", "hardware verification",
+    "digital design", "logic design", "chip design", "chip verification",
+]
+
+NON_TARGET_ROLE_KEYWORDS = [
+    "embedded", "firmware", "software", "backend", "frontend", "front-end",
+    "full stack", "fullstack", "web developer", "data scientist",
+    "data engineer", "machine learning", "ml engineer", "ai engineer",
+    "devops", "site reliability", "sre", "cloud engineer", "it support",
+    "technical support", "product manager", "sales engineer",
 ]
 
 
-def _is_swe_role(title: str) -> bool:
-    """Check if the job title is a software engineering role."""
+def _is_hardware_role(title: str) -> bool:
+    """Check if a title is a strict ASIC/SoC/FPGA hardware role."""
     lower = title.lower()
-    return any(kw in lower for kw in SWE_ROLE_KEYWORDS)
+    if not any(kw in lower for kw in HARDWARE_ROLE_KEYWORDS):
+        return False
+    if any(kw in lower for kw in NON_TARGET_ROLE_KEYWORDS):
+        return False
+    return True
+
+
+def _is_swe_role(title: str) -> bool:
+    """Backward-compatible alias for the scanner's role pre-filter."""
+    return _is_hardware_role(title)
 
 
 def _is_recent(posted_at: str | int | None, max_age_hours: int) -> bool:
@@ -176,7 +192,7 @@ def scan_lever(company: str, api_url: str, include_kw: list[str], max_age_hours:
         if not _is_recent(post.get("createdAt"), max_age_hours):
             continue
 
-        # Must be a software engineering role
+        # Must be a target hardware engineering role
         if not _is_swe_role(title):
             continue
 
@@ -361,14 +377,14 @@ def scan_all_api_boards(
 # needed for accurate scoring). Descriptions are truncated to 5K chars.
 
 LINKEDIN_SEARCH_TERMS = [
-    "New Grad Software Engineer",
-    "Junior Software Engineer",
-    "Associate Software Engineer",
-    "Entry Level Software Engineer",
-    "Entry Level Jobs 2026",
-    "New Grad Machine Learning Engineer",
-    "Entry Level AI Engineer",
-    "Software engineer new grad posted in the past 24 hours",
+    "New Grad ASIC Design Engineer",
+    "Entry Level ASIC Verification Engineer",
+    "New Grad Physical Design Engineer",
+    "New Grad SoC Verification Engineer",
+    "Entry Level FPGA Design Engineer",
+    "New Grad GPU ASIC Engineer",
+    "Entry Level RTL Design Engineer",
+    "Entry Level VLSI Engineer",
 ]
 
 
@@ -671,12 +687,9 @@ def _parse_table_row(cols: list[str], seen: set) -> JobPosting | None:
 SEEN_TTL_HOURS = 48
 EST = ZoneInfo("US/Eastern")
 
-_USE_DB = bool(os.environ.get("DATABASE_URL"))
-
-
 def load_seen_jobs(config: dict) -> dict[str, str]:
     """Load previously seen job URLs, pruning entries older than 48h."""
-    if _USE_DB:
+    if os.environ.get("DATABASE_URL"):
         from .db import load_seen_jobs as db_load
         return db_load()
     path = config["output_dir"] / "seen_jobs.json"
@@ -698,7 +711,7 @@ def load_seen_jobs(config: dict) -> dict[str, str]:
 
 def save_seen_jobs(config: dict, seen: dict[str, str]) -> None:
     """Save seen job URLs with timestamps."""
-    if _USE_DB:
+    if os.environ.get("DATABASE_URL"):
         from .db import save_seen_jobs_bulk as db_save
         db_save(seen)
         return

@@ -134,7 +134,7 @@ def _rescore_entry(entry: dict) -> dict:
     from .filter import (
         keyword_score, synergy_bonus, level_tag, extract_experience,
         competition_estimate, experience_score, recency_score,
-        has_match, _has_phrase, count_matches,
+        has_match, _has_phrase, count_matches, is_target_hardware_role,
         DISQUALIFYING_PHRASES, OVERQUALIFIED_PATTERNS,
         TITLE_REJECT_PATTERNS, COMPANY_BLOCKLIST, SENIOR_SALARY_PATTERN,
         ENTRY_LEVEL_SIGNALS, SENIOR_DESC_SIGNALS,
@@ -174,18 +174,22 @@ def _rescore_entry(entry: dict) -> dict:
         if re.search(pattern, title_lower):
             return _hard_reject(f"Title disqualified: {title}")
 
-    # 3. Sponsorship / citizenship / clearance
+    # 3. Milan target role guard
+    if not is_target_hardware_role(title):
+        return _hard_reject(f"Not a target ASIC/SoC/FPGA hardware role: {title}")
+
+    # 4. Sponsorship / citizenship / clearance
     if _has_phrase(text_lower, DISQUALIFYING_PHRASES):
         return _hard_reject("No visa sponsorship or requires citizenship/clearance")
 
-    # 4. Overqualified experience
+    # 5. Overqualified experience
     if min_exp is not None and min_exp >= 4:
         return _hard_reject(f"Requires {min_exp}+ years experience")
     for pattern in OVERQUALIFIED_PATTERNS:
         if re.search(pattern, text_lower):
             return _hard_reject("Overqualified: high experience requirement")
 
-    # 5. Senior salary with no entry signals
+    # 6. Senior salary with no entry signals
     has_senior_salary = bool(re.search(SENIOR_SALARY_PATTERN, text))
     has_entry_signals = has_match(text_lower, ENTRY_LEVEL_SIGNALS)
     if has_senior_salary and not has_entry_signals:
@@ -712,21 +716,35 @@ def format_recency(iso_timestamp: str) -> str:
 def _bucket_minutes(local_dt: datetime) -> int:
     """Return bucket size in minutes based on local day/hour.
 
-    Cron runs every 30 minutes, so buckets are always 30 min.
+    Weekday business hours use 30-minute buckets, weekday off-hours use
+    60-minute buckets, and weekends use 4-hour buckets.
     """
-    return 30
+    if local_dt.weekday() >= 5:
+        return 240
+    if 9 <= local_dt.hour < 21:
+        return 30
+    return 60
 
 
 def _bucket_start(local_dt: datetime) -> datetime:
     """Snap a local datetime to its bucket start."""
     bm = _bucket_minutes(local_dt)
-    # 30-min: snap to :00 or :30
+    if bm == 240:
+        h = (local_dt.hour // 4) * 4
+        return local_dt.replace(hour=h, minute=0, second=0, microsecond=0)
+    if bm == 60:
+        return local_dt.replace(minute=0, second=0, microsecond=0)
     m = 0 if local_dt.minute < 30 else 30
     return local_dt.replace(minute=m, second=0, microsecond=0)
 
 
 def _bucket_label(local_dt: datetime, bm: int) -> str:
     """Human-readable label for a bucket."""
+    if bm == 240:
+        end = local_dt + timedelta(minutes=bm)
+        return f"{local_dt.strftime('%I %p').lstrip('0')}-{end.strftime('%I %p').lstrip('0')}"
+    if bm == 60:
+        return local_dt.strftime("%I %p").lstrip("0")
     return local_dt.strftime("%I:%M %p").lstrip("0")
 
 
@@ -770,7 +788,7 @@ def get_time_counts(store: dict, tz_offset: int = 0, time_range: str = "", sourc
         bucket_range_start = yesterday_start_utc
         bucket_range_end = today_start_utc
     else:
-        bucket_range_start = None
+        bucket_range_start = now_utc - timedelta(hours=24)
         bucket_range_end = None
 
     hour_count = 0

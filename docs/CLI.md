@@ -41,13 +41,13 @@ Process a single job posting.
 
 ```bash
 # From URL (scrapes JD)
-jobflow apply "https://example.com/job" -t "SWE" -c "Stripe" -l "SF, CA"
+jobflow apply "https://example.com/job" -t "ASIC Design Engineer" -c "NVIDIA" -l "Santa Clara, CA"
 
 # From clipboard/stdin
-jobflow apply "https://example.com/job" --paste -t "SWE" -c "Stripe"
+jobflow apply "https://example.com/job" --paste -t "ASIC Design Engineer" -c "NVIDIA"
 
 # Skip filter check
-jobflow apply "https://example.com/job" --no-filter -t "SWE" -c "Stripe"
+jobflow apply "https://example.com/job" --no-filter -t "ASIC Design Engineer" -c "NVIDIA"
 ```
 
 ### jobflow save
@@ -55,7 +55,7 @@ jobflow apply "https://example.com/job" --no-filter -t "SWE" -c "Stripe"
 Merge tailored resume sections and compile PDF.
 
 ```bash
-jobflow save --dir data/output/Stripe_SWE_2026-04-08
+jobflow save --dir data/output/NVIDIA_ASIC_Design_Engineer_2026-04-08
 jobflow save --dir <path> --variant ml
 jobflow save --dir <path> --sections custom_sections.tex
 ```

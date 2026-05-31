@@ -27,7 +27,7 @@ import time
 from pathlib import Path
 
 
-SCORE_PROMPT = """You are a job relevance scorer for a new grad / entry-level software engineer on F1 OPT visa looking for their first full-time role in the US.
+SCORE_PROMPT = """You are a job relevance scorer for a new grad / entry-level ASIC, SoC, FPGA, and GPU hardware engineering candidate on F1 OPT visa looking for their first full-time role in the US.
 
 ## Candidate Profile
 {profile}
@@ -41,7 +41,7 @@ Give a score of 0 if ANY of these are true. Check carefully:
 
 3. **Senior/Staff/Lead role**: The role is clearly senior-level, staff-level, principal, architect, VP, director, or management — even if the title doesn't say "Senior" explicitly, if the JD consistently describes 5+ years, team leadership, mentoring, or principal-level scope, score 0.
 
-4. **Not a software engineering role**: The role is primarily QA/testing, technical writing, product management, sales engineering, IT support, or DevOps/SRE-only with no software development. Data Science with heavy statistics and no coding is also a reject.
+4. **Not a target semiconductor hardware role**: Score 0 if the role is not primarily ASIC design, ASIC verification, ASIC physical design, SoC design, SoC verification, SoC physical design, FPGA design, RTL design, VLSI, silicon design/verification, or GPU ASIC/hardware engineering. Reject embedded-only, firmware-only, generic software engineering, web/backend/frontend, data science, ML/AI, DevOps/SRE, IT/support, product, sales, and software QA/testing roles.
 
 5. **Not US-based**: The job is located outside the United States with no remote-US option.
 
@@ -49,28 +49,27 @@ Give a score of 0 if ANY of these are true. Check carefully:
 Score 1-10 based on how well this job fits the candidate:
 
 **9-10 — Perfect fit, apply immediately:**
-- Entry-level / new grad SWE, ML Engineer, Backend Engineer, or Data Engineer
-- Mentions Python, ML/AI, distributed systems, or backend technologies the candidate knows
+- Entry-level / new grad ASIC, SoC, FPGA, RTL, physical design, design verification, or GPU ASIC role
+- Mentions strong overlap with Verilog, SystemVerilog, UVM, RTL, ASIC, SoC, FPGA, VLSI, STA, timing closure, synthesis, DFT, CDC, Cadence, Synopsys, PrimeTime, Innovus, VCS, Questa, Vivado, or Quartus
 - Explicitly sponsors visas or mentions H1B/OPT
-- US-based at a reputable tech company or well-funded startup
+- US-based at a semiconductor, hardware, chip, EDA, big tech hardware, or well-funded startup
 
 **7-8 — Strong fit, definitely apply:**
-- SWE / backend / ML role at appropriate level (junior, entry, SDE-1, L3/L4)
-- Good tech stack overlap (Python, AWS, Docker, Kubernetes, etc.)
+- Target hardware role at appropriate level (junior, entry, new grad, university grad, level 1)
+- Good stack overlap across RTL/design, verification, physical design, FPGA, GPU ASIC, or EDA tools
 - US-based, doesn't explicitly deny sponsorship
-- May have minor gaps (e.g., some unfamiliar technologies, or experience listed as "1-3 years")
+- May have minor gaps such as unfamiliar EDA tools or experience listed as "1-3 years"
 
 **5-6 — Decent fit, worth considering:**
-- Relevant SWE role but weaker stack match (e.g., Java-heavy, .NET, frontend-focused)
+- Relevant semiconductor hardware role but weaker stack match or domain ambiguity
 - Level is ambiguous — could be entry or mid, JD is unclear
 - US-based, no sponsorship info either way
-- Roles like Full-Stack, Platform Engineer, or Data Engineer with partial overlap
+- Roles like hardware engineer, silicon engineer, or digital design engineer with partial overlap
 
 **3-4 — Weak fit, probably skip:**
-- Role exists in SWE space but poor overlap (e.g., iOS developer, Salesforce admin, embedded C)
+- Role is hardware-adjacent but outside the target scope, such as embedded-only, firmware-only, board validation, lab technician, applications engineer, or manufacturing test
 - Experience requirement is borderline (says "2-4 years" — technically the min is 2 but the JD tone suggests mid-level)
-- Non-tech company with limited engineering culture
-- Heavy on technologies the candidate doesn't know at all
+- Heavy on skills outside ASIC/SoC/FPGA design, verification, or physical design
 
 **1-2 — Very poor fit:**
 - Barely related to candidate's skills
@@ -80,7 +79,7 @@ Score 1-10 based on how well this job fits the candidate:
 ## IMPORTANT NOTES
 - When the JD doesn't mention sponsorship at all, do NOT assume the worst. Many companies sponsor but don't advertise it. Only score 0 if there's explicit denial.
 - "Must be authorized to work in the US" alone is ambiguous — OPT holders ARE authorized. Only reject if it adds "without sponsorship" or "without company assistance".
-- New grad roles at big tech (Google, Amazon, Meta, Apple, Microsoft, etc.) should score high even if the JD is generic, because these companies reliably sponsor.
+- New grad hardware roles at big tech or semiconductor companies should score high even if the JD is generic, because many of these companies sponsor.
 - If the description is very short or missing, score based on title + company. Don't penalize for lack of info.
 - Focus on the MINIMUM experience, not the preferred/desired. "1+ years required, 3+ preferred" = fine.
 

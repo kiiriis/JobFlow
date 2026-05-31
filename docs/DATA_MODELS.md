@@ -42,7 +42,7 @@ Persistent storage for LinkedIn jobs with user status tracking.
   "jobs": {
     "https://linkedin.com/jobs/view/12345": {
       "company": "Stripe",
-      "title": "Software Engineer, New Grad",
+      "title": "ASIC Design Engineer, New Grad",
       "location": "San Francisco, CA",
       "url": "https://linkedin.com/jobs/view/12345",
       "score": 45,
@@ -60,7 +60,7 @@ Persistent storage for LinkedIn jobs with user status tracking.
       "first_seen": "2026-04-09T03:00:00+00:00",
       "last_seen": "2026-04-09T04:00:00+00:00",
       "date_posted": "",
-      "search_term": "new grad software engineer"
+      "search_term": "New Grad ASIC Design Engineer"
     }
   }
 }
@@ -118,7 +118,7 @@ Raw output from the scanner. Array of job entries (max 500, sorted by score desc
   {
     "index": 1,
     "company": "Stripe",
-    "title": "Software Engineer, New Grad",
+    "title": "ASIC Design Engineer, New Grad",
     "location": "San Francisco, CA",
     "url": "https://...",
     "score": 45,
@@ -141,7 +141,7 @@ Application tracking with status management.
 
 ```
 company,role,link,score,variant,status,source,resume_path,date_found,date_applied,notes
-Stripe,Software Engineer,https://...,85,se,Applied,linkedin,,2026-04-08,2026-04-09,Great match
+NVIDIA,ASIC Design Engineer,https://...,85,se,Applied,linkedin,,2026-04-08,2026-04-09,Great match
 ```
 
 ### CSV Headers

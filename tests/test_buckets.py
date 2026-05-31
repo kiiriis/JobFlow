@@ -406,8 +406,9 @@ class TestGetTimeCounts:
     def test_yesterday_count(self):
         """Jobs from yesterday (user local) counted in yesterday tab."""
         now = datetime.now(UTC)
-        # Make a job from 30 hours ago — should be "yesterday" for most tz
-        store = _make_store_with_jobs([now - timedelta(hours=30)])
+        # One hour before today's UTC midnight is always yesterday for tz_offset=0.
+        yesterday = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=1)
+        store = _make_store_with_jobs([yesterday])
         tc = get_time_counts(store, tz_offset=0)
         assert tc["yesterday"] == 1
         assert tc["today"] == 0

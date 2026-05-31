@@ -96,6 +96,7 @@ jobs:
           else
             COUNT=$(python -c "import json; d=json.load(open('data/ci/linkedin_jobs.json')); print(len(d.get('jobs', d)))" 2>/dev/null || echo "?")
             git commit -m "scan: LinkedIn $(date -u +%Y-%m-%dT%H:%M) — ${COUNT} jobs total"
-            git pull --rebase origin main
-            git push
+            BRANCH="${GITHUB_REF_NAME:-$(git branch --show-current)}"
+            git pull --rebase origin "$BRANCH"
+            git push origin "HEAD:$BRANCH"
           fi

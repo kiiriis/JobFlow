@@ -2,7 +2,7 @@
 
 ## System Overview
 
-JobFlow is a job scanning, scoring, and resume tailoring system for new grad / entry-level software engineering roles. It runs as a CLI tool + Flask web dashboard, with GitHub Actions for automated hourly scanning.
+JobFlow is a job scanning, scoring, and resume tailoring system for Milan's new grad / entry-level ASIC, SoC, FPGA, physical design, verification, and GPU ASIC roles. It runs as a CLI tool + Flask web dashboard, with GitHub Actions for automated hourly scanning.
 
 ```
 GitHub Actions (hourly cron)
@@ -91,7 +91,7 @@ JobFlow/
 
 - **JSON file storage** (no database) — simple, git-friendly, works on Render free tier
 - **Server-side rendering with HTMX** — no SPA complexity, partial HTML swaps
-- **Multi-signal scoring** — adapted from Atriveo's approach but tuned for Python/ML/Backend stack
+- **Multi-signal scoring** — adapted from Atriveo's approach but tuned for ASIC/SoC/FPGA/GPU hardware roles
 - **Deduplication by company+title** — same role posted in multiple cities collapsed to one
 - **Timezone-aware filtering** — client sends `tz` offset, server computes local today/yesterday
 - **Render deployment** — auto-deploys on push, kept alive by hourly GitHub Actions ping

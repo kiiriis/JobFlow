@@ -1,6 +1,6 @@
 {
   "_metadata": {
-    "description": "Job board sources for scraping new grad / entry-level SWE positions",
+    "description": "Job board sources for scraping new grad / entry-level ASIC, SoC, FPGA, and hardware positions",
     "last_updated": "2026-03-28",
     "notes": "All API endpoints verified working as of 2026-03-28. 'api' entries return JSON directly; 'scrape' entries require Playwright."
   },
@@ -669,10 +669,10 @@
       "access_method": "scrape",
       "guest_api_base": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search",
       "preconfigured_searches": {
-        "new_grad_swe_usa": "https://www.linkedin.com/jobs/search/?keywords=new%20grad%20software%20engineer&geoId=103644278&f_E=2&f_JT=F&sortBy=DD",
-        "entry_level_swe_usa": "https://www.linkedin.com/jobs/search/?keywords=software%20engineer%20entry%20level&geoId=103644278&f_E=2&f_JT=F&sortBy=DD",
-        "new_grad_swe_usa_recent": "https://www.linkedin.com/jobs/search/?keywords=new%20grad%20software%20engineer%202026&geoId=103644278&f_E=2&f_JT=F&f_TPR=r604800&sortBy=DD",
-        "sde1_usa": "https://www.linkedin.com/jobs/search/?keywords=SDE%20I&geoId=103644278&f_E=2&f_JT=F&sortBy=DD"
+        "new_grad_asic_design_usa": "https://www.linkedin.com/jobs/search/?keywords=new%20grad%20ASIC%20design%20engineer&geoId=103644278&f_E=2&f_JT=F&sortBy=DD",
+        "entry_level_asic_verification_usa": "https://www.linkedin.com/jobs/search/?keywords=entry%20level%20ASIC%20verification%20engineer&geoId=103644278&f_E=2&f_JT=F&sortBy=DD",
+        "new_grad_physical_design_usa": "https://www.linkedin.com/jobs/search/?keywords=new%20grad%20physical%20design%20engineer&geoId=103644278&f_E=2&f_JT=F&sortBy=DD",
+        "entry_level_fpga_usa": "https://www.linkedin.com/jobs/search/?keywords=entry%20level%20FPGA%20design%20engineer&geoId=103644278&f_E=2&f_JT=F&sortBy=DD"
       }
     },
     "indeed": {
@@ -725,8 +725,7 @@
     ],
     "keyword_filters_for_new_grad": [
       "new grad", "new graduate", "entry level", "entry-level",
-      "junior", "associate", "sde 1", "sde i", "swe 1", "swe i",
-      "software engineer i", "software engineer 1",
+      "junior", "associate", "engineer 1", "engineer i",
       "early career", "recent graduate", "university grad",
       "0-1 years", "0-2 years", "campus hire", "2025", "2026"
     ]

@@ -23,7 +23,7 @@ The merge_resume() function handles cleanup of Claude's output:
     - Ensures \\end{document} is present
 
 Three resume variants exist:
-    - "se"     — Software Engineering (default, backend/infra focus)
+    - "se"     — Default resume variant
     - "ml"     — Machine Learning (PyTorch, model training, NLP)
     - "appdev" — App Development (React, full-stack, UI/UX)
 """

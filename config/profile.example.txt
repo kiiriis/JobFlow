@@ -1,11 +1,14 @@
-I am a new grad / entry-level software engineer (graduating YYYY).
+I am a new grad / entry-level ASIC, SoC, FPGA, and hardware engineering candidate.
 
-Skills: Python, Java, JavaScript, React, Node.js, AWS, Docker, PostgreSQL,
-REST APIs — replace with your actual tech stack.
+Skills: Verilog, SystemVerilog, UVM, RTL design, FPGA, physical design,
+static timing analysis, synthesis, Cadence, Synopsys, Vivado, Python, Tcl,
+Linux, and shell scripting.
 
-Looking for: Software Engineer, Backend Engineer, ML Engineer, or similar
-entry-level roles.
+Looking for: ASIC Design Engineer, ASIC Verification Engineer, SoC Design
+Engineer, SoC Verification Engineer, Physical Design Engineer, FPGA Design
+Engineer, RTL Design Engineer, VLSI Engineer, or similar entry-level roles.
 
 Must have: US-based, visa sponsorship friendly (if applicable).
-Prefer: your preferred domains (e.g., backend, ML, systems).
-Avoid: role types you want to exclude (e.g., frontend-only, QA, management).
+Prefer: semiconductor, chip design, EDA, hardware, or silicon teams.
+Avoid: embedded-only, firmware-only, generic software, QA, management, senior,
+citizenship-only, clearance-required, or no-sponsorship roles.

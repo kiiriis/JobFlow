@@ -72,7 +72,6 @@ from ..linkedin_store import (
     normalize_url,
     LINKEDIN_STATUSES,
     STORE_LOCK,
-    USE_DB,
 )
 
 
@@ -478,16 +477,17 @@ def create_app():
 
     linkedin_store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
     scan_results_path = config["_root"] / "data" / "ci" / "scan_results.json"
+    use_db = bool(os.environ.get("DATABASE_URL"))
 
     # Initialize DB if available
-    if USE_DB:
+    if use_db:
         from ..db import init_db as _init_db
         from .. import db as _db
         _init_db()
 
     def _do_linkedin_merge():
         """Merge scan_results.json into linkedin_jobs.json (JSON backend only)."""
-        if USE_DB:
+        if use_db:
             return  # DB backend handles merges directly
         if not scan_results_path.exists():
             return
@@ -504,7 +504,7 @@ def create_app():
             save_store(linkedin_store_path, store)
 
     # Merge once on startup (JSON backend only)
-    if not USE_DB:
+    if not use_db:
         _do_linkedin_merge()
 
     # Auto-pull thread (JSON backend, local dev only)
@@ -512,8 +512,15 @@ def create_app():
         while True:
             time.sleep(3600)
             try:
+                branch = subprocess.run(
+                    ["git", "branch", "--show-current"],
+                    cwd=str(config["_root"]),
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                ).stdout.strip() or "main"
                 subprocess.run(
-                    ["git", "pull", "--rebase", "origin", "main"],
+                    ["git", "pull", "--rebase", "origin", branch],
                     cwd=str(config["_root"]),
                     capture_output=True,
                     timeout=30,
@@ -522,12 +529,12 @@ def create_app():
             except Exception:
                 pass
 
-    if not USE_DB and not os.environ.get("RENDER"):
+    if not use_db and not os.environ.get("RENDER"):
         pull_thread = threading.Thread(target=_auto_pull_loop, daemon=True)
         pull_thread.start()
 
     def _render_feed_page(source: str, page_title: str, page_subtitle: str, api_base: str):
-        if USE_DB:
+        if use_db:
             counts = _db.get_status_counts(source=source)
             level_counts = _db.get_level_counts(source=source)
             search_terms = _db.get_search_terms(source=source)
@@ -580,7 +587,7 @@ def create_app():
         }
 
     def _feed_counts(source: str, args: dict):
-        if USE_DB:
+        if use_db:
             return _db.get_filtered_counts(
                 time_range=args["time_range"], bucket_filter=args["bucket_filter"],
                 tz_offset=args["tz_offset"], query=args["query"],
@@ -602,7 +609,7 @@ def create_app():
             "total": fc["status"].get("All", 0),
         }
         if args["include_time_meta"]:
-            if USE_DB:
+            if use_db:
                 time_counts = _db.get_time_counts(
                     tz_offset=args["tz_offset"], time_range=args["time_range"], source=source,
                 )
@@ -622,7 +629,7 @@ def create_app():
     def _render_feed_jobs(source: str, api_base: str):
         args = _feed_args()
 
-        if USE_DB:
+        if use_db:
             jobs = _db.get_filtered_jobs(
                 status=args["status_filter"], level=args["level_filter"], query=args["query"],
                 search_term=args["search_term"], time_range=args["time_range"],
@@ -666,7 +673,7 @@ def create_app():
     def _update_status_and_render(key: str, api_base: str):
         data = request.form or request.get_json(silent=True) or {}
         new_status = data.get("status", "")
-        if USE_DB:
+        if use_db:
             _db.update_job_status(key, new_status)
             job = _db.get_job(key) or {"_key": key}
         else:
@@ -686,7 +693,7 @@ def create_app():
         )
 
     def _delete_job(key: str):
-        if USE_DB:
+        if use_db:
             _db.delete_job(key)
         else:
             with STORE_LOCK:
@@ -702,7 +709,7 @@ def create_app():
             keys = []
 
         deleted = 0
-        if USE_DB:
+        if use_db:
             for key in keys:
                 if key and _db.delete_job(key):
                     deleted += 1
@@ -778,7 +785,7 @@ def create_app():
     @app.route("/api/linkedin/refresh", methods=["POST"])
     @app.route("/api/boards/refresh", methods=["POST"])
     def api_linkedin_refresh():
-        if USE_DB:
+        if use_db:
             # DB is always fresh — just prune expired jobs
             try:
                 _db.prune_expired_jobs()
@@ -861,7 +868,7 @@ def _run_scan(config, platforms, hours, new_only):
 
         # Merge into store so new jobs appear in the feed
         try:
-            if USE_DB:
+            if use_db:
                 from ..db import merge_scan_results as db_merge
                 scan_state["new_jobs"] = db_merge(output)
             else:

@@ -1,6 +1,6 @@
 # Scoring Engine
 
-The scoring engine (`jobflow/filter.py`) evaluates each job posting against the user's profile using multiple signals. It produces a `FilterResult` with a normalized 0-100% match score.
+The scoring engine (`jobflow/filter.py`) evaluates each job posting against Milan's ASIC/SoC/FPGA/GPU hardware profile and produces a normalized 0-100% match score.
 
 ## Score Calculation
 
@@ -11,108 +11,47 @@ raw = keyword_score + synergy_bonus + level_points + experience_score
 score_pct = min(100, max(0, round(raw / 130 * 100)))
 ```
 
-`SCORE_MAX_RAW = 130` is the practical ceiling (not every keyword firing at once).
+`SCORE_MAX_RAW = 130` is the practical ceiling.
 
 ## Scoring Signals
 
 ### 1. Keyword Matching (`keyword_score`)
 
-Binary presence match — each keyword scores once regardless of frequency. Organized by category:
+Binary presence match. Each keyword scores once regardless of frequency.
 
-| Category | Keywords (weight) |
-|----------|------------------|
-| **Core** | python(10), c++(6), java(4), sql(5), go(4) |
-| **ML/AI** | machine learning(10), deep learning(8), pytorch(8), tensorflow(7), llm(8), rag(7), langchain(6), hugging face(5), computer vision(5), nlp(6), transformers(6) |
-| **Backend** | distributed systems(8), rest(4), api(4), fastapi(7), flask(5), microservices(5), grpc(5) |
-| **Cloud** | aws(7), gcp(4), azure(3), lambda(3), ec2(3) |
-| **DevOps** | docker(5), kubernetes(6), ci/cd(4), terraform(4), linux(4) |
-| **Data** | postgresql(5), mongodb(4), redis(5), kafka(5), spark(4), airflow(4), elasticsearch(4) |
+| Category | Examples |
+|----------|----------|
+| **Design** | ASIC, SoC, RTL, VLSI, Verilog, SystemVerilog, digital design, synthesis |
+| **Verification** | design verification, UVM, testbench, coverage, assertions, constrained random, simulation |
+| **Physical** | physical design, STA, static timing analysis, timing closure, P&R, floorplanning, DRC/LVS |
+| **FPGA/GPU** | FPGA, GPU ASIC, Xilinx, Vivado, Quartus |
+| **EDA Tools** | Cadence, Synopsys, PrimeTime, Innovus, VCS, Questa, ModelSim |
+| **Scripting** | C, C++, Python, Perl, Tcl, Linux, shell scripting |
 
 ### 2. Synergy Combos (`synergy_bonus`)
 
-Extra points when a full tech combo appears together:
+Extra points when a full hardware combo appears together:
 
 | Combo | Bonus |
 |-------|-------|
-| python + fastapi + aws | +10 |
-| python + pytorch + aws | +10 |
-| machine learning + python + docker | +8 |
-| llm + python + aws | +10 |
-| python + docker + kubernetes | +8 |
-| python + kafka + distributed systems | +8 |
-| postgresql + redis + api | +6 |
+| SystemVerilog + UVM + coverage | +10 |
+| RTL + Verilog + synthesis | +10 |
+| physical design + STA + timing closure | +10 |
+| FPGA + Verilog + Vivado/Quartus | +8 |
+| SoC + RTL + verification | +10 |
+| GPU + ASIC + RTL | +10 |
+| DFT + CDC + RTL | +8 |
 
-### 3. Level Points
+### 3. Level, Experience, Location
 
-Based on `level_tag()` which detects job level from title + description:
+New grad and entry-level signals receive the strongest level bonus. Jobs requiring 4+ years are rejected, 0-2 years is the best fit, and US/remote-US locations are required. Explicit H1B/OPT/visa sponsorship language adds a bonus; explicit no-sponsorship, citizenship-only, green-card-only, or clearance-required language rejects the job.
 
-| Level | Points | Detection Patterns |
-|-------|--------|--------------------|
-| New Grad | +20 | "new grad", "university grad", "recent graduate" |
-| Entry | +15 | "entry-level", "junior", "associate", "SDE I", "SWE I", "early career" |
-| Mid | +5 | "SDE II", "SWE II", "software engineer II", "mid-level" |
-| Unknown | +4 | No level signals detected |
+## Target Role Guard
 
-### 4. Experience Score
+Jobs are rejected unless the title clearly matches Milan's target hardware scope: ASIC, SoC, FPGA, RTL, VLSI, GPU ASIC, design verification, physical design, STA, synthesis, DFT, CDC, silicon, semiconductor, digital design, logic design, or chip design.
 
-Parsed from JD text (e.g., "2-4 years", "minimum 3 years"):
-
-| Range | Points | Rationale |
-|-------|--------|-----------|
-| Includes 0-2 years | +10 | Sweet spot for new grad |
-| Max <= 1 year | +8 | Intern/very junior |
-| Min exactly 3 | +6 | Stretch but possible |
-| Min > 3 | 0 | Too senior |
-| No data | 0 | Can't determine |
-
-### 5. Recency Score
-
-Based on `first_seen` timestamp (when job was discovered):
-
-| Age | Points |
-|-----|--------|
-| < 6 hours | +10 |
-| 6-12 hours | +8 |
-| 12-24 hours | +5 |
-| 24-48 hours | +2 |
-| > 48 hours | -5 |
-
-### 6. Other Signals
-
-| Signal | Points | Condition |
-|--------|--------|-----------|
-| US location | +10 | Matches US city/state/remote patterns |
-| Non-US location | -10 | Doesn't match US patterns |
-| H1B mention | +8 | JD mentions "h1b", "visa sponsorship", "will sponsor" |
-| Senior penalty | -30 | 3+ senior phrases AND 0 entry-level signals |
-
-### 7. Competition Estimate (0-10)
-
-Separate from main score — estimates applicant competition:
-- Big tech company (Google, Amazon, Meta, etc.): +5
-- Posting > 48h old: +5
-- Posting 24-48h old: +2
-
-## Hard Disqualifiers
-
-Jobs are instantly rejected (score=0) if they match:
-- "no visa sponsorship", "will not sponsor", "cannot sponsor"
-- "US citizen required", "security clearance"
-- "permanent resident only", "green card required"
-- "authorized to work without sponsorship"
-- Non-US location (India, UK, Germany, etc.)
-
-## Thresholds
-
-| Threshold | Value | Usage |
-|-----------|-------|-------|
-| `should_apply` | score_pct >= 30 | Job appears in scan results |
-| `recommended` | score_pct >= 25 | Gold star on LinkedIn dashboard |
-| Senior reject | 3+ senior phrases, 0 entry signals | -30 penalty |
+Generic SWE, backend, frontend, embedded-only, firmware-only, data, ML/AI, DevOps/SRE, IT/support, product, sales, management, senior/staff/principal/lead, and software QA/testing titles are rejected.
 
 ## Variant Selection
 
-Resume variant selected based on JD keyword counts:
-- **ml**: ML_KEYWORDS count > APPDEV_KEYWORDS count AND >= 2 matches
-- **appdev**: APPDEV_KEYWORDS > ML_KEYWORDS AND >= 2 matches  
-- **se**: Default (software engineering)
+Milan-specific hardware resume variants are not in this repo yet, so all passing roles default to the existing `se` variant for compatibility.

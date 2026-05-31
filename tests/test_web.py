@@ -27,7 +27,7 @@ def _job(url: str, title: str, source: str = "linkedin") -> dict:
         "status": "",
         "first_seen": now,
         "last_seen": now,
-        "search_term": "software engineer",
+        "search_term": "New Grad ASIC Design Engineer",
         "source": source,
     }
 
@@ -119,11 +119,11 @@ class TestLinkedInAPI:
         assert r.status_code == 200
 
     def test_combined_filters(self, client):
-        r = client.get("/api/linkedin/jobs?level=Entry&q=python&sort=score_pct&dir=desc&tz=240")
+        r = client.get("/api/linkedin/jobs?level=Entry&q=asic&sort=score_pct&dir=desc&tz=240")
         assert r.status_code == 200
 
     def test_rows_include_bulk_selection_metadata(self, client):
-        _write_store([_job("https://example.com/1", "Software Engineer")])
+        _write_store([_job("https://example.com/1", "ASIC Design Engineer")])
         r = client.get("/api/linkedin/jobs?time=")
         assert r.status_code == 200
         assert b'class="job-select"' in r.data
@@ -131,9 +131,9 @@ class TestLinkedInAPI:
 
     def test_bulk_delete_json_jobs(self, client):
         _write_store([
-            _job("https://example.com/1", "Software Engineer One"),
-            _job("https://example.com/2", "Software Engineer Two"),
-            _job("https://example.com/3", "Software Engineer Three"),
+            _job("https://example.com/1", "ASIC Design Engineer One"),
+            _job("https://example.com/2", "ASIC Design Engineer Two"),
+            _job("https://example.com/3", "ASIC Design Engineer Three"),
         ])
 
         r = client.post(
@@ -144,9 +144,9 @@ class TestLinkedInAPI:
         assert r.get_json() == {"requested": 2, "deleted": 2}
 
         feed = client.get("/api/linkedin/jobs?time=")
-        assert b"Software Engineer One" not in feed.data
-        assert b"Software Engineer Two" not in feed.data
-        assert b"Software Engineer Three" in feed.data
+        assert b"ASIC Design Engineer One" not in feed.data
+        assert b"ASIC Design Engineer Two" not in feed.data
+        assert b"ASIC Design Engineer Three" in feed.data
 
     def test_bulk_delete_empty_keys_is_noop(self, client):
         r = client.post("/api/linkedin/jobs/bulk-delete", json={})

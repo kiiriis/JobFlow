@@ -13,14 +13,14 @@ JobFlow scans multiple job board platforms and aggregates results into a unified
 Uses the [python-jobspy](https://github.com/Bunsly/JobSpy) library to scrape LinkedIn.
 
 **Search Terms** (8 queries, 200 results each):
-1. "New Grad Software Engineer"
-2. "Junior Software Engineer"
-3. "Associate Software Engineer"
-4. "Entry Level Software Engineer"
-5. "Entry Level Jobs 2026"
-6. "New Grad Machine Learning Engineer"
-7. "Entry Level AI Engineer"
-8. "Software engineer new grad posted in the past 24 hours"
+1. "New Grad ASIC Design Engineer"
+2. "Entry Level ASIC Verification Engineer"
+3. "New Grad Physical Design Engineer"
+4. "New Grad SoC Verification Engineer"
+5. "Entry Level FPGA Design Engineer"
+6. "New Grad GPU ASIC Engineer"
+7. "Entry Level RTL Design Engineer"
+8. "Entry Level VLSI Engineer"
 
 **Configuration:**
 - Location: "United States"
@@ -69,7 +69,9 @@ Parses markdown tables from new-grad aggregator repos:
 
 Before full scoring, jobs are pre-filtered by title:
 
-**Must match** (SWE_ROLE_KEYWORDS): software, engineer, developer, swe, sde, backend, frontend, full stack, machine learning, data scientist, ml engineer, ai engineer, applied scientist
+**Must match** (hardware role keywords): ASIC, SoC, FPGA, RTL, VLSI, GPU ASIC, design verification, physical design, STA, timing closure, synthesis, DFT, CDC, silicon, semiconductor, hardware design, digital design, or chip design.
+
+**Excluded title families:** embedded-only, firmware-only, generic software engineering, backend, frontend, data science, ML/AI, DevOps/SRE, IT/support, product, sales, management, senior/staff/principal/lead, and software QA/testing.
 
 **Role exclusion** (in evaluate_job): senior, staff, principal, lead, manager, director (only penalized, not hard-rejected, unless 3+ signals with 0 entry signals)
 
@@ -82,7 +84,7 @@ Results saved to `scan_results.json`:
   {
     "index": 1,
     "company": "Stripe",
-    "title": "Software Engineer, New Grad",
+    "title": "ASIC Design Engineer, New Grad",
     "location": "San Francisco, CA",
     "url": "https://...",
     "score": 45,

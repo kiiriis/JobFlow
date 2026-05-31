@@ -55,13 +55,13 @@ STAFFING_SOURCE_BLOCKLIST_COMPACT = tuple(
     for source in STAFFING_SOURCE_BLOCKLIST
 )
 
-BATCH_PROMPT = """You are a job relevance scorer for a new grad / entry-level software engineer on F1 OPT visa looking for their first full-time role in the US.
+BATCH_PROMPT = """You are a job relevance scorer for a new grad / entry-level ASIC, SoC, FPGA, and GPU hardware engineering candidate on F1 OPT visa looking for their first full-time role in the US.
 
 ## Candidate Profile
 {profile}
 
 ## HARD REJECT — score MUST be 0
-Give a score of 0 ONLY if ANY of these are true. Be strict — only these 6 conditions warrant a 0:
+Give a score of 0 ONLY if ANY of these are true. Be strict - only these conditions warrant a 0:
 
 1. **Explicit no sponsorship**: The posting explicitly says "no sponsorship", "will not sponsor", "cannot sponsor", "must be authorized to work without sponsorship", "US citizen only", "permanent resident only", "green card required". Also score 0 if it requires security clearance (TS/SCI, Secret, DoD). NOTE: "Must be authorized to work in the US" ALONE is NOT a rejection — OPT holders ARE authorized.
 
@@ -69,21 +69,25 @@ Give a score of 0 ONLY if ANY of these are true. Be strict — only these 6 cond
 
 3. **Senior/Staff/Lead role**: Clearly senior-level, staff, principal, architect, VP, director, or management. Must be obvious from title or JD — don't assume.
 
-4. **Not a software engineering role at all**: QA-only, technical writing, product management, sales engineering, IT support. NOTE: Frontend, Full-Stack, iOS, Android, Data Science WITH coding, DevOps WITH development — these ARE software engineering. Score them low (2-4) if poor fit, but NOT 0.
+4. **Not a target semiconductor hardware role**: Score 0 if the role is not primarily ASIC design, ASIC verification, ASIC physical design, SoC design, SoC verification, SoC physical design, FPGA design, RTL design, VLSI, silicon design/verification, GPU ASIC, or GPU hardware engineering.
 
 5. **Not US-based**: Located outside the US with no remote-US option.
 
 6. **Blocked staffing/spam source**: The job is from jobright.ai, Remotehunter, Quik Hire Staffing, Beacon Fire, Helic & Co., or Jobs Via Dice.
 
-IMPORTANT: The candidate's "Avoid" preferences (e.g., "Avoid: Frontend-only") should LOWER the score (2-4) but NEVER cause a score of 0. A frontend SWE role is still a software engineering role — it's just a weak fit, not a hard reject.
+7. **Explicitly non-target role family**: Reject embedded-only, firmware-only, generic software engineering, web/backend/frontend, data science, ML/AI, DevOps/SRE, IT/support, product, sales, applications engineering, manufacturing test, technician, and software QA/testing roles.
+
+IMPORTANT: Do not reject a target ASIC/SoC/FPGA role just because it mentions Python, C/C++, Tcl, Linux, firmware teams, or software collaborators in the description. Judge the primary role from the title and responsibilities.
 
 ## SCORING GUIDE (only if no hard reject applies)
 
-**9-10 — Perfect fit:** Entry-level/new grad SWE, ML, Backend, Data Engineer. Python/ML/backend stack. Sponsors visas. Reputable company.
-**7-8 — Strong fit:** SWE at right level, good stack overlap, US-based, no sponsorship denial.
-**5-6 — Decent fit:** Relevant SWE but weaker stack match (Java, .NET, frontend). Level ambiguous.
-**3-4 — Weak fit:** SWE but poor overlap (iOS, Salesforce, embedded, frontend-only). Borderline exp.
-**1-2 — Very poor fit:** Barely related to skills. Multiple weak signals.
+**9-10 — Perfect fit:** Entry-level/new grad ASIC, SoC, FPGA, RTL, physical design, design verification, or GPU ASIC role. Strong overlap with Verilog, SystemVerilog, UVM, RTL, ASIC, SoC, FPGA, VLSI, STA, timing closure, synthesis, DFT, CDC, Cadence, Synopsys, PrimeTime, Innovus, VCS, Questa, Vivado, or Quartus. Sponsors visas or is from a company likely to sponsor.
+**7-8 — Strong fit:** Target hardware role at junior/entry/new-grad level with good design, verification, physical design, FPGA, GPU ASIC, or EDA overlap. US-based with no sponsorship denial.
+**5-6 — Decent fit:** Relevant semiconductor hardware role but level or stack fit is ambiguous. US-based and no explicit sponsorship denial.
+**3-4 — Weak fit:** Hardware-adjacent but not ideal, such as validation-heavy, lab-heavy, board-level, applications engineering, or a role with mostly unfamiliar tools. Borderline experience wording.
+**1-2 — Very poor fit:** Barely related to Milan's target ASIC/SoC/FPGA/GPU hardware profile, but not a hard reject.
+
+Prefer these role families: ASIC Design Engineer, ASIC Verification Engineer, ASIC Physical Design Engineer, SoC Design Engineer, SoC Verification Engineer, SoC Physical Design Engineer, FPGA Design Engineer, RTL Design Engineer, VLSI Engineer, Silicon Design Engineer, Silicon Verification Engineer, GPU ASIC Engineer.
 
 ## Jobs to Score
 
@@ -256,7 +260,7 @@ def main():
     if args.limit:
         print(f"  Limit: latest {args.limit} eligible jobs")
     claude_rescore = sum(1 for r in rows if r[5] == 'claude')
-    print(f"  {unscored} unscored, {groq_rescore} Groq→Codex rescore, {claude_rescore} Claude→Codex rescore")
+    print(f"  {unscored} unscored, {groq_rescore} Groq->Codex rescore, {claude_rescore} Claude->Codex rescore")
     if not rows:
         print("Nothing to score!")
         return

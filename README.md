@@ -1,177 +1,103 @@
 # JobFlow
 
-Automated job scanner + resume tailoring system for new grad / entry-level software engineering roles. Scans LinkedIn hourly via GitHub Actions, scores jobs against your tech stack, and serves a real-time dashboard.
+Automated LinkedIn job scanner and dashboard for Milan's new grad / entry-level semiconductor hardware search.
 
-**Live at:** [jobflow.onrender.com](https://jobflow.onrender.com) (or your Render URL)
+This branch is tuned for:
 
-## How It Works
+- ASIC Design Engineer
+- ASIC Verification Engineer
+- ASIC Physical Design Engineer
+- SoC Design Engineer
+- SoC Verification Engineer
+- SoC Physical Design Engineer
+- FPGA Design Engineer
+- RTL / VLSI / Silicon Design or Verification Engineer
+- GPU ASIC Engineer
 
-```
-GitHub Actions (hourly cron)
-    |
-    v
-Scan LinkedIn (8 search terms x 200 results)
-    |
-    v
-Score & filter (multi-signal engine: keywords, synergy, level, experience)
-    |
-    v
-Commit to GitHub --> Render auto-deploys --> Live dashboard
-```
-
-The dashboard shows jobs ranked by relevance to your profile, with filtering by time, level, and status.
-
-## Features
-
-- **Hourly LinkedIn scanning** via GitHub Actions + python-jobspy
-- **Multi-signal scoring** — keyword matching, synergy combos, level detection, experience fit, recency, H1B bonus
-- **Real-time web dashboard** — Atriveo-inspired dark theme with sidebar stats, hourly cards, sortable table
-- **Resume tailoring** — Claude AI rewrites your LaTeX resume per job description
-- **Application tracking** — CSV-based status management
-- **Auto-deployment** — Render free tier with GitHub Actions keep-alive
+It keeps the same international-student constraints: US-based roles only, visa-sponsorship friendly, OPT/H1B/CPT compatible, and no citizenship-only or clearance-required postings.
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/kiiriis/JobFlow.git
+git clone https://github.com/<your-username>/JobFlow.git
 cd JobFlow
+python -m venv .venv
+source .venv/bin/activate
 pip install -e .
-
-# Set up your personal config (not tracked in git)
-cp config/config.example.yaml config/config.yaml
-cp config/profile.example.txt config/profile.txt
-# Edit both to point to your own resume files and describe your profile
-
-# Run locally
+pytest
 jobflow web
-
-# Or scan jobs from CLI
-jobflow scan --platform linkedin --hours 24
 ```
 
-**Requirements:** Python 3.11+ | Optional: pdflatex (for resume PDFs), Claude CLI (for tailoring + AI scoring), Postgres/Neon (for persistent job storage — set `DATABASE_URL` env var)
+For Milan's full setup path, use:
 
-## Scanning
+[docs/MILAN_SETUP.md](docs/MILAN_SETUP.md)
+
+That guide covers GitHub ownership, Neon Postgres, GitHub Actions, local dashboard setup, optional AI scoring, troubleshooting, and daily usage. Render is optional and not required for Milan's local workflow.
+
+## How It Works
+
+```text
+GitHub Actions
+    -> LinkedIn hardware searches
+    -> hardware-specific scoring/filtering
+    -> Neon Postgres
+    -> local jobflow web dashboard at /linkedin
+```
+
+The default workflow scans LinkedIn every 30 minutes with hardware-focused search terms from `jobflow/scanner.py`. Milan can run the dashboard on his laptop while GitHub Actions keeps Neon updated in the background.
+
+## Important Files
+
+| Path | Purpose |
+|------|---------|
+| `docs/MILAN_SETUP.md` | Milan's complete setup and deployment guide |
+| `jobflow/scanner.py` | LinkedIn search terms and strict hardware title prefilter |
+| `jobflow/filter.py` | ASIC/SoC/FPGA/GPU scoring, hard rejects, sponsorship filters |
+| `jobflow/ai_scorer.py` | Optional Groq AI relevance scoring prompt |
+| `scripts/ai_score_local.py` | Optional local Codex CLI scorer for Neon DB jobs |
+| `config/profile.txt` | Milan-specific candidate profile for AI scoring |
+| `.github/workflows/scan-jobs.yml` | Scheduled LinkedIn scan and Neon merge |
+| `render.yaml` | Optional Render web service configuration |
+| `data/ci/` | Empty JSON fallback store for non-DB deployments |
+
+## Required Services
+
+- GitHub repo under Milan's account
+- Neon Postgres, configured as `DATABASE_URL`
+- Optional Groq key as `GROQ_API_KEY` for AI scoring
+- Optional local Codex CLI if Milan wants to score DB jobs from his laptop without Groq
+- Optional Render web service only if Milan later wants a hosted dashboard
+
+## Local Commands
 
 ```bash
-# Scan all platforms (Lever + Greenhouse + Ashby + LinkedIn + GitHub)
-jobflow scan
+# Run dashboard locally
+DATABASE_URL="<neon-url>" JOBFLOW_CONFIG=config/config.ci.yaml jobflow web
 
-# LinkedIn only, last 24 hours
-jobflow scan --platform linkedin --hours 24
+# Scan recent LinkedIn jobs
+DATABASE_URL="<neon-url>" JOBFLOW_CONFIG=config/config.ci.yaml jobflow scan --platform linkedin --save --hours 24
 
-# Specific platform
-jobflow scan --platform greenhouse --hours 24
-```
+# Run tests
+pytest
 
-**Sources:**
-- **LinkedIn** — 8 search terms via python-jobspy (new grad, junior, associate, entry level, AI/ML, recent-posted phrasing)
-- **Lever API** — 11 companies (Spotify, Palantir, Plaid, etc.)
-- **Greenhouse API** — 40 companies (Stripe, Airbnb, Databricks, etc.)
-- **Ashby API** — 31 companies (OpenAI, Ramp, Figma, etc.)
-- **GitHub repos** — SimplifyJobs + Jobright aggregators
-
-## Scoring Engine
-
-Jobs are scored 0-100% match against your personal tech stack:
-
-| Signal | Points | Example |
-|--------|--------|---------|
-| Keyword match | 3-10 each | Python(10), PyTorch(8), AWS(7), FastAPI(7) |
-| Synergy combos | +6 to +10 | Python + FastAPI + AWS = +10 bonus |
-| Level detection | +5 to +20 | "New Grad" = +20, "Entry" = +15 |
-| Experience fit | +0 to +10 | 0-2 years = +10 (sweet spot) |
-| Recency | -5 to +10 | < 6h = +10, > 48h = -5 |
-| H1B mention | +8 | "will sponsor" in JD |
-| US location | +10 | US city/state/remote |
-
-**Filter flags (score=0) but never drops:** sponsorship denial, US citizen required, security clearance, non-US location, 4+ years experience required. All jobs flow to the DB so the AI scorer (`scripts/ai_score_local.py`) can correct false positives.
-
-See [docs/SCORING.md](docs/SCORING.md) for full details.
-
-## Web Dashboard
-
-The LinkedIn feed at `/linkedin` features:
-
-- **Time filtering** — This Hour / Today / Yesterday / All Time + scrollable hourly cards
-- **Sortable table** — Sort by match %, score, level, recency
-- **Filter chips** — All / Recommended / New Grad / Entry / Mid / Tracking / Applied
-- **Search** — Real-time text search across company, title, location
-- **Sidebar stats** — Match score distribution, level breakdown, top companies, experience required
-- **Status tracking** — Mark jobs as Tracking / Applied / Not Interested
-- **Timezone-aware** — All times shown in your local timezone
-
-## Resume Tailoring
-
-```bash
-# Via web dashboard: paste JD at /tailor
-# Via CLI:
-jobflow apply "https://..." --paste -t "SWE" -c "Stripe" -l "SF"
-jobflow save --dir data/output/Stripe_SWE_2026-04-09
-```
-
-Claude AI tailors your LaTeX resume:
-1. Auto-selects variant (SE / ML / AppDev) based on JD keywords
-2. Preserves preamble + header + education
-3. Rewrites experience, projects, skills sections
-4. Compiles to PDF, auto-condenses if > 1 page
-
-## Deployment
-
-Deployed on Render free tier with auto-deploy from GitHub.
-
-```
-render.yaml     — Render Blueprint (auto-configures service)
-Procfile        — gunicorn -w 1 wsgi:app
-wsgi.py         — WSGI entry point
-```
-
-GitHub Actions hourly cron scans LinkedIn, commits data, pushes to GitHub. Push triggers Render redeploy. Same workflow pings the Render URL to prevent free-tier sleep.
-
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for setup instructions.
-
-## Project Structure
-
-```
-JobFlow/
-├── config/
-│   ├── config.example.yaml  # Template — copy to config.yaml
-│   ├── config.ci.yaml       # CI config (GitHub Actions)
-│   ├── profile.example.txt  # Template — copy to profile.txt
-│   └── job_boards.json      # 82 company API endpoints
-├── data/ci/                 # CI scan output (git-tracked)
-├── jobflow/
-│   ├── cli.py               # CLI commands
-│   ├── config.py            # Config loader
-│   ├── models.py            # JobPosting, FilterResult
-│   ├── filter.py            # Scoring engine
-│   ├── scanner.py           # Job scanners
-│   ├── linkedin_store.py    # LinkedIn job store + dedup
-│   ├── tracker.py           # CSV tracking
-│   ├── tailor.py            # Resume merging
-│   ├── latex.py             # PDF compilation
-│   └── web/                 # Flask dashboard
-├── docs/                    # Documentation
-├── .github/workflows/       # Hourly scan cron
-├── wsgi.py                  # Production WSGI
-├── Procfile                 # Render process
-└── render.yaml              # Render Blueprint
+# Optional: score Neon jobs using signed-in local Codex CLI
+DATABASE_URL="<neon-url>" python scripts/ai_score_local.py --hours 24
 ```
 
 ## Documentation
 
 | Doc | Content |
 |-----|---------|
-| [Architecture](docs/ARCHITECTURE.md) | System overview, data flow, design decisions |
-| [Scoring](docs/SCORING.md) | Full scoring engine breakdown |
+| [Milan Setup](docs/MILAN_SETUP.md) | End-to-end GitHub, Neon, GitHub Actions, and local dashboard setup |
+| [Scoring](docs/SCORING.md) | Hardware scoring rules and target-role guard |
+| [Scanning](docs/SCANNING.md) | LinkedIn search terms, filters, and scan output |
 | [API](docs/API.md) | HTTP endpoints reference |
-| [Data Models](docs/DATA_MODELS.md) | JSON/CSV schemas |
-| [Deployment](docs/DEPLOYMENT.md) | Render setup, GitHub Actions, env vars |
-| [Frontend](docs/FRONTEND.md) | CSS architecture, JS functions, HTMX patterns |
-| [Scanning](docs/SCANNING.md) | Platforms, search terms, dedup, rate limiting |
-| [Tailoring](docs/TAILORING.md) | Resume flow, Claude integration |
-| [CLI](docs/CLI.md) | All commands with examples |
+| [Data Models](docs/DATA_MODELS.md) | JSON/CSV/Postgres-shaped data fields |
+| [Frontend](docs/FRONTEND.md) | Dashboard UI notes |
+| [CLI](docs/CLI.md) | Command-line reference |
 
-## License
+## Notes
 
-MIT
+- The active CI job files are intentionally empty so Milan starts with a clean feed.
+- Resume tailoring code remains available, but Milan-specific resume files are not included yet.
+- Use Neon for persistent jobs and statuses; JSON files are only fallback storage.

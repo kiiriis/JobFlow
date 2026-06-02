@@ -212,6 +212,18 @@ tr.dismissing { animation: dismissOut 0.3s ease forwards; }
     background-repeat: no-repeat !important; background-position: right 6px center !important;
 }
 .li-status-sel option { background: var(--option-bg); color: var(--text-primary); }
+.li-status-sel.status-not-interested,
+.li-status-sel.status-not-needed {
+    color: #ff9aa2 !important;
+    background-color: rgba(224, 96, 96, 0.16) !important;
+    border-color: rgba(224, 96, 96, 0.55) !important;
+}
+[data-theme="light"] .li-status-sel.status-not-interested,
+[data-theme="light"] .li-status-sel.status-not-needed {
+    color: #b42318 !important;
+    background-color: rgba(220, 38, 38, 0.09) !important;
+    border-color: rgba(220, 38, 38, 0.34) !important;
+}
 
 /* ── Empty state ── */
 .li-empty { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 48px 16px; font-family: "IBM Plex Mono", monospace; }

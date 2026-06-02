@@ -63,12 +63,13 @@
         {% if job.url %}
         <a href="{{ job.url }}" target="_blank" rel="noopener" class="apply-btn" aria-label="Apply to {{ job.title }} at {{ job.company }}">Apply</a>
         {% endif %}
+        {% set status_slug = (job.status|default('none')|lower|replace(' ', '-')|replace('_', '-')) %}
         <select name="status"
                 hx-patch="{{ api_base }}/jobs/{{ job._key }}/status"
                 hx-target="closest tr"
                 hx-swap="outerHTML"
                 hx-on::after-request="showToast('Updated'); setTimeout(function(){ if(typeof pruneMismatchedRows==='function') pruneMismatchedRows(); if(typeof updateBulkSelectionState==='function') updateBulkSelectionState({restore:true,sync:false,prune:true}); if(typeof refreshCounts==='function') refreshCounts(); }, 80)"
-                class="li-status-sel"
+                class="li-status-sel status-{{ status_slug }}"
                 aria-label="Set status for {{ job.title }}">
             <option value="" {% if not job.status %}selected{% endif %}>--</option>
             {% for st in statuses %}

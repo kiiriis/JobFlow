@@ -123,6 +123,7 @@ COMPANY_BLOCKLIST = {
     "dice", "remotehunter", "jobs via dice", "jobot", "cybercoders",
     "lancesoft", "haystack", "turing", "micro1", "hackajob",
     "crossover", "toptal", "andela", "revelo", "tira",
+    "jack & jill", "jack and jill",
 }
 
 # ── Senior salary pattern (>= $130K suggests non-entry) ────────────────────

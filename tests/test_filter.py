@@ -71,6 +71,7 @@ class TestHardRejectCompany:
     @pytest.mark.parametrize("company", [
         "Dice", "Jobs via Dice", "CyberCoders", "Jobot", "Turing",
         "Micro1", "Hackajob", "Toptal", "Crossover", "LanceSoft",
+        "Jack & Jill", "Jack and Jill",
     ])
     def test_blocked_company(self, company):
         job = JobPosting(url="x", title="SWE", company=company, location="US", description="Python")

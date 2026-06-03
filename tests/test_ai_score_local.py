@@ -15,6 +15,8 @@ def test_blocked_staffing_sources_match_company_and_url():
     assert is_blocked_staffing_source(_row(company="BeaconFire Inc."))
     assert is_blocked_staffing_source(_row(company="Helic & Co."))
     assert is_blocked_staffing_source(_row(company="Helic and Co"))
+    assert is_blocked_staffing_source(_row(company="Jack & Jill"))
+    assert is_blocked_staffing_source(_row(company="Jack and Jill"))
     assert is_blocked_staffing_source(_row(company="Jobs Via DIce"))
 
 

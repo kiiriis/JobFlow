@@ -27,6 +27,23 @@ import time
 from pathlib import Path
 
 
+AI_BLOCK_REASON = "Blocked staffing/spam source."
+AI_SOURCE_BLOCKLIST = (
+    "jobright.ai",
+    "remotehunter",
+    "quik hire staffing",
+    "beacon fire",
+    "helic & co.",
+    "helic and co",
+    "jack & jill",
+    "jack and jill",
+    "jobs via dice",
+)
+AI_SOURCE_BLOCKLIST_COMPACT = tuple(
+    re.sub(r"[^a-z0-9]+", "", source.lower())
+    for source in AI_SOURCE_BLOCKLIST
+)
+
 SCORE_PROMPT = """You are a job relevance scorer for a new grad / entry-level software engineer on F1 OPT visa looking for their first full-time role in the US.
 
 ## Candidate Profile
@@ -44,6 +61,8 @@ Give a score of 0 if ANY of these are true. Check carefully:
 4. **Not a software engineering role**: The role is primarily QA/testing, technical writing, product management, sales engineering, IT support, or DevOps/SRE-only with no software development. Data Science with heavy statistics and no coding is also a reject.
 
 5. **Not US-based**: The job is located outside the United States with no remote-US option.
+
+6. **Blocked staffing/spam source**: The job is from jobright.ai, Remotehunter, Quik Hire Staffing, Beacon Fire, Helic & Co., Jack and Jill, or Jobs Via Dice.
 
 ## SCORING GUIDE (only if no hard reject applies)
 Score 1-10 based on how well this job fits the candidate:
@@ -118,8 +137,30 @@ def _get_client():
         return None
 
 
+def _is_blocked_ai_source(job: dict) -> bool:
+    """Return True if the job comes from a blocked staffing/spam source."""
+    haystack = " ".join(
+        str(value or "")
+        for value in (
+            job.get("url", ""),
+            job.get("company", ""),
+            job.get("title", ""),
+            job.get("location", ""),
+            job.get("description_preview", ""),
+            job.get("description", ""),
+        )
+    ).lower()
+    compact_haystack = re.sub(r"[^a-z0-9]+", "", haystack)
+    return any(source in haystack for source in AI_SOURCE_BLOCKLIST) or any(
+        source in compact_haystack for source in AI_SOURCE_BLOCKLIST_COMPACT
+    )
+
+
 def score_single_job(client, profile: str, job: dict, max_retries: int = 3) -> dict | None:
     """Score a single job with Llama 4 Scout via Groq. Returns {"ai_score": int, "ai_reason": str} or None."""
+    if _is_blocked_ai_source(job):
+        return {"ai_score": 0, "ai_reason": AI_BLOCK_REASON}
+
     prompt = SCORE_PROMPT.format(
         profile=profile,
         title=job.get("title", ""),
@@ -183,7 +224,7 @@ def ai_score_jobs(jobs: list[dict], config_root: Path | None = None, max_score: 
         if scored >= max_score:
             break
         # Skip if already scored
-        if job.get("ai_score"):
+        if job.get("ai_score") is not None:
             continue
         result = score_single_job(client, profile, job)
         if result:

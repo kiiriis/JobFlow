@@ -1,7 +1,8 @@
-"""Local AI scoring using signed-in Codex CLI with batching.
+"""Local AI scoring using the signed-in Claude or Codex CLI with batching.
 
 Usage:
-    python scripts/ai_score_local.py
+    python scripts/ai_score_local.py                       # defaults to --engine claude
+    python scripts/ai_score_local.py --engine codex
     python scripts/ai_score_local.py --limit 50
     python scripts/ai_score_local.py --hours 12
     python scripts/ai_score_local.py --hours 12 --limit 100
@@ -9,9 +10,9 @@ Usage:
     python scripts/ai_score_local.py --backend json --hours 24 --rescore
 
 Reads DATABASE_URL from .env when available, fetches unscored jobs, scores
-them in batches of 15 with the local Codex CLI session, and updates Postgres
-or data/ci/linkedin_jobs.json. This uses the signed-in Codex app/CLI account
-instead of an API key.
+them in batches of 15 with the local Claude or Codex CLI session, and updates
+Postgres or data/ci/linkedin_jobs.json. This uses the signed-in Claude/Codex
+app/CLI account instead of an API key.
 """
 
 import argparse
@@ -46,6 +47,10 @@ PROFILE_EXAMPLE_PATH = ROOT / "config" / "profile.example.txt"
 JSON_STORE_PATH = ROOT / "data" / "ci" / "linkedin_jobs.json"
 
 BATCH_SIZE = 15
+ENGINES = ("claude", "codex")
+# Models considered provisional: a job scored by one of these is eligible to be
+# re-scored by a *different* engine (and unscored jobs are always eligible).
+PROVISIONAL_MODELS = frozenset({"groq", "claude", "codex"})
 STAFFING_BLOCK_REASON = "Blocked staffing/spam source."
 STAFFING_SOURCE_BLOCKLIST = (
     "jobright.ai",
@@ -104,7 +109,13 @@ Return ONLY a valid JSON array with one object per job, in the same order. Nothi
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Score recent/unscored JobFlow jobs with the signed-in Codex CLI.",
+        description="Score recent/unscored JobFlow jobs with the signed-in Claude or Codex CLI.",
+    )
+    parser.add_argument(
+        "--engine",
+        choices=ENGINES,
+        default="claude",
+        help="Which signed-in CLI to score with. Default: claude.",
     )
     parser.add_argument(
         "--limit",
@@ -128,7 +139,8 @@ def parse_args():
     parser.add_argument(
         "--rescore",
         action="store_true",
-        help="Include jobs already scored by Codex. Default only scores unscored/Groq/Claude rows.",
+        help="Include jobs already scored by the selected engine. Default only scores "
+        "unscored rows plus rows scored by a different provisional engine.",
     )
     args = parser.parse_args()
     if args.limit < 0:
@@ -159,9 +171,18 @@ def parse_iso(ts: str) -> datetime | None:
     return dt
 
 
-def eligible_ai_model(model: str | None, rescore: bool = False) -> bool:
-    """Return True when a job should be scored or rescored by Codex."""
-    return rescore or model is None or model in ("groq", "claude")
+def eligible_ai_model(model: str | None, rescore: bool = False, engine: str = "claude") -> bool:
+    """Return True when a job should be scored or rescored by the given engine.
+
+    Unscored jobs are always eligible. Jobs scored by a *different* provisional
+    engine are eligible (so switching engines upgrades them); jobs already scored
+    by this engine are skipped unless --rescore is set.
+    """
+    return (
+        rescore
+        or model is None
+        or (model in PROVISIONAL_MODELS and model != engine)
+    )
 
 
 def normalize_row_score(score_data: dict) -> tuple[int, str, int, bool]:
@@ -194,6 +215,31 @@ def load_profile() -> str:
     print(f"Create it with: cp {PROFILE_EXAMPLE_PATH} {PROFILE_PATH}")
     print("Then edit it with your real skills, target roles, visa needs, and preferences.")
     sys.exit(1)
+
+
+def parse_scores(text: str):
+    """Parse a model's text response into a list of score objects.
+
+    Tolerates markdown fences, stray backticks, and surrounding prose by
+    extracting the first JSON array. Returns None on empty/unparseable input.
+    """
+    text = (text or "").strip()
+    if not text:
+        return None
+    if text.startswith("```"):
+        text = text.split("```")[1]
+        if text.startswith("json"):
+            text = text[4:]
+        text = text.strip()
+    text = text.strip("`")
+    m = re.search(r'\[.*\]', text, re.DOTALL)
+    if m:
+        text = m.group()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as e:
+        print(f"  Batch error: could not parse model output as JSON: {e}")
+        return None
 
 
 def score_batch_with_codex(batch, profile: str):
@@ -237,24 +283,8 @@ def score_batch_with_codex(batch, profile: str):
         if output_path and output_path.exists():
             text = output_path.read_text(errors="replace").strip()
         if not text:
-            text = result.stdout.strip()
-        if not text:
-            return None
-
-        # Parse JSON array — handle fences, backticks
-        if text.startswith("```"):
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-            text = text.strip()
-        text = text.strip("`")
-        # Extract JSON array
-        m = re.search(r'\[.*\]', text, re.DOTALL)
-        if m:
-            text = m.group()
-
-        scores = json.loads(text)
-        return scores
+            text = result.stdout
+        return parse_scores(text)
     except Exception as e:
         print(f"  Batch error: {e}")
         return None
@@ -264,6 +294,45 @@ def score_batch_with_codex(batch, profile: str):
                 output_path.unlink(missing_ok=True)
             except OSError:
                 pass
+
+
+def score_batch_with_claude(batch, profile: str):
+    """Score a batch of jobs using one signed-in `claude -p` (headless) call."""
+    jobs_block = build_jobs_block(batch)
+    prompt = BATCH_PROMPT.format(profile=profile, jobs_block=jobs_block)
+
+    if not shutil.which("claude"):
+        print("  Batch error: claude CLI not found on PATH")
+        return None
+
+    try:
+        result = subprocess.run(
+            [
+                "claude",
+                "-p",
+                "--output-format", "text",
+                "--allowedTools", "",
+            ],
+            input=prompt,
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+        if result.returncode != 0:
+            err = (result.stderr or result.stdout or "").strip()
+            print(f"  Batch error: claude exited with code {result.returncode}: {err[:500]}")
+            return None
+        return parse_scores(result.stdout)
+    except Exception as e:
+        print(f"  Batch error: {e}")
+        return None
+
+
+def score_batch(batch, profile: str, engine: str):
+    """Dispatch a batch to the selected scoring engine."""
+    if engine == "codex":
+        return score_batch_with_codex(batch, profile)
+    return score_batch_with_claude(batch, profile)
 
 
 def connect_db():
@@ -283,7 +352,10 @@ def fetch_db_rows(args):
     conditions = []
     params = []
     if not args.rescore:
-        conditions.append("(ai_score IS NULL OR ai_model IN ('groq', 'claude'))")
+        other_models = sorted(PROVISIONAL_MODELS - {args.engine})
+        placeholders = ", ".join(["%s"] * len(other_models))
+        conditions.append(f"(ai_score IS NULL OR ai_model IN ({placeholders}))")
+        params.extend(other_models)
     if args.hours:
         since = datetime.now(timezone.utc) - timedelta(hours=args.hours)
         conditions.append("first_seen >= %s")
@@ -330,7 +402,7 @@ def fetch_json_rows(store: dict, args):
 
     for key, job in store.get("jobs", {}).items():
         ai_model = job.get("ai_model")
-        if not eligible_ai_model(ai_model, args.rescore):
+        if not eligible_ai_model(ai_model, args.rescore, args.engine):
             continue
         if cutoff:
             first_seen = parse_iso(job.get("first_seen", ""))
@@ -357,7 +429,7 @@ def fetch_json_rows(store: dict, args):
     return rows
 
 
-def update_db_blocked(blocked_rows):
+def update_db_blocked(blocked_rows, engine):
     """Persist blocked-source scores to Postgres."""
     conn = get_conn()
     try:
@@ -367,9 +439,9 @@ def update_db_blocked(blocked_rows):
                     UPDATE jobs
                     SET ai_score = 0, ai_reason = %s,
                         score_pct = 0, recommended = false,
-                        ai_model = 'codex'
+                        ai_model = %s
                     WHERE url = %s
-                """, (STAFFING_BLOCK_REASON, url))
+                """, (STAFFING_BLOCK_REASON, engine, url))
         conn.commit()
     except Exception:
         conn.rollback()
@@ -378,20 +450,20 @@ def update_db_blocked(blocked_rows):
         put_conn(conn)
 
 
-def update_db_scores(codex_batch, scores):
-    """Persist Codex scores to Postgres."""
+def update_db_scores(scored_batch, scores, engine):
+    """Persist engine scores to Postgres."""
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            for (url, *_), score_data in zip(codex_batch, scores):
+            for (url, *_), score_data in zip(scored_batch, scores):
                 ai_score, ai_reason, score_pct, recommended = normalize_row_score(score_data)
                 cur.execute("""
                     UPDATE jobs
                     SET ai_score = %s, ai_reason = %s,
                         score_pct = %s, recommended = %s,
-                        ai_model = 'codex'
+                        ai_model = %s
                     WHERE url = %s
-                """, (ai_score, ai_reason, score_pct, recommended, url))
+                """, (ai_score, ai_reason, score_pct, recommended, engine, url))
         conn.commit()
     except Exception:
         conn.rollback()
@@ -400,7 +472,7 @@ def update_db_scores(codex_batch, scores):
         put_conn(conn)
 
 
-def update_json_blocked(store: dict, blocked_rows):
+def update_json_blocked(store: dict, blocked_rows, engine):
     """Persist blocked-source scores to the JSON store in memory."""
     jobs = store.get("jobs", {})
     for url, *rest in blocked_rows:
@@ -412,13 +484,13 @@ def update_json_blocked(store: dict, blocked_rows):
         job["ai_reason"] = STAFFING_BLOCK_REASON
         job["score_pct"] = 0
         job["recommended"] = False
-        job["ai_model"] = "codex"
+        job["ai_model"] = engine
 
 
-def update_json_scores(store: dict, codex_batch, scores):
-    """Persist Codex scores to the JSON store in memory."""
+def update_json_scores(store: dict, scored_batch, scores, engine):
+    """Persist engine scores to the JSON store in memory."""
     jobs = store.get("jobs", {})
-    for (url, *rest), score_data in zip(codex_batch, scores):
+    for (url, *rest), score_data in zip(scored_batch, scores):
         key = rest[5] if len(rest) > 5 else url
         job = jobs.get(key)
         if not job:
@@ -428,23 +500,27 @@ def update_json_scores(store: dict, codex_batch, scores):
         job["ai_reason"] = ai_reason
         job["score_pct"] = score_pct
         job["recommended"] = recommended
-        job["ai_model"] = "codex"
+        job["ai_model"] = engine
 
 
 def print_summary(rows, args, backend: str):
     """Print scoring summary for either backend."""
     total = len(rows)
     unscored = sum(1 for r in rows if r[5] is None)
-    groq_rescore = sum(1 for r in rows if r[5] == "groq")
-    claude_rescore = sum(1 for r in rows if r[5] == "claude")
+    rescore_models = sorted(PROVISIONAL_MODELS - {args.engine})
+    rescore_counts = {m: sum(1 for r in rows if r[5] == m) for m in rescore_models}
     batches = (total + BATCH_SIZE - 1) // BATCH_SIZE
+    print(f"Engine: {args.engine}")
     print(f"Backend: {backend}")
     print(f"Found {total} jobs to score ({batches} batches of {BATCH_SIZE})")
     if args.hours:
         print(f"  Window: first_seen in past {args.hours:g} hours")
     if args.limit:
         print(f"  Limit: latest {args.limit} eligible jobs")
-    print(f"  {unscored} unscored, {groq_rescore} Groq->Codex rescore, {claude_rescore} Claude->Codex rescore")
+    rescore_summary = ", ".join(
+        f"{count} {model}->{args.engine} rescore" for model, count in rescore_counts.items()
+    )
+    print(f"  {unscored} unscored" + (f", {rescore_summary}" if rescore_summary else ""))
 
 
 def save_json_store(store: dict):
@@ -492,19 +568,19 @@ def main():
         print(f"\n--- Batch {batch_num}/{total_batches} ({len(batch)} jobs) ---")
 
         blocked_rows = []
-        codex_batch = []
+        scorable_batch = []
         for row in batch:
             if is_blocked_staffing_source(row):
                 blocked_rows.append(row)
             else:
-                codex_batch.append(row)
+                scorable_batch.append(row)
 
         if blocked_rows:
             try:
                 if backend == "db":
-                    update_db_blocked(blocked_rows)
+                    update_db_blocked(blocked_rows, args.engine)
                 else:
-                    update_json_blocked(store, blocked_rows)
+                    update_json_blocked(store, blocked_rows, args.engine)
                 for _, company, title, *_ in blocked_rows:
                     scored += 1
                     print(f"    0 | {company} — {title} ({STAFFING_BLOCK_REASON})")
@@ -512,30 +588,30 @@ def main():
                 print(f"  {backend.upper()} error: {e}")
                 failed += len(blocked_rows)
 
-        if not codex_batch:
+        if not scorable_batch:
             continue
 
-        scores = score_batch_with_codex(codex_batch, profile)
-        if not scores or len(scores) != len(codex_batch):
+        scores = score_batch(scorable_batch, profile, args.engine)
+        if not scores or len(scores) != len(scorable_batch):
             # Fallback: if batch fails or count mismatch, mark as failed
-            for url, company, title, *_ in codex_batch:
+            for url, company, title, *_ in scorable_batch:
                 print(f"  SKIP | {company} — {title}")
                 failed += 1
             continue
 
         try:
             if backend == "db":
-                update_db_scores(codex_batch, scores)
+                update_db_scores(scorable_batch, scores, args.engine)
             else:
-                update_json_scores(store, codex_batch, scores)
-            for (_, company, title, *_), score_data in zip(codex_batch, scores):
+                update_json_scores(store, scorable_batch, scores, args.engine)
+            for (_, company, title, *_), score_data in zip(scorable_batch, scores):
                 ai_score, _, _, recommended = normalize_row_score(score_data)
                 scored += 1
                 tag = "REC" if recommended else f"  {ai_score}"
                 print(f"  {tag} | {company} — {title}")
         except Exception as e:
             print(f"  {backend.upper()} error: {e}")
-            failed += len(codex_batch)
+            failed += len(scorable_batch)
 
     if backend == "json":
         save_json_store(store)

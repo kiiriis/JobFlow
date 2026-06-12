@@ -48,14 +48,23 @@ JobFlow/
 - `jobflow init` — First-time setup
 
 ## Web Routes
+The web app is a single page — the job feed. Everything else lives in the CLI.
 - `/` — Redirects to /linkedin
-- `/linkedin` — LinkedIn job feed (main dashboard)
-- `/boards` — Job Boards placeholder
-- `/scan` — Scanner page
-- `/tailor` — Resume tailor page
+- `/linkedin` — The job feed (filtering, sorting, time buckets, bulk actions)
+- `/api/linkedin/*` — Feed data: jobs table fragment, meta counts, delete, refresh
+- `/api/scan/*` — Background scan (powers the feed's "Scan Now" button)
+- `/api/aiscore/*` — Local AI scoring runner: the feed's "AI Score" button runs
+  `scripts/ai_score_local.py` as a subprocess (engine claude/codex, hours/limit/rescore)
+  and streams live progress. Uses the signed-in CLI — no API key.
+
+Removed from the web UI in June 2026: application tracking (CSV tracker, status
+dropdowns, /api/stats), the /boards page, the /scan page, and the /tailor page.
+`tracker.py` and `tailor.py` remain for CLI use only.
 
 ## Scoring
 Multi-signal scoring (0-100%) for Python/ML/Backend stack. See docs/SCORING.md.
+When a job has no AI score yet, `filter.algo_recommended()` flags high-scoring
+entry-level jobs as Recommended (score_pct >= 65 and level New Grad/Entry).
 
 ## Filter Criteria
 - New grad / entry-level / SDE 1 roles only

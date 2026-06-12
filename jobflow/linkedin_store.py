@@ -144,8 +144,10 @@ def _rescore_entry(entry: dict) -> dict:
         keyword_score, synergy_bonus, level_tag, extract_experience,
         competition_estimate, experience_score, recency_score,
         has_match, _has_phrase, count_matches,
+        title_fit_bonus, title_keyword_boost, poor_fit_penalty,
+        senior_desc_penalty, is_blocked_source, algo_recommended,
         DISQUALIFYING_PHRASES, OVERQUALIFIED_PATTERNS,
-        TITLE_REJECT_PATTERNS, COMPANY_BLOCKLIST, SENIOR_SALARY_PATTERN,
+        TITLE_REJECT_PATTERNS, SENIOR_SALARY_PATTERN,
         ENTRY_LEVEL_SIGNALS, SENIOR_DESC_SIGNALS,
         H1B_PREFER, SCORE_MAX_RAW,
     )
@@ -174,8 +176,8 @@ def _rescore_entry(entry: dict) -> dict:
 
     # ── Hard-reject pipeline (same order as evaluate_job) ──
 
-    # 1. Company blocklist
-    if company_lower in COMPANY_BLOCKLIST:
+    # 1. Company / staffing-source blocklist (company name or URL)
+    if is_blocked_source(entry.get("company", ""), entry.get("url", "")):
         return _hard_reject(f"Blocked company: {entry.get('company', '')}")
 
     # 2. Title-level reject (senior, QA, architect, VP)
@@ -203,6 +205,9 @@ def _rescore_entry(entry: dict) -> dict:
     # ── Passed hard filters — compute score ──
     ks, hits = keyword_score(text)
     sb = synergy_bonus(text)
+    tf = title_fit_bonus(title)
+    tb = title_keyword_boost(title)
+    pf = poor_fit_penalty(text_lower)
     es = experience_score(min_exp, max_exp)
     rs = recency_score(entry.get("first_seen"))
     loc_score = 10  # assume US (LinkedIn US search)
@@ -212,12 +217,12 @@ def _rescore_entry(entry: dict) -> dict:
     # Level points
     lp = {"New Grad": 20, "Entry": 15, "Mid": 5}.get(level, 4)
 
-    # Senior description penalty
+    # Senior description penalty (graded)
     senior_count = count_matches(text_lower, SENIOR_DESC_SIGNALS)
     entry_count = count_matches(text_lower, ENTRY_LEVEL_SIGNALS)
-    senior_penalty = -30 if senior_count >= 3 and entry_count == 0 else 0
+    senior_penalty = senior_desc_penalty(senior_count, entry_count)
 
-    raw = ks + sb + lp + es + rs + loc_score + h1b + senior_penalty
+    raw = ks + sb + tf + tb + pf + lp + es + rs + loc_score + h1b + senior_penalty
     score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
 
     entry["score"] = max(0, min(100, raw))
@@ -233,7 +238,8 @@ def _rescore_entry(entry: dict) -> dict:
         entry["recommended"] = int(ai_score) >= 7
     else:
         entry["score_pct"] = score_pct
-        entry["recommended"] = False  # only AI can recommend
+        # No AI score yet — high-scoring entry-level jobs still get flagged
+        entry["recommended"] = algo_recommended(score_pct, level)
     entry.pop("reject_reason", None)
     return entry
 

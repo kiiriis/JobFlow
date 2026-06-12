@@ -118,13 +118,20 @@ TITLE_REJECT_PATTERNS = [
 
 # ── Company blocklist (job aggregators / spam) ──────────────────────────────
 # These companies are staffing agencies or aggregators that repost jobs
-# from other companies. Applying through them adds no value.
+# from other companies. Applying through them adds no value. Kept in sync
+# with the staffing blocklist in scripts/ai_score_local.py.
 COMPANY_BLOCKLIST = {
     "dice", "remotehunter", "jobs via dice", "jobot", "cybercoders",
     "lancesoft", "haystack", "turing", "micro1", "hackajob",
     "crossover", "toptal", "andela", "revelo", "tira",
     "jack & jill", "jack and jill",
+    "jobright", "jobright.ai", "quik hire staffing", "beacon fire",
+    "helic & co.", "helic and co",
 }
+
+# URL fragments that identify aggregator/staffing reposts even when the
+# company field looks legitimate (e.g. jobright.ai deep links).
+BLOCKED_URL_SIGNS = ("jobright.ai", "jobs-via-dice")
 
 # ── Senior salary pattern (>= $130K suggests non-entry) ────────────────────
 # A salary floor of $130K+ without any entry-level signals strongly indicates
@@ -226,10 +233,54 @@ SYNERGY_COMBOS = [
     ({"postgresql", "redis", "api"}, 6),
 ]
 
+# ── Title role-fit bonus ────────────────────────────────────────────────────
+# The job TITLE is the strongest single relevance signal we have without AI.
+# A title that names the user's target role family gets a strong bonus; an
+# adjacent role family gets a smaller one. Checked against title only.
+TITLE_FIT_STRONG = [
+    r"\bsoftware\s+(?:engineer|developer)\b", r"\bswe\b", r"\bsde\b",
+    r"\bback[\s-]*end\b", r"\bbackend\b", r"\bfull[\s-]*stack\b",
+    r"\bmachine\s+learning\b", r"\bml\s+engineer\b", r"\bai\s+engineer\b",
+    r"\bdata\s+engineer\b", r"\bplatform\s+engineer\b",
+    r"\binfrastructure\s+engineer\b",
+]
+TITLE_FIT_ADJACENT = [
+    r"\bdevops\b", r"\bsite\s+reliability\b", r"\bsre\b",
+    r"\bcloud\s+engineer\b", r"\bdata\s+scientist\b",
+    r"\bsoftware\b", r"\bdeveloper\b", r"\bengineer\b",
+]
+TITLE_FIT_STRONG_POINTS = 12
+TITLE_FIT_ADJACENT_POINTS = 6
+
+# Cap on extra points for stack keywords that appear in the TITLE itself
+# ("Python Backend Engineer" is a far stronger signal than a JD that lists
+# Python among 30 technologies).
+TITLE_KEYWORD_BOOST_MAX = 10
+
+# ── Poor-fit tech penalties ─────────────────────────────────────────────────
+# Stacks that are clearly outside the user's Python/ML/backend profile.
+# These are soft penalties (never a hard reject — the AI scorer can still
+# rescue edge cases). Total penalty is capped at POOR_FIT_MAX_PENALTY.
+POOR_FIT_PATTERNS = [
+    (r"\bsalesforce\b", 8), (r"\bservicenow\b", 8), (r"\babap\b", 8),
+    (r"\bpeoplesoft\b", 8), (r"\bworkday\s+(?:consultant|developer)\b", 8),
+    (r"\bmainframe\b", 10), (r"\bcobol\b", 10),
+    (r"\bsharepoint\b", 6), (r"\bwordpress\b", 6), (r"\bdrupal\b", 6),
+    (r"\bverilog\b", 8), (r"\bvhdl\b", 8), (r"\bfpga\b", 8),
+    (r"\brtl\s+design\b", 8), (r"\bembedded\s+firmware\b", 6),
+    (r"\bmanual\s+test", 6), (r"\bhelp\s*desk\b", 8), (r"\bservice\s+desk\b", 8),
+    (r"\.net\b", 3), (r"\bc#", 3), (r"\bphp\b", 4),
+]
+POOR_FIT_MAX_PENALTY = 20
+
 # Maximum theoretical raw score. Used to normalize to 0-100%.
 # Approximate breakdown: stack ~50 + synergy ~10 + level 20 + exp 10 + recency 10
-# + location 10 + h1b 8 + misc ≈ 130
-SCORE_MAX_RAW = 130
+# + location 10 + h1b 8 + title fit 12 + title boost 10 ≈ 140
+SCORE_MAX_RAW = 140
+
+# Algo-recommended threshold: when a job has no AI score yet, the dashboard
+# falls back to flagging high-scoring entry-level jobs as recommended.
+RECOMMENDED_MIN_PCT = 65
 
 # Big Tech companies get a +5 competition score — more applicants means
 # the user should prioritize these applications (higher urgency, not penalty).
@@ -305,6 +356,59 @@ def synergy_bonus(text: str) -> int:
         if all(k in lower for k in keywords):
             bonus += points
     return bonus
+
+
+def title_fit_bonus(title: str) -> int:
+    """Role-family fit from the title alone. Strong > adjacent > none."""
+    lower = title.lower()
+    if has_match(lower, TITLE_FIT_STRONG):
+        return TITLE_FIT_STRONG_POINTS
+    if has_match(lower, TITLE_FIT_ADJACENT):
+        return TITLE_FIT_ADJACENT_POINTS
+    return 0
+
+
+def title_keyword_boost(title: str) -> int:
+    """Extra (capped) points when stack keywords appear in the title itself."""
+    score, _ = keyword_score(title)
+    return min(score, TITLE_KEYWORD_BOOST_MAX)
+
+
+def poor_fit_penalty(text_lower: str) -> int:
+    """Negative points for clearly off-profile stacks. Returns <= 0, capped."""
+    penalty = 0
+    for pattern, points in POOR_FIT_PATTERNS:
+        if re.search(pattern, text_lower):
+            penalty += points
+            if penalty >= POOR_FIT_MAX_PENALTY:
+                return -POOR_FIT_MAX_PENALTY
+    return -penalty
+
+
+def senior_desc_penalty(senior_count: int, entry_count: int) -> int:
+    """Graded penalty for senior-leaning JDs with zero entry signals."""
+    if entry_count > 0:
+        return 0
+    if senior_count >= 4:
+        return -35
+    if senior_count >= 3:
+        return -30
+    if senior_count == 2:
+        return -15
+    return 0
+
+
+def is_blocked_source(company: str, url: str = "") -> bool:
+    """True when the job comes from a blocklisted staffing/aggregator source."""
+    if company.lower().strip() in COMPANY_BLOCKLIST:
+        return True
+    url_lower = (url or "").lower()
+    return any(sign in url_lower for sign in BLOCKED_URL_SIGNS)
+
+
+def algo_recommended(score_pct: int, level: str) -> bool:
+    """Fallback 'recommended' flag when no AI score exists yet."""
+    return score_pct >= RECOMMENDED_MIN_PCT and level in ("New Grad", "Entry")
 
 
 def level_tag(title: str, description: str = "") -> str:
@@ -451,8 +555,8 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
             resume_variant=variant, level=level, reject_reason=reason,
         )
 
-    # ── 1. Company blocklist ──
-    if job.company.lower().strip() in COMPANY_BLOCKLIST:
+    # ── 1. Company / staffing-source blocklist (company name or URL) ──
+    if is_blocked_source(job.company, getattr(job, "url", "")):
         return _reject(f"Blocked company: {job.company}")
 
     # ── 2. Title-level hard reject (senior, QA, architect, VP) ──
@@ -532,6 +636,20 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     if sb > 0:
         reasons.append(f"Synergy +{sb}")
 
+    # Title role-fit + title keyword boost — the title is the strongest
+    # non-AI relevance signal, so it earns dedicated points.
+    tf = title_fit_bonus(job.title)
+    if tf > 0:
+        reasons.append(f"Title fit +{tf}")
+    tb = title_keyword_boost(job.title)
+    if tb > 0:
+        reasons.append(f"Title stack +{tb}")
+
+    # Off-profile stack penalty (Salesforce, mainframe, FPGA, helpdesk, ...)
+    pf = poor_fit_penalty(text_lower)
+    if pf < 0:
+        reasons.append(f"Poor fit {pf}")
+
     # Level
     lp = _level_points(level)
     if level != "Unknown":
@@ -584,13 +702,12 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     # Description-level senior penalty (soft — JD may mention "work with senior engineers")
     senior_count = count_matches(text_lower, SENIOR_DESC_SIGNALS)
     entry_count = count_matches(text_lower, ENTRY_LEVEL_SIGNALS)
-    senior_penalty = 0
-    if senior_count >= 3 and entry_count == 0:
-        senior_penalty = -30
-        reasons.append("Senior desc -30")
+    senior_penalty = senior_desc_penalty(senior_count, entry_count)
+    if senior_penalty < 0:
+        reasons.append(f"Senior desc {senior_penalty}")
 
     # ── Aggregate: sum all components, normalize to 0-100% ──
-    raw = ks + sb + lp + es + rs + loc_score + h1b_bonus + senior_penalty
+    raw = ks + sb + tf + tb + pf + lp + es + rs + loc_score + h1b_bonus + senior_penalty
     score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
     score = max(0, min(100, raw))
     # All jobs that pass hard rejects are kept — AI scoring is the real quality gate

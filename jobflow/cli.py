@@ -30,7 +30,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from .config import load_config
-from .filter import evaluate_job
+from .filter import evaluate_job, algo_recommended
 from .latex import check_pdflatex, compile_pdf
 from .models import JobPosting
 from .scraper import parse_job_text, save_job_description
@@ -287,6 +287,7 @@ def scan(
                 "variant": filt.resume_variant,
                 "reason": filt.reason,
                 "reject_reason": filt.reject_reason,
+                "recommended": algo_recommended(filt.score_pct, filt.level),
                 "description_preview": job.description,
                 "date_posted": getattr(job, "date_posted", ""),
                 "source": getattr(job, "source", "linkedin"),

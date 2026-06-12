@@ -1,38 +1,30 @@
-"""JobFlow Web Dashboard — Flask app factory with HTMX-powered routes.
+"""JobFlow Web Dashboard — single-page job feed.
 
-This is the main web interface deployed on Render.com. It provides:
+The web app is exactly one page: the LinkedIn job feed.
 
-Pages:
-    /           → Redirects to /linkedin
-    /linkedin   → Main job feed with filtering, sorting, time buckets, status management
-    /scan       → Trigger job scans from the browser
-    /tailor     → Paste a JD → Claude tailors your resume → download PDF
-    /boards     → ATS platform scanner (placeholder)
-    /health     → JSON health check for uptime monitoring
-
-Architecture:
-    - HTMX for dynamic updates (no full-page reloads)
-    - Partial templates in _partials/ return HTML fragments
-    - Background threads for long-running operations (scan, tailor)
-    - In-memory session store for tailor sessions (max 20, auto-evict)
+Routes:
+    /                    → Redirects to /linkedin
+    /linkedin            → The job feed (filtering, sorting, time buckets)
+    /health              → JSON health check for uptime monitoring
+    /api/linkedin/jobs   → Filtered table rows (HTML fragment + count headers)
+    /api/linkedin/meta   → Filter counts as JSON
+    /api/linkedin/...    → Delete / bulk-delete / refresh
+    /api/scan/*          → Background scan (powers the feed's "Scan Now" button)
+    /api/aiscore/*       → Local AI scoring runner (claude/codex CLI subprocess)
 
 Data flow:
-    1. /api/scan/trigger → starts background scan thread
-    2. _run_scan() calls scan_all_api_boards() + filter + dedup
-    3. Results saved to scan_results.json and merged into linkedin_jobs.json
-    4. /api/linkedin/jobs reads linkedin_jobs.json and returns filtered HTML table
-    5. Response headers carry count metadata (X-Counts, X-Level-Counts, etc.)
-       so the JS can update sidebar chips without a separate request
+    1. "Scan Now" → /api/scan/trigger → _run_scan() fetches + filters + dedups
+    2. Results saved to scan_results.json and merged into the store
+       (PostgreSQL when DATABASE_URL is set, else data/ci/linkedin_jobs.json)
+    3. /api/linkedin/jobs returns the filtered HTML table; response headers
+       carry count metadata (X-Counts, X-Time-Counts, ...) so the page JS can
+       update chips and stat tiles without a second request
+    4. "AI Score" → /api/aiscore/trigger runs scripts/ai_score_local.py with
+       the signed-in claude/codex CLI and streams progress to the modal
 
-Auto-pull (local only):
+Auto-pull (local JSON backend only):
     A background thread runs `git pull --rebase` every hour to pick up CI scan
-    results, then re-merges into the store. Disabled on Render (data updates
-    via redeploy triggered by CI push).
-
-Tailor sessions:
-    Each tailoring request creates an in-memory session with a UUID. The session
-    tracks: JD text, variant, Claude output, PDF path, feedback history, and
-    cancellation state. Sessions auto-evict when exceeding MAX_SESSIONS (20).
+    results, then re-merges into the store. Disabled on Render.
 """
 
 import json
@@ -40,37 +32,22 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import threading
 import time
-import uuid
-from collections import Counter
-from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from flask import Flask, render_template, request, jsonify, send_file, abort, redirect, make_response
+from flask import Flask, render_template, request, jsonify, redirect, make_response
 
 from ..config import load_config
-from ..filter import (
-    select_variant,
-    has_match,
-    count_matches,
-    _has_phrase,
-    DISQUALIFYING_PHRASES,
-    SENIOR_DESC_SIGNALS,
-    ENTRY_LEVEL_SIGNALS,
-)
-from ..latex import compile_pdf, get_page_count
-from ..tailor import load_base_resume, load_master_prompt, save_tailored_resume
-from ..tracker import list_jobs, append_job, STATUSES
+from ..filter import algo_recommended
 from ..linkedin_store import (
     load_store, save_store, merge_scan_results, prune_old_jobs,
-    update_job_status, get_filtered_jobs, get_status_counts,
+    get_filtered_jobs, get_status_counts,
     get_level_counts, get_filtered_counts, get_search_terms,
     get_time_counts,
     backfill_job,
     delete_job as delete_json_job,
-    normalize_url,
-    LINKEDIN_STATUSES,
     STORE_LOCK,
     is_db_enabled,
 )
@@ -81,51 +58,158 @@ from ..linkedin_store import (
 # for thread communication without locks — only one scan runs at a time.
 scan_state = {
     "running": False,
-    "results": None,
     "error": None,
     "total": 0,
     "relevant": 0,
     "skipped": 0,
 }
 
-# In-memory store for tailor sessions.
-# Keyed by UUID session_id. Each session tracks the full state of a resume
-# tailoring request, including the Claude subprocess, output .tex, and PDF.
-tailor_sessions = {}
+# Shared state for the local AI scoring run (scripts/ai_score_local.py).
+# Same thread-safety story as scan_state — one scoring run at a time.
+ai_state = {
+    "running": False,
+    "engine": "",
+    "hours": 0.0,
+    "limit": 0,
+    "rescore": False,
+    "total": 0,        # jobs found to score
+    "batch": 0,        # current batch number
+    "batches": 0,      # total batches
+    "scored": 0,
+    "failed": 0,
+    "log": [],         # tail of subprocess output lines
+    "error": None,
+    "ok": None,        # None while running, True/False when finished
+    "cancelled": False,
+    "started_at": None,
+    "finished_at": None,
+    "_process": None,
+}
 
-MAX_SESSIONS = 20  # Evict oldest sessions beyond this
+AI_ENGINES = ("claude", "codex")
+AI_LOG_TAIL = 100  # keep this many output lines for the status endpoint
+
+# The web server often runs with a minimal PATH (launched from an IDE, launchd,
+# or a service manager) that misses the dirs where CLIs like codex/claude live.
+# Search these well-known install locations in addition to the inherited PATH,
+# and hand the augmented PATH to subprocesses so they resolve the CLIs too.
+_EXTRA_BIN_DIRS = (
+    Path.home() / ".npm-global" / "bin",   # npm prefix installs (codex)
+    Path.home() / ".local" / "bin",        # pipx / local installs (claude)
+    Path("/opt/homebrew/bin"),
+    Path("/usr/local/bin"),
+    Path.home() / ".bun" / "bin",
+)
 
 
-def _evict_old_sessions():
-    """Remove oldest completed sessions when we exceed MAX_SESSIONS."""
-    if len(tailor_sessions) <= MAX_SESSIONS:
-        return
-    # Sort by creation time (embedded in UUID v4 isn't ordered, so use _created_at)
-    completed = [
-        (sid, s) for sid, s in tailor_sessions.items()
-        if s["status"] in ("done", "error")
-    ]
-    completed.sort(key=lambda x: x[1].get("_created_at", 0))
-    # Remove oldest completed until we're at limit
-    to_remove = len(tailor_sessions) - MAX_SESSIONS
-    for sid, _ in completed[:to_remove]:
-        tailor_sessions.pop(sid, None)
+def _augmented_path() -> str:
+    parts = [p for p in os.environ.get("PATH", "").split(os.pathsep) if p]
+    seen = set(parts)
+    candidates = list(_EXTRA_BIN_DIRS)
+    candidates += sorted((Path.home() / ".nvm" / "versions" / "node").glob("*/bin"))
+    for d in candidates:
+        s = str(d)
+        if s not in seen and d.is_dir():
+            parts.append(s)
+            seen.add(s)
+    return os.pathsep.join(parts)
 
 
-def _cancel_session(session):
-    """Cancel a running session and kill its subprocess if possible."""
-    session["_cancelled"] = True
-    proc = session.get("_process")
-    if proc and proc.poll() is None:
-        try:
-            proc.kill()
-        except OSError:
-            pass
+def _which_cli(name: str) -> str | None:
+    """shutil.which() over the augmented PATH."""
+    return shutil.which(name, path=_augmented_path())
 
 
-def _is_cancelled(session):
-    """Check if session has been cancelled."""
-    return session.get("_cancelled", False)
+def _ai_state_snapshot() -> dict:
+    """JSON-safe copy of ai_state for the status endpoint."""
+    snap = {k: v for k, v in ai_state.items() if not k.startswith("_")}
+    snap["log"] = list(snap["log"])[-25:]
+    return snap
+
+
+def _run_ai_score(root: Path, engine: str, hours: float, limit: int, rescore: bool):
+    """Run scripts/ai_score_local.py as a subprocess and stream its progress.
+
+    The script prints well-known lines we parse for live progress:
+        "Found N jobs to score (B batches of 15)"
+        "--- Batch i/N (k jobs) ---"
+        "Done: X scored, Y failed out of Z total"
+        "Nothing to score!"
+    """
+    script = root / "scripts" / "ai_score_local.py"
+    cmd = [sys.executable, "-u", str(script), "--engine", engine]
+    if hours:
+        cmd += ["--hours", str(hours)]
+    if limit:
+        cmd += ["--limit", str(limit)]
+    if rescore:
+        cmd += ["--rescore"]
+
+    done_line_seen = False
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(root),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            env={**os.environ, "PATH": _augmented_path()},
+        )
+        ai_state["_process"] = proc
+
+        for raw_line in proc.stdout:
+            line = raw_line.rstrip()
+            if not line:
+                continue
+            log = ai_state["log"]
+            log.append(line)
+            if len(log) > AI_LOG_TAIL:
+                del log[: len(log) - AI_LOG_TAIL]
+
+            m = re.search(r"Found (\d+) jobs to score \((\d+) batch", line)
+            if m:
+                ai_state["total"] = int(m.group(1))
+                ai_state["batches"] = int(m.group(2))
+                continue
+            m = re.match(r"--- Batch (\d+)/(\d+)", line)
+            if m:
+                ai_state["batch"] = int(m.group(1))
+                ai_state["batches"] = int(m.group(2))
+                continue
+            m = re.match(r"Done: (\d+) scored, (\d+) failed out of (\d+) total", line)
+            if m:
+                ai_state["scored"] = int(m.group(1))
+                ai_state["failed"] = int(m.group(2))
+                ai_state["total"] = int(m.group(3))
+                done_line_seen = True
+                continue
+            if "Nothing to score!" in line:
+                done_line_seen = True
+
+        returncode = proc.wait()
+
+        if ai_state["cancelled"]:
+            ai_state["ok"] = False
+            ai_state["error"] = "Cancelled by user."
+        elif returncode != 0:
+            ai_state["ok"] = False
+            ai_state["error"] = f"Scorer exited with code {returncode}."
+        elif not done_line_seen:
+            ai_state["ok"] = False
+            ai_state["error"] = "Scorer ended without reporting results."
+        elif ai_state["failed"] > 0:
+            ai_state["ok"] = False
+            ai_state["error"] = f"{ai_state['failed']} job(s) failed to score."
+        else:
+            ai_state["ok"] = True
+    except Exception as e:
+        ai_state["ok"] = False
+        ai_state["error"] = str(e)
+    finally:
+        ai_state["running"] = False
+        ai_state["finished_at"] = time.time()
+        ai_state["_process"] = None
 
 
 def create_app():
@@ -138,346 +222,10 @@ def create_app():
     config = load_config()
     app.config["JOBFLOW"] = config
 
-    # ── Page Routes ──────────────────────────────────────────────
-
-    @app.route("/")
-    def index():
-        return redirect("/linkedin")
-
-    @app.route("/health")
-    def health():
-        return jsonify({"status": "ok"}), 200
-
-    @app.route("/scan")
-    def scan_page():
-        return render_template("scan.html", scan_running=scan_state["running"])
-
-    # ── API Routes ───────────────────────────────────────────────
-
-    @app.route("/api/scan/trigger", methods=["POST"])
-    def api_trigger_scan():
-        if scan_state["running"]:
-            return jsonify({"error": "Scan already running"}), 409
-
-        data = request.form or request.get_json(silent=True) or {}
-        platform = data.get("platform", "") or None
-        hours = int(data.get("hours", 0) or 0)
-        new_only = data.get("new_only") in ("true", "on", True, "1")
-
-        platforms = [platform] if platform else None
-
-        thread = threading.Thread(
-            target=_run_scan,
-            args=(config, platforms, hours, new_only),
-            daemon=True,
-        )
-        thread.start()
-        return render_template("_partials/scan_status.html", running=True)
-
-    @app.route("/api/scan/status")
-    def api_scan_status():
-        if scan_state["running"]:
-            return render_template("_partials/scan_status.html", running=True)
-
-        results = scan_state.get("results")
-        error = scan_state.get("error")
-        if error:
-            return render_template("_partials/scan_status.html", running=False, error=error)
-
-        # Load scan results from file
-        results_path = config["output_dir"] / "scan_results.json"
-        scan_results = []
-        if results_path.exists():
-            scan_results = json.loads(results_path.read_text())
-
-        return render_template(
-            "_partials/scan_status.html",
-            running=False,
-            results=scan_results,
-            total=scan_state.get("total", 0),
-            relevant=scan_state.get("relevant", 0),
-            skipped=scan_state.get("skipped", 0),
-        )
-
-    @app.route("/api/scan/track", methods=["POST"])
-    def api_track_job():
-        data = request.form or request.get_json(silent=True) or {}
-        added = append_job(
-            config["csv_path"],
-            company=data.get("company", ""),
-            role=data.get("role", ""),
-            link=data.get("url", ""),
-            score=int(data.get("score", 0) or 0),
-            status="Pending",
-            variant=data.get("variant", "se"),
-            source=data.get("source", "scan"),
-        )
-        if added:
-            return '<span class="badge-tracked">Tracked ✓</span>'
-        return '<span class="badge-duplicate">Already tracked</span>'
-
-    @app.route("/api/stats")
-    def api_stats():
-        jobs = list_jobs(config["csv_path"])
-        counts = Counter(j.get("status", "Unknown") for j in jobs)
-
-        # Weekly activity (last 8 weeks)
-        weeks = {}
-        today = date.today()
-        for j in jobs:
-            d = j.get("date_found", "")
-            if d:
-                try:
-                    job_date = date.fromisoformat(d)
-                    week_start = job_date - timedelta(days=job_date.weekday())
-                    key = week_start.isoformat()
-                    weeks[key] = weeks.get(key, 0) + 1
-                except ValueError:
-                    pass
-
-        # Last 8 weeks
-        week_labels = []
-        week_values = []
-        for i in range(7, -1, -1):
-            ws = today - timedelta(weeks=i, days=today.weekday())
-            key = ws.isoformat()
-            week_labels.append(ws.strftime("%b %d"))
-            week_values.append(weeks.get(key, 0))
-
-        return jsonify({
-            "status_counts": dict(counts),
-            "week_labels": week_labels,
-            "week_values": week_values,
-            "total": len(jobs),
-        })
-
-    @app.route("/api/file/<path:filepath>")
-    def api_serve_file(filepath):
-        output_dir = config["output_dir"].resolve()
-        requested = (output_dir / filepath).resolve()
-        if not str(requested).startswith(str(output_dir)):
-            abort(403)
-        if not requested.exists():
-            abort(404)
-        # Set appropriate MIME type
-        suffix = requested.suffix.lower()
-        mimetype = {
-            ".pdf": "application/pdf",
-            ".tex": "text/plain",
-            ".txt": "text/plain",
-            ".json": "application/json",
-        }.get(suffix, "application/octet-stream")
-        return send_file(requested, mimetype=mimetype)
-
-    # ── Tailor Routes ────────────────────────────────────────────
-
-    @app.route("/tailor")
-    def tailor_page():
-        return render_template("tailor.html")
-
-    @app.route("/api/tailor/generate", methods=["POST"])
-    def api_tailor_generate():
-        jd_text = (request.form.get("jd_text") or "").strip()
-        if not jd_text:
-            return render_template(
-                "_partials/tailor_status.html",
-                status="error",
-                error="Please paste a job description.",
-            )
-
-        if not shutil.which("claude"):
-            return render_template(
-                "_partials/tailor_status.html",
-                status="error",
-                error="Claude CLI not found. Make sure 'claude' is installed and on your PATH.",
-            )
-
-        # Fast pre-filter: reject non-new-grad / no-sponsorship JDs instantly
-        jd_lower = jd_text.lower()
-        if _has_phrase(jd_lower, DISQUALIFYING_PHRASES):
-            return render_template(
-                "_partials/tailor_status.html",
-                status="error",
-                error="This role does not sponsor visas or requires U.S. citizenship / security clearance. Skipping.",
-            )
-
-        senior_count = count_matches(jd_lower, SENIOR_DESC_SIGNALS)
-        entry_count = count_matches(jd_lower, ENTRY_LEVEL_SIGNALS)
-        if senior_count > 0 and entry_count == 0 and senior_count >= 3:
-            return render_template(
-                "_partials/tailor_status.html",
-                status="error",
-                error="This role requires senior-level experience and has no entry-level signals. Skipping.",
-            )
-
-        # Cancel any currently running sessions to avoid orphaned Claude processes
-        for sid, s in list(tailor_sessions.items()):
-            if s["status"] == "running":
-                _cancel_session(s)
-                s["status"] = "error"
-                s["error"] = "Cancelled — new tailor request started."
-
-        _evict_old_sessions()
-
-        session_id = str(uuid.uuid4())
-        output_dir = config["output_dir"] / f"tailor_{session_id[:8]}"
-        variant = select_variant(jd_text)
-        model = request.form.get("model", "sonnet")
-        effort = request.form.get("effort", "low")
-
-        tailor_sessions[session_id] = {
-            "id": session_id,
-            "status": "running",
-            "jd_text": jd_text,
-            "variant": variant,
-            "company": "Unknown",
-            "role": "Unknown",
-            "location": "",
-            "conversation": [],
-            "feedback_history": [],
-            "current_tex": "",
-            "pdf_path": None,
-            "error": None,
-            "output_dir": output_dir,
-            "iteration": 1,
-            "model": model,
-            "effort": effort,
-            "_created_at": time.time(),
-            "_cancelled": False,
-            "_process": None,
-        }
-
-        thread = threading.Thread(
-            target=_run_tailor,
-            args=(session_id, config),
-            daemon=True,
-        )
-        thread.start()
-
-        return render_template(
-            "_partials/tailor_status.html",
-            status="running",
-            session_id=session_id,
-            iteration=1,
-        )
-
-    @app.route("/api/tailor/status/<session_id>")
-    def api_tailor_status(session_id):
-        session = tailor_sessions.get(session_id)
-        if not session:
-            abort(404)
-
-        if session["status"] == "running":
-            return render_template(
-                "_partials/tailor_status.html",
-                status="running",
-                session_id=session_id,
-                iteration=session["iteration"],
-            )
-
-        if session["status"] == "error":
-            return render_template(
-                "_partials/tailor_status.html",
-                status="error",
-                error=session["error"],
-            )
-
-        # Done
-        return render_template(
-            "_partials/tailor_status.html",
-            status="done",
-            session_id=session_id,
-            company=session["company"],
-            role=session["role"],
-            location=session["location"],
-            variant=session["variant"],
-            iteration=session["iteration"],
-            pdf_path=session["pdf_path"],
-            tex_content=session["current_tex"],
-            model=session.get("model", "sonnet"),
-            effort=session.get("effort", "low"),
-        )
-
-    @app.route("/api/tailor/refine/<session_id>", methods=["POST"])
-    def api_tailor_refine(session_id):
-        session = tailor_sessions.get(session_id)
-        if not session:
-            abort(404)
-
-        if session["status"] == "running":
-            return render_template(
-                "_partials/tailor_status.html",
-                status="running",
-                session_id=session_id,
-                iteration=session["iteration"],
-            )
-
-        feedback = (request.form.get("feedback") or "").strip()
-        if not feedback:
-            return render_template(
-                "_partials/tailor_status.html",
-                status="error",
-                error="Please provide feedback for regeneration.",
-            )
-
-        session["feedback_history"].append(feedback)
-        session["iteration"] += 1
-        session["status"] = "running"
-        session["pdf_path"] = None
-        session["error"] = None
-
-        thread = threading.Thread(
-            target=_run_tailor_refine,
-            args=(session_id, config, feedback),
-            daemon=True,
-        )
-        thread.start()
-
-        return render_template(
-            "_partials/tailor_status.html",
-            status="running",
-            session_id=session_id,
-            iteration=session["iteration"],
-        )
-
-    @app.route("/api/tailor/cancel/<session_id>", methods=["POST"])
-    def api_tailor_cancel(session_id):
-        session = tailor_sessions.get(session_id)
-        if session and session["status"] == "running":
-            _cancel_session(session)
-            session["status"] = "error"
-            session["error"] = "Cancelled by user."
-        return render_template(
-            "_partials/tailor_status.html",
-            status="error",
-            error="Cancelled by user.",
-        )
-
-    @app.route("/api/tailor/pdf/<session_id>")
-    def api_tailor_pdf(session_id):
-        session = tailor_sessions.get(session_id)
-        if not session or not session.get("pdf_path"):
-            abort(404)
-        pdf = Path(session["pdf_path"]).resolve()
-        if not pdf.exists():
-            abort(404)
-        return send_file(pdf, mimetype="application/pdf")
-
-    @app.route("/api/tailor/download/<session_id>")
-    def api_tailor_download(session_id):
-        session = tailor_sessions.get(session_id)
-        if not session or not session.get("pdf_path"):
-            abort(404)
-        pdf = Path(session["pdf_path"]).resolve()
-        if not pdf.exists():
-            abort(404)
-        download_name = f"{session['company']}_{session['role']}.pdf".replace(" ", "_")
-        return send_file(pdf, mimetype="application/pdf", as_attachment=True, download_name=download_name)
-
-    # ── LinkedIn Scanner Routes ──────────────────────────────────
-
     linkedin_store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
     scan_results_path = config["_root"] / "data" / "ci" / "scan_results.json"
+
+    # ── DB backend plumbing (falls back to JSON store) ───────────
 
     db_state = {"module": None, "last_attempt": 0.0, "last_error": ""}
 
@@ -555,37 +303,9 @@ def create_app():
         pull_thread = threading.Thread(target=_auto_pull_loop, daemon=True)
         pull_thread.start()
 
-    def _render_feed_page(source: str, page_title: str, page_subtitle: str, api_base: str):
-        ok, payload = _try_db(lambda db: (
-            db.get_status_counts(source=source),
-            db.get_level_counts(source=source),
-            db.get_search_terms(source=source),
-            db.get_time_counts(source=source, time_range="today"),
-            db.get_last_updated(),
-        ))
-        if ok:
-            counts, level_counts, search_terms, time_counts, last_updated = payload
-        else:
-            store = load_store(linkedin_store_path)
-            counts = get_status_counts(store, source=source)
-            level_counts = get_level_counts(store, source=source)
-            search_terms = get_search_terms(store, source=source)
-            time_counts = get_time_counts(store, source=source, time_range="today")
-            last_updated = store.get("last_updated", "")
-        return render_template(
-            "linkedin.html",
-            statuses=LINKEDIN_STATUSES,
-            counts=counts,
-            level_counts=level_counts,
-            search_terms=search_terms,
-            time_counts=time_counts,
-            last_updated=last_updated,
-            scan_running=scan_state["running"],
-            page_title=page_title,
-            page_subtitle=page_subtitle,
-            api_base=api_base,
-            source=source,
-        )
+    # ── Feed helpers ─────────────────────────────────────────────
+
+    SOURCE = "linkedin"
 
     def _feed_args():
         try:
@@ -611,11 +331,11 @@ def create_app():
             "include_time_meta": request.args.get("meta", "1") == "1",
         }
 
-    def _feed_counts(source: str, args: dict):
+    def _feed_counts(args: dict):
         ok, counts = _try_db(lambda db: db.get_filtered_counts(
             time_range=args["time_range"], bucket_filter=args["bucket_filter"],
             tz_offset=args["tz_offset"], query=args["query"],
-            search_term=args["search_term"], source=source,
+            search_term=args["search_term"], source=SOURCE,
         ))
         if ok:
             return counts
@@ -624,11 +344,11 @@ def create_app():
         return get_filtered_counts(
             store, time_range=args["time_range"], bucket_filter=args["bucket_filter"],
             tz_offset=args["tz_offset"], query=args["query"],
-            search_term=args["search_term"], source=source,
+            search_term=args["search_term"], source=SOURCE,
         )
 
-    def _feed_meta(source: str, args: dict):
-        fc = _feed_counts(source, args)
+    def _feed_meta(args: dict):
+        fc = _feed_counts(args)
         payload = {
             "counts": fc["status"],
             "level_counts": fc["level"],
@@ -636,12 +356,12 @@ def create_app():
         }
         if args["include_time_meta"]:
             ok, time_counts = _try_db(lambda db: db.get_time_counts(
-                tz_offset=args["tz_offset"], time_range=args["time_range"], source=source,
+                tz_offset=args["tz_offset"], time_range=args["time_range"], source=SOURCE,
             ))
             if not ok:
                 store = load_store(linkedin_store_path)
                 time_counts = get_time_counts(
-                    store, tz_offset=args["tz_offset"], time_range=args["time_range"], source=source,
+                    store, tz_offset=args["tz_offset"], time_range=args["time_range"], source=SOURCE,
                 )
             payload["time_counts"] = {
                 "this_hour": time_counts["this_hour"],
@@ -651,14 +371,56 @@ def create_app():
             payload["buckets"] = time_counts.get("buckets", [])
         return payload
 
-    def _render_feed_jobs(source: str, api_base: str):
+    # ── Page Routes ──────────────────────────────────────────────
+
+    @app.route("/")
+    def index():
+        return redirect("/linkedin")
+
+    @app.route("/health")
+    def health():
+        return jsonify({"status": "ok"}), 200
+
+    @app.route("/linkedin")
+    def linkedin_page():
+        ok, payload = _try_db(lambda db: (
+            db.get_status_counts(source=SOURCE),
+            db.get_level_counts(source=SOURCE),
+            db.get_search_terms(source=SOURCE),
+            db.get_time_counts(source=SOURCE, time_range="today"),
+            db.get_last_updated(),
+        ))
+        if ok:
+            counts, level_counts, search_terms, time_counts, last_updated = payload
+        else:
+            store = load_store(linkedin_store_path)
+            counts = get_status_counts(store, source=SOURCE)
+            level_counts = get_level_counts(store, source=SOURCE)
+            search_terms = get_search_terms(store, source=SOURCE)
+            time_counts = get_time_counts(store, source=SOURCE, time_range="today")
+            last_updated = store.get("last_updated", "")
+        return render_template(
+            "linkedin.html",
+            counts=counts,
+            level_counts=level_counts,
+            search_terms=search_terms,
+            time_counts=time_counts,
+            last_updated=last_updated,
+            scan_running=scan_state["running"],
+            ai_running=ai_state["running"],
+        )
+
+    # ── Feed API ─────────────────────────────────────────────────
+
+    @app.route("/api/linkedin/jobs")
+    def api_linkedin_jobs():
         args = _feed_args()
 
         ok, jobs = _try_db(lambda db: db.get_filtered_jobs(
             status=args["status_filter"], level=args["level_filter"], query=args["query"],
             search_term=args["search_term"], time_range=args["time_range"],
             bucket_filter=args["bucket_filter"], sort_col=args["sort_col"],
-            sort_dir=args["sort_dir"], tz_offset=args["tz_offset"], source=source,
+            sort_dir=args["sort_dir"], tz_offset=args["tz_offset"], source=SOURCE,
             limit=args["limit"],
         ))
         if not ok:
@@ -667,22 +429,17 @@ def create_app():
                 store, status=args["status_filter"], level=args["level_filter"], query=args["query"],
                 search_term=args["search_term"], time_range=args["time_range"],
                 bucket_filter=args["bucket_filter"], sort_col=args["sort_col"],
-                sort_dir=args["sort_dir"], tz_offset=args["tz_offset"], source=source,
+                sort_dir=args["sort_dir"], tz_offset=args["tz_offset"], source=SOURCE,
                 limit=args["limit"],
             )
 
-        meta = _feed_meta(source, args)
-        counts = meta["counts"]
-        level_counts = meta["level_counts"]
+        meta = _feed_meta(args)
         resp = make_response(render_template(
             "_partials/linkedin_tbody.html",
             jobs=jobs,
-            statuses=LINKEDIN_STATUSES,
-            counts=counts,
-            api_base=api_base,
         ))
-        resp.headers["X-Counts"] = json.dumps(counts)
-        resp.headers["X-Level-Counts"] = json.dumps(level_counts)
+        resp.headers["X-Counts"] = json.dumps(meta["counts"])
+        resp.headers["X-Level-Counts"] = json.dumps(meta["level_counts"])
         if "time_counts" in meta:
             resp.headers["X-Time-Counts"] = json.dumps(meta["time_counts"])
             resp.headers["X-Buckets"] = json.dumps(meta.get("buckets", []))
@@ -690,34 +447,12 @@ def create_app():
         resp.headers["X-Displayed"] = str(len(jobs))
         return resp
 
-    def _render_feed_meta_json(source: str):
-        args = _feed_args()
-        return jsonify(_feed_meta(source, args))
+    @app.route("/api/linkedin/meta")
+    def api_linkedin_meta():
+        return jsonify(_feed_meta(_feed_args()))
 
-    def _update_status_and_render(key: str, api_base: str):
-        data = request.form or request.get_json(silent=True) or {}
-        new_status = data.get("status", "")
-        ok, job = _try_db(lambda db: (
-            db.update_job_status(key, new_status),
-            db.get_job(key) or {"_key": key},
-        )[1])
-        if not ok:
-            with STORE_LOCK:
-                store = load_store(linkedin_store_path)
-                if update_job_status(store, key, new_status):
-                    save_store(linkedin_store_path, store)
-                jobs = store.get("jobs", {})
-                stored_key = key if key in jobs else normalize_url(key)
-                job = store.get("jobs", {}).get(stored_key, {})
-                job["_key"] = stored_key
-        return render_template(
-            "_partials/linkedin_row.html",
-            job=job,
-            statuses=LINKEDIN_STATUSES,
-            api_base=api_base,
-        )
-
-    def _delete_job(key: str):
+    @app.route("/api/linkedin/jobs/<path:key>", methods=["DELETE"])
+    def api_linkedin_delete(key):
         ok, _ = _try_db(lambda db: db.delete_job(key))
         if not ok:
             with STORE_LOCK:
@@ -726,7 +461,8 @@ def create_app():
                 save_store(linkedin_store_path, store)
         return "", 204
 
-    def _bulk_delete_jobs():
+    @app.route("/api/linkedin/jobs/bulk-delete", methods=["POST"])
+    def api_linkedin_bulk_delete():
         data = request.get_json(silent=True) or {}
         keys = data.get("keys") or []
         if not isinstance(keys, list):
@@ -755,70 +491,11 @@ def create_app():
 
         return jsonify({"requested": len(keys), "deleted": deleted})
 
-    @app.route("/linkedin")
-    def linkedin_page():
-        return _render_feed_page(
-            source="linkedin",
-            page_title="LinkedIn Feed",
-            page_subtitle="Hourly Job Intelligence",
-            api_base="/api/linkedin",
-        )
-
-    @app.route("/boards")
-    def boards_page():
-        return _render_feed_page(
-            source="github",
-            page_title="Job Boards",
-            page_subtitle="New Grad Repo Feed",
-            api_base="/api/boards",
-        )
-
-    @app.route("/api/linkedin/jobs")
-    def api_linkedin_jobs():
-        return _render_feed_jobs(source="linkedin", api_base="/api/linkedin")
-
-    @app.route("/api/boards/jobs")
-    def api_boards_jobs():
-        return _render_feed_jobs(source="github", api_base="/api/boards")
-
-    @app.route("/api/linkedin/meta")
-    def api_linkedin_meta():
-        return _render_feed_meta_json(source="linkedin")
-
-    @app.route("/api/boards/meta")
-    def api_boards_meta():
-        return _render_feed_meta_json(source="github")
-
-    @app.route("/api/linkedin/jobs/<path:key>/status", methods=["PATCH"])
-    def api_linkedin_status(key):
-        return _update_status_and_render(key, "/api/linkedin")
-
-    @app.route("/api/boards/jobs/<path:key>/status", methods=["PATCH"])
-    def api_boards_status(key):
-        return _update_status_and_render(key, "/api/boards")
-
-    @app.route("/api/linkedin/jobs/<path:key>", methods=["DELETE"])
-    def api_linkedin_delete(key):
-        return _delete_job(key)
-
-    @app.route("/api/boards/jobs/<path:key>", methods=["DELETE"])
-    def api_boards_delete(key):
-        return _delete_job(key)
-
-    @app.route("/api/linkedin/jobs/bulk-delete", methods=["POST"])
-    def api_linkedin_bulk_delete():
-        return _bulk_delete_jobs()
-
-    @app.route("/api/boards/jobs/bulk-delete", methods=["POST"])
-    def api_boards_bulk_delete():
-        return _bulk_delete_jobs()
-
     @app.route("/api/linkedin/refresh", methods=["POST"])
-    @app.route("/api/boards/refresh", methods=["POST"])
     def api_linkedin_refresh():
         ok, _ = _try_db(lambda db: db.prune_expired_jobs())
         if ok:
-            return '<span style="color:#5cb85c;">Refreshed!</span>'
+            return jsonify({"ok": True})
         try:
             subprocess.run(
                 ["git", "pull", "--rebase", "origin", "main"],
@@ -827,9 +504,91 @@ def create_app():
                 timeout=30,
             )
             _do_linkedin_merge()
-            return '<span style="color:#5cb85c;">Refreshed!</span>'
+            return jsonify({"ok": True})
         except Exception as e:
-            return f'<span style="color:#d9534f;">Error: {e}</span>'
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    # ── Scan (powers the feed's "Scan Now" button) ───────────────
+
+    @app.route("/api/scan/trigger", methods=["POST"])
+    def api_trigger_scan():
+        if scan_state["running"]:
+            return jsonify({"error": "Scan already running"}), 409
+
+        data = request.form or request.get_json(silent=True) or {}
+        hours = int(data.get("hours", 0) or 0)
+        new_only = data.get("new_only") in ("true", "on", True, "1")
+
+        thread = threading.Thread(
+            target=_run_scan,
+            args=(config, None, hours, new_only),
+            daemon=True,
+        )
+        thread.start()
+        return jsonify({"running": True})
+
+    @app.route("/api/scan/status")
+    def api_scan_status():
+        return jsonify({
+            "running": scan_state["running"],
+            "error": scan_state.get("error"),
+            "total": scan_state.get("total", 0),
+            "relevant": scan_state.get("relevant", 0),
+            "skipped": scan_state.get("skipped", 0),
+        })
+
+    # ── AI Scoring Runner (local CLI, no API key) ────────────────
+
+    @app.route("/api/aiscore/trigger", methods=["POST"])
+    def api_aiscore_trigger():
+        if ai_state["running"]:
+            return jsonify({"error": "Scoring already running"}), 409
+
+        data = request.form or request.get_json(silent=True) or {}
+        engine = (data.get("engine") or "claude").strip().lower()
+        if engine not in AI_ENGINES:
+            return jsonify({"error": f"Unknown engine '{engine}'"}), 400
+        if not _which_cli(engine):
+            return jsonify({"error": f"'{engine}' CLI not found. Install it and sign in, then restart the server."}), 400
+        try:
+            hours = float(data.get("hours", 0) or 0)
+            limit = int(data.get("limit", 0) or 0)
+        except (TypeError, ValueError):
+            return jsonify({"error": "hours and limit must be numbers"}), 400
+        if hours < 0 or limit < 0:
+            return jsonify({"error": "hours and limit must be >= 0"}), 400
+        rescore = str(data.get("rescore", "")).lower() in ("true", "on", "1")
+
+        ai_state.update({
+            "running": True, "engine": engine, "hours": hours, "limit": limit,
+            "rescore": rescore, "total": 0, "batch": 0, "batches": 0,
+            "scored": 0, "failed": 0, "log": [], "error": None, "ok": None,
+            "cancelled": False, "started_at": time.time(), "finished_at": None,
+        })
+
+        thread = threading.Thread(
+            target=_run_ai_score,
+            args=(config["_root"], engine, hours, limit, rescore),
+            daemon=True,
+        )
+        thread.start()
+        return jsonify(_ai_state_snapshot())
+
+    @app.route("/api/aiscore/status")
+    def api_aiscore_status():
+        return jsonify(_ai_state_snapshot())
+
+    @app.route("/api/aiscore/cancel", methods=["POST"])
+    def api_aiscore_cancel():
+        if ai_state["running"]:
+            ai_state["cancelled"] = True
+            proc = ai_state.get("_process")
+            if proc and proc.poll() is None:
+                try:
+                    proc.kill()
+                except OSError:
+                    pass
+        return jsonify(_ai_state_snapshot())
 
     return app
 
@@ -837,18 +596,17 @@ def create_app():
 def _run_scan(config, platforms, hours, new_only):
     """Run scan in background thread.
 
-    Called when the user clicks "Start Scan" on the /scan page. Runs the full
-    scan pipeline: fetch jobs → score → dedup → save → merge into linkedin store.
+    Called when the user clicks "Scan Now" on the feed. Runs the full scan
+    pipeline: fetch jobs → score → dedup → save → merge into the store.
 
     All jobs passing hard rejects (company blocklist, senior titles, non-US)
-    are saved to scan_results.json and merged into linkedin_jobs.json.
-    AI scoring is the real quality gate — algo score is informational only.
+    are saved to scan_results.json and merged into the store. AI scoring is
+    the real quality gate — algo score is the fallback.
     """
     from ..scanner import scan_all_api_boards, load_seen_jobs, save_seen_jobs, deduplicate_results
 
     scan_state["running"] = True
     scan_state["error"] = None
-    scan_state["results"] = None
 
     try:
         results = scan_all_api_boards(config, platforms, max_age_hours=hours)
@@ -882,6 +640,7 @@ def _run_scan(config, platforms, hours, new_only):
                 "competition": filt.competition,
                 "variant": filt.resume_variant,
                 "reason": filt.reason,
+                "recommended": algo_recommended(filt.score_pct, filt.level),
                 "description_preview": job.description or "",
                 "date_posted": getattr(job, "date_posted", ""),
                 "source": getattr(job, "source", "linkedin"),
@@ -891,15 +650,13 @@ def _run_scan(config, platforms, hours, new_only):
         config["output_dir"].mkdir(parents=True, exist_ok=True)
         results_path.write_text(json.dumps(output, indent=2))
 
-        scan_state["results"] = output
-
         # Merge into store so new jobs appear in the feed. Prefer DB when it is
         # configured and reachable, then fall back to JSON.
         try:
             if is_db_enabled():
                 try:
                     from ..db import merge_scan_results as db_merge
-                    scan_state["new_jobs"] = db_merge(output)
+                    db_merge(output)
                     return
                 except Exception:
                     pass
@@ -911,7 +668,6 @@ def _run_scan(config, platforms, hours, new_only):
                 for key in store.get("jobs", {}):
                     store["jobs"][key] = backfill_job(store["jobs"][key])
                 save_store(store_path, store)
-            scan_state["new_jobs"] = len(output)
         except Exception:
             pass
 
@@ -919,327 +675,3 @@ def _run_scan(config, platforms, hours, new_only):
         scan_state["error"] = str(e)
     finally:
         scan_state["running"] = False
-
-
-def _parse_meta_line(output: str) -> tuple[str, str, str, str]:
-    """Parse META line from Claude output. Returns (company, role, location, cleaned_output)."""
-    lines = output.strip().split("\n")
-    company, role, location = "Unknown", "Unknown", ""
-
-    for i, line in enumerate(lines):
-        meta_match = re.match(
-            r"META:\s*company=(.+?)\s*\|\s*role=(.+?)\s*\|\s*location=(.+)",
-            line.strip(),
-            re.IGNORECASE,
-        )
-        if meta_match:
-            company = meta_match.group(1).strip()
-            role = meta_match.group(2).strip()
-            location = meta_match.group(3).strip()
-            # Remove the META line from output
-            cleaned = "\n".join(lines[:i] + lines[i + 1:]).strip()
-            return company, role, location, cleaned
-
-    return company, role, location, output
-
-
-def _build_tailor_prompt(jd_text, base_tex, master_prompt):
-    """Build prompt that asks Claude to output a COMPLETE tailored .tex file.
-
-    Unlike the CLI's build_tailor_prompt() (which asks for sections only),
-    this prompt asks Claude to output the entire file from \\documentclass to
-    \\end{document}. This avoids the preamble merge step and gives Claude
-    full control over the output.
-
-    The META line requirement (first line of output) lets us extract company/role
-    metadata without a separate API call.
-    """
-    return (
-        f"{master_prompt}\n\n"
-        f"---\n\n"
-        f"## Job Description\n\n"
-        f"{jd_text}\n\n"
-        f"---\n\n"
-        f"## My Current Resume (LaTeX)\n\n"
-        f"Below is my complete LaTeX resume file. Edit the CONTENT (bullet points, skills, "
-        f"project descriptions) to tailor it for the job description above. "
-        f"Keep ALL LaTeX commands, structure, formatting, and macros EXACTLY as they are. "
-        f"Only change the text inside the commands.\n\n"
-        f"IMPORTANT OUTPUT RULES:\n"
-        f"1. On the VERY FIRST LINE, output metadata: META: company=<company> | role=<role> | location=<location>\n"
-        f"2. Then output the COMPLETE modified .tex file — from \\documentclass to \\end{{document}}\n"
-        f"3. Do NOT wrap the output in markdown code fences (no ```)\n"
-        f"4. Do NOT add any commentary or explanation\n"
-        f"5. The output must be a valid, compilable LaTeX file\n"
-        f"6. The resume MUST fit on exactly ONE PAGE. Keep bullets concise (1-2 lines max). Do NOT modify margins or font sizes.\n\n"
-        f"{base_tex}"
-    )
-
-
-def _extract_tex_from_output(output):
-    """Extract the complete .tex content from Claude's output, stripping any markdown."""
-    # Remove markdown code fences if present
-    cleaned = re.sub(r"```(?:latex)?\s*\n?", "", output)
-    cleaned = cleaned.strip()
-
-    # Find \documentclass to \end{document}
-    doc_start = cleaned.find(r"\documentclass")
-    doc_end = cleaned.rfind(r"\end{document}")
-
-    if doc_start != -1 and doc_end != -1:
-        return cleaned[doc_start:doc_end + len(r"\end{document}")] + "\n"
-
-    # Fallback: return everything after META line
-    lines = cleaned.split("\n")
-    for i, line in enumerate(lines):
-        if line.strip().startswith(r"\documentclass"):
-            return "\n".join(lines[i:]).strip() + "\n"
-
-    return cleaned
-
-
-def _run_claude(session, prompt):
-    """Run Claude CLI and return (stdout, stderr, returncode). Handles cancellation."""
-    proc = subprocess.Popen(
-        ["claude", "-p", prompt, "--model", session["model"], "--effort", session["effort"]],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    session["_process"] = proc
-    try:
-        stdout, stderr = proc.communicate(timeout=180)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.communicate()
-        raise
-    finally:
-        session["_process"] = None
-
-    if _is_cancelled(session):
-        return None, None, -1
-
-    return (
-        stdout.decode("utf-8", errors="replace"),
-        stderr.decode("utf-8", errors="replace"),
-        proc.returncode,
-    )
-
-
-def _run_tailor(session_id, config):
-    """Run initial resume tailoring in background thread.
-
-    Pipeline: load base .tex → build prompt → run Claude CLI → parse META line
-    → extract .tex → save → compile PDF → auto-condense if >1 page.
-
-    The Claude CLI is run as a subprocess (`claude -p <prompt> --model <model>`),
-    not via API, because the web server may not have an API key but the user
-    has Claude Code installed.
-    """
-    session = tailor_sessions[session_id]
-    try:
-        jd_text = session["jd_text"]
-        variant = session["variant"]
-
-        base_tex = load_base_resume(variant, config)
-        master_prompt = load_master_prompt(config)
-
-        prompt = _build_tailor_prompt(jd_text, base_tex, master_prompt)
-
-        stdout, stderr, returncode = _run_claude(session, prompt)
-
-        if _is_cancelled(session):
-            return
-
-        if returncode != 0:
-            session["status"] = "error"
-            session["error"] = stderr or f"Claude CLI exited with code {returncode}"
-            return
-
-        output = (stdout or "").strip()
-        if not output:
-            session["status"] = "error"
-            session["error"] = "Claude returned empty output."
-            return
-
-        # Parse META line
-        company, role, location, cleaned_output = _parse_meta_line(output)
-        session["company"] = company
-        session["role"] = role
-        session["location"] = location
-
-        # Extract the complete .tex file from output
-        full_tex = _extract_tex_from_output(cleaned_output)
-        session["current_tex"] = full_tex
-
-        # Store conversation
-        session["conversation"].append({"role": "assistant", "content": full_tex})
-
-        # Save and compile
-        output_dir = session["output_dir"]
-        output_dir.mkdir(parents=True, exist_ok=True)
-        tex_path = save_tailored_resume(full_tex, output_dir, company, role)
-        pdf_path = compile_pdf(tex_path)
-        session["pdf_path"] = str(pdf_path) if pdf_path else None
-
-        # Auto-fix: if PDF exceeds 1 page, ask Claude to condense
-        if pdf_path and get_page_count(Path(pdf_path)) > 1:
-            _auto_condense(session_id, config)
-            return
-
-        session["status"] = "done"
-
-    except subprocess.TimeoutExpired:
-        session["status"] = "error"
-        session["error"] = "Claude CLI timed out (>180s). Try again."
-    except Exception as e:
-        session["status"] = "error"
-        session["error"] = str(e)
-
-
-def _auto_condense(session_id, config):
-    """Automatically condense a resume that spilled to 2+ pages.
-
-    Called when _run_tailor() detects the compiled PDF has >1 page. Sends
-    the current .tex back to Claude with instructions to shorten bullet points
-    and reduce skill counts while preserving all sections and entries.
-    """
-    session = tailor_sessions[session_id]
-    session["iteration"] += 1
-    try:
-        if _is_cancelled(session):
-            return
-
-        previous_tex = session["current_tex"]
-        master_prompt = load_master_prompt(config)
-
-        prompt = (
-            f"{master_prompt}\n\n"
-            f"---\n\n"
-            f"## CRITICAL: The resume below compiled to MORE THAN ONE PAGE. Fix it.\n\n"
-            f"You MUST condense it to fit on exactly ONE page. Strategies:\n"
-            f"- Shorten bullet points — cut filler words, merge clauses, aim for 1 line each\n"
-            f"- Reduce skills per category to 4-5 items max\n"
-            f"- Shorten project descriptions\n"
-            f"- Do NOT remove sections, experience entries, or projects\n"
-            f"- Do NOT change margins, font size, or spacing commands\n\n"
-            f"Output the COMPLETE condensed .tex file from \\documentclass to \\end{{document}}.\n"
-            f"No markdown fences. No commentary.\n\n"
-            f"{previous_tex}"
-        )
-
-        stdout, stderr, returncode = _run_claude(session, prompt)
-
-        if _is_cancelled(session):
-            return
-
-        if returncode != 0:
-            session["status"] = "error"
-            session["error"] = f"Auto-condense failed: {stderr or 'unknown error'}"
-            return
-
-        output = (stdout or "").strip()
-        if not output:
-            session["status"] = "error"
-            session["error"] = "Auto-condense returned empty output."
-            return
-
-        full_tex = _extract_tex_from_output(output)
-        session["current_tex"] = full_tex
-        session["conversation"].append({"role": "assistant", "content": full_tex})
-
-        output_dir = session["output_dir"]
-        tex_path = save_tailored_resume(full_tex, output_dir, session["company"], session["role"])
-        pdf_path = compile_pdf(tex_path)
-        session["pdf_path"] = str(pdf_path) if pdf_path else None
-        session["status"] = "done"
-
-    except subprocess.TimeoutExpired:
-        session["status"] = "error"
-        session["error"] = "Auto-condense timed out (>180s)."
-    except Exception as e:
-        session["status"] = "error"
-        session["error"] = str(e)
-
-
-def _run_tailor_refine(session_id, config, feedback):
-    """Run resume refinement with user feedback in background thread.
-
-    Called when the user submits feedback on a completed tailor session.
-    Uses the PREVIOUS .tex output (not the original base) as the starting
-    point, so edits are cumulative across iterations. The user can refine
-    as many times as needed.
-    """
-    session = tailor_sessions[session_id]
-    try:
-        jd_text = session["jd_text"]
-        master_prompt = load_master_prompt(config)
-
-        # Use the PREVIOUS .tex output as the base (not the original)
-        previous_tex = session["current_tex"]
-
-        prompt = (
-            f"{master_prompt}\n\n"
-            f"---\n\n"
-            f"## Job Description\n\n"
-            f"{jd_text}\n\n"
-            f"---\n\n"
-            f"## Current Resume (LaTeX) — needs revision\n\n"
-            f"Below is the current tailored resume. The user wants changes.\n\n"
-            f"{previous_tex}\n\n"
-            f"---\n\n"
-            f"## User Feedback\n\n"
-            f"{feedback}\n\n"
-            f"---\n\n"
-            f"Apply the user's feedback to the resume above. "
-            f"Keep ALL LaTeX commands, structure, formatting, and macros EXACTLY as they are. "
-            f"Only change the text content as requested.\n\n"
-            f"IMPORTANT OUTPUT RULES:\n"
-            f"1. Output the COMPLETE modified .tex file — from \\documentclass to \\end{{document}}\n"
-            f"2. Do NOT wrap the output in markdown code fences (no ```)\n"
-            f"3. Do NOT add any commentary or explanation\n"
-            f"4. The output must be a valid, compilable LaTeX file\n"
-            f"5. The resume MUST fit on exactly ONE PAGE. Keep bullets concise (1-2 lines max). Do NOT modify margins or font sizes.\n"
-        )
-
-        stdout, stderr, returncode = _run_claude(session, prompt)
-
-        if _is_cancelled(session):
-            return
-
-        if returncode != 0:
-            session["status"] = "error"
-            session["error"] = stderr or f"Claude CLI exited with code {returncode}"
-            return
-
-        output = (stdout or "").strip()
-        if not output:
-            session["status"] = "error"
-            session["error"] = "Claude returned empty output."
-            return
-
-        # Extract the complete .tex file
-        full_tex = _extract_tex_from_output(output)
-        session["current_tex"] = full_tex
-
-        # Store in conversation
-        session["conversation"].append({"role": "assistant", "content": full_tex})
-
-        # Save and compile (overwrite previous)
-        output_dir = session["output_dir"]
-        tex_path = save_tailored_resume(full_tex, output_dir, session["company"], session["role"])
-        pdf_path = compile_pdf(tex_path)
-        session["pdf_path"] = str(pdf_path) if pdf_path else None
-
-        # Auto-fix: if PDF exceeds 1 page, ask Claude to condense
-        if pdf_path and get_page_count(Path(pdf_path)) > 1:
-            _auto_condense(session_id, config)
-            return
-
-        session["status"] = "done"
-
-    except subprocess.TimeoutExpired:
-        session["status"] = "error"
-        session["error"] = "Claude CLI timed out (>180s). Try again."
-    except Exception as e:
-        session["status"] = "error"
-        session["error"] = str(e)

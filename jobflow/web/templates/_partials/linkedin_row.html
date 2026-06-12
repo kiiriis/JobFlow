@@ -3,12 +3,10 @@
 {% set color_idx = (job.company | length) % 10 if job.company else 0 %}
 {% set ai = job.ai_score|default(none) %}
 {% set match_pct = (ai * 10)|int if ai is not none else job.score_pct|default(0)|int %}
-{% set api_base = api_base|default("/api/linkedin") %}
 {% set searchable = (job.company|default('') ~ ' ' ~ job.title|default('') ~ ' ' ~ job.location|default(''))|lower %}
 <tr role="row"
     data-key="{{ job._key|default('')|e }}"
     data-url="{{ job.url|default('')|e }}"
-    data-status="{{ job.status|default('') }}"
     data-level="{{ job.level|default('Unknown') }}"
     data-recommended="{{ 1 if job.recommended else 0 }}"
     data-search="{{ searchable|e }}"
@@ -26,16 +24,16 @@
             <div class="co-avatar" style="background:{{ avatar_colors[color_idx] }}">{{ co_letter }}</div>
             <div class="role-info">
                 <div class="role-title">
-                    {% if job.recommended %}<span style="color:var(--yellow)" {% if job.ai_reason %}title="AI: {{ job.ai_reason }}"{% endif %}>★ </span>{% endif %}
+                    {% if job.recommended %}<span class="rec-star" {% if job.ai_reason %}title="AI: {{ job.ai_reason }}"{% endif %}>★ </span>{% endif %}
                     {% if job.url %}<a href="{{ job.url }}" target="_blank" rel="noopener">{{ job.title }}</a>{% else %}{{ job.title }}{% endif %}
-                    {% if job.url and 'linkedin.com' in job.url %}<span class="li-badge badge-linkedin">LinkedIn</span>
-                    {% elif job.url and 'greenhouse.io' in job.url %}<span class="li-badge badge-gh">Greenhouse</span>
-                    {% elif job.url and 'lever.co' in job.url %}<span class="li-badge badge-lever">Lever</span>
-                    {% elif job.url and 'ashbyhq.com' in job.url %}<span class="li-badge badge-ashby">Ashby</span>
-                    {% elif job.url and 'myworkdayjobs.com' in job.url %}<span class="li-badge badge-wd">Workday</span>
-                    {% elif job.url %}<span class="li-badge badge-other">Career</span>
+                    {% if job.url and 'linkedin.com' in job.url %}<span class="tag tag-linkedin">LinkedIn</span>
+                    {% elif job.url and 'greenhouse.io' in job.url %}<span class="tag tag-gh">Greenhouse</span>
+                    {% elif job.url and 'lever.co' in job.url %}<span class="tag tag-lever">Lever</span>
+                    {% elif job.url and 'ashbyhq.com' in job.url %}<span class="tag tag-ashby">Ashby</span>
+                    {% elif job.url and 'myworkdayjobs.com' in job.url %}<span class="tag tag-wd">Workday</span>
+                    {% elif job.url %}<span class="tag tag-other">Career</span>
                     {% endif %}
-                    {% if job.h1b is defined and job.h1b %}<span class="li-badge badge-h1b">H1B ✓</span>{% endif %}
+                    {% if job.h1b is defined and job.h1b %}<span class="tag tag-h1b">H1B ✓</span>{% endif %}
                 </div>
                 <div class="role-sub">
                     <span>{{ job.company }}</span>
@@ -43,7 +41,7 @@
                     <span>{{ job.location }}</span>
                     {% if job.min_exp is not none or job.max_exp is not none %}
                     <span class="sep">·</span>
-                    <span class="li-badge badge-exp-tag">{% set mn = job.min_exp|default(0)|int %}{% set mx = job.max_exp %}{% if mx is not none and mx != mn %}{{ mn }}-{{ mx }} yrs{% else %}{{ mn }}+ yrs{% endif %}</span>
+                    <span class="tag tag-exp">{% set mn = job.min_exp|default(0)|int %}{% set mx = job.max_exp %}{% if mx is not none and mx != mn %}{{ mn }}-{{ mx }} yrs{% else %}{{ mn }}+ yrs{% endif %}</span>
                     {% endif %}
                     <span class="sep">·</span>
                     <span class="utc-recency" data-utc="{{ job.first_seen }}">{{ job._recency|default('--') }}</span>
@@ -51,31 +49,24 @@
             </div>
         </div>
     </td>
-    <td data-label="Match">
-        <span class="match-val {% if match_pct >= 70 %}match-high{% elif match_pct >= 40 %}match-med{% else %}match-low{% endif %}" {% if job.ai_reason %}title="{{ job.ai_reason }}"{% endif %}>{{ match_pct }}%</span>
-        {% if job.ai_model %}<span class="ai-model-badge ai-model-{{ job.ai_model }}" title="Scored by {{ job.ai_model | capitalize }}">{{ job.ai_model[0] | upper }}</span>{% endif %}
+    <td class="match-cell" data-label="Match">
+        {% set match_cls = 'match-high' if match_pct >= 70 else ('match-med' if match_pct >= 40 else 'match-low') %}
+        <span class="match-val {{ match_cls }}" {% if job.ai_reason %}title="{{ job.ai_reason }}"{% elif job.reason %}title="{{ job.reason }}"{% endif %}>{{ match_pct }}%</span>
+        {%- if job.ai_model -%}
+        <span class="ai-src ai-src-{{ job.ai_model }}" title="Scored by {{ job.ai_model | capitalize }}">{{ job.ai_model[:1] | upper }}</span>
+        {%- else -%}
+        <span class="ai-src ai-src-algo" title="Algorithmic score — run AI Score for a smarter match">A</span>
+        {%- endif %}
+        <div class="match-bar {{ match_cls }}"><i style="--match: {{ (match_pct / 100)|round(2) }}"></i></div>
     </td>
     <td data-label="Level">
         {% set lvl = job.level|default('Unknown') %}
-        <span class="lvl-badge lvl-{{ 'newgrad' if lvl == 'New Grad' else 'entry' if lvl == 'Entry' else 'mid' if lvl == 'Mid' else 'unknown' }}">{{ lvl }}</span>
+        <span class="lvl lvl-{{ 'newgrad' if lvl == 'New Grad' else 'entry' if lvl == 'Entry' else 'mid' if lvl == 'Mid' else 'unknown' }}">{{ lvl }}</span>
     </td>
-    <td style="white-space:nowrap;">
+    <td style="white-space:nowrap; text-align:right;">
         {% if job.url %}
         <a href="{{ job.url }}" target="_blank" rel="noopener" class="apply-btn" aria-label="Apply to {{ job.title }} at {{ job.company }}">Apply</a>
         {% endif %}
-        {% set status_slug = (job.status|default('none')|lower|replace(' ', '-')|replace('_', '-')) %}
-        <select name="status"
-                hx-patch="{{ api_base }}/jobs/{{ job._key }}/status"
-                hx-target="closest tr"
-                hx-swap="outerHTML"
-                hx-on::after-request="showToast('Updated'); setTimeout(function(){ if(typeof pruneMismatchedRows==='function') pruneMismatchedRows(); if(typeof updateBulkSelectionState==='function') updateBulkSelectionState({restore:true,sync:false,prune:true}); if(typeof refreshCounts==='function') refreshCounts(); }, 80)"
-                class="li-status-sel status-{{ status_slug }}"
-                aria-label="Set status for {{ job.title }}">
-            <option value="" {% if not job.status %}selected{% endif %}>--</option>
-            {% for st in statuses %}
-            <option value="{{ st }}" {% if st == job.status %}selected{% endif %}>{{ st }}</option>
-            {% endfor %}
-        </select>
         <button class="dismiss-btn" title="Delete {{ job.title }}" aria-label="Delete {{ job.title }}" data-key="{{ job._key }}" onclick="dismissJob(this, this.dataset.key)">✕</button>
     </td>
 </tr>

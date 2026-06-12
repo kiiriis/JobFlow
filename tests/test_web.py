@@ -50,23 +50,11 @@ class TestPageRoutes:
     def test_linkedin_page(self, client):
         r = client.get("/linkedin")
         assert r.status_code == 200
-        assert b"LinkedIn Feed" in r.data
-        assert b"bulk-actions" in r.data
+        assert b"Job Feed" in r.data
+        assert b"bulk-count" in r.data
         assert b"Open top 10" in r.data
         assert b"Delete top 10" in r.data
-
-    def test_boards_page(self, client):
-        r = client.get("/boards")
-        assert r.status_code == 200
-        assert b"Job Boards" in r.data
-
-    def test_scan_page(self, client):
-        r = client.get("/scan")
-        assert r.status_code == 200
-
-    def test_tailor_page(self, client):
-        r = client.get("/tailor")
-        assert r.status_code == 200
+        assert b"AI Score" in r.data
 
     def test_health_endpoint(self, client):
         r = client.get("/health")
@@ -75,8 +63,8 @@ class TestPageRoutes:
         assert data["status"] == "ok"
 
     def test_removed_routes_404(self, client):
-        """Removed pages should return 404."""
-        for path in ["/applications", "/application/1", "/dashboard"]:
+        """Removed pages should return 404 — the feed is the only page."""
+        for path in ["/applications", "/dashboard", "/boards", "/scan", "/tailor"]:
             r = client.get(path)
             assert r.status_code == 404, f"{path} should be 404"
 
@@ -153,44 +141,68 @@ class TestLinkedInAPI:
         assert r.status_code == 200
         assert r.get_json() == {"requested": 0, "deleted": 0}
 
-    def test_boards_bulk_delete_endpoint(self, client):
-        _write_store([_job("https://github.com/example/job", "Repo Job", source="github")])
-        r = client.post(
-            "/api/boards/jobs/bulk-delete",
-            json={"keys": ["https://github.com/example/job"]},
-        )
+
+class TestScanAPI:
+    """Test scan endpoints that power the feed's Scan Now button."""
+
+    def test_scan_status_is_json(self, client):
+        r = client.get("/api/scan/status")
         assert r.status_code == 200
-        assert r.get_json() == {"requested": 1, "deleted": 1}
+        data = json.loads(r.data)
+        assert data["running"] is False
+        assert "relevant" in data
 
 
-class TestLinkedInStatusUpdate:
-    """Test job status PATCH endpoint."""
+class TestAiScoreAPI:
+    """Test local AI scoring runner endpoints."""
 
-    def test_update_returns_html(self, client):
-        # Use a key that may or may not exist — endpoint should not crash
+    def test_status_when_idle(self, client):
+        r = client.get("/api/aiscore/status")
+        assert r.status_code == 200
+        data = json.loads(r.data)
+        assert data["running"] is False
+        assert "scored" in data
+        assert "log" in data
+        assert "_process" not in data
+
+    def test_trigger_rejects_unknown_engine(self, client):
+        r = client.post("/api/aiscore/trigger", data={"engine": "gpt5"})
+        assert r.status_code == 400
+        assert "engine" in json.loads(r.data)["error"].lower()
+
+    def test_trigger_rejects_bad_numbers(self, client):
+        r = client.post("/api/aiscore/trigger", data={"engine": "claude", "hours": "abc"})
+        assert r.status_code == 400
+
+    def test_cancel_when_idle_is_safe(self, client):
+        r = client.post("/api/aiscore/cancel")
+        assert r.status_code == 200
+        assert json.loads(r.data)["running"] is False
+
+
+class TestRemovedFeatures:
+    """Tracking, boards, scanner page, and tailor were removed."""
+
+    def test_stats_endpoint_removed(self, client):
+        assert client.get("/api/stats").status_code == 404
+
+    def test_track_endpoint_removed(self, client):
+        assert client.post("/api/scan/track", data={}).status_code == 404
+
+    def test_status_patch_removed(self, client):
         r = client.patch(
             "/api/linkedin/jobs/https%3A%2F%2Fexample.com%2F1/status",
             data={"status": "Tracking"},
         )
-        assert r.status_code == 200
+        assert r.status_code in (404, 405)
 
-    def test_clear_status(self, client):
-        r = client.patch(
-            "/api/linkedin/jobs/https%3A%2F%2Fexample.com%2F1/status",
-            data={"status": ""},
-        )
-        assert r.status_code == 200
+    def test_boards_api_removed(self, client):
+        assert client.get("/api/boards/jobs").status_code == 404
+        assert client.post("/api/boards/jobs/bulk-delete", json={}).status_code == 404
 
+    def test_tailor_api_removed(self, client):
+        assert client.post("/api/tailor/generate", data={}).status_code == 404
+        assert client.get("/api/tailor/status/abc").status_code == 404
 
-class TestScanAPI:
-    """Test scanner API endpoints."""
-
-    def test_scan_status_when_idle(self, client):
-        r = client.get("/api/scan/status")
-        assert r.status_code == 200
-
-    def test_stats_endpoint(self, client):
-        r = client.get("/api/stats")
-        assert r.status_code == 200
-        data = json.loads(r.data)
-        assert "total" in data
+    def test_file_serve_removed(self, client):
+        assert client.get("/api/file/scan_results.json").status_code == 404

@@ -1,456 +1,206 @@
 {% extends "base.html" %}
-{% set page_title = page_title|default("LinkedIn Feed") %}
-{% set page_subtitle = page_subtitle|default("Hourly Job Intelligence") %}
-{% set api_base = api_base|default("/api/linkedin") %}
+{% set page_title = "Job Feed" %}
+{% set page_subtitle = "Hourly Job Intelligence" %}
 {% block title %}{{ page_title }} — JobFlow{% endblock %}
 {% block content %}
 
-<style>
-/* ── LinkedIn page styles (themed) ── */
-.li-page { font-family: "Sora", sans-serif; }
-.li-page * { font-family: inherit; }
-
-.li-header {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
-}
-.li-header hgroup h2 { font-size: 1.4rem; margin: 0; font-weight: 700; color: var(--text-primary); }
-.li-header hgroup p { font-size: 0.75rem; color: var(--text-muted); margin: 0; font-family: "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: 0.08em; }
-.li-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.li-live { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--live-border); background: var(--live-bg); color: var(--live-text); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-family: "IBM Plex Mono", monospace; }
-.li-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--live-dot); animation: li-pulse 1.9s infinite; }
-@keyframes li-pulse { 0% { box-shadow: 0 0 0 0 rgba(114,240,176,0.65); } 100% { box-shadow: 0 0 0 8px rgba(114,240,176,0); } }
-[data-theme="light"] .li-live-dot { animation-name: li-pulse-light; }
-@keyframes li-pulse-light { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,0.5); } 100% { box-shadow: 0 0 0 8px rgba(22,163,74,0); } }
-
-/* ── Layout ── */
-.li-layout { display: grid; grid-template-columns: 1fr; }
-.li-main { min-width: 0; }
-
-/* ── Sidebar ── */
-.li-panel { border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-card); padding: 14px; backdrop-filter: blur(8px); }
-.li-panel-title { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); font-family: "IBM Plex Mono", monospace; font-weight: 600; margin-bottom: 10px; }
-.li-stat-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 0.78rem; }
-.li-stat-label { color: var(--text-primary); white-space: nowrap; }
-.li-stat-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--border-subtle); overflow: hidden; }
-.li-stat-bar-fill { height: 100%; border-radius: 2px; }
-.li-stat-count { color: var(--text-secondary); font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; font-weight: 500; min-width: 24px; text-align: right; }
-.bar-green { background: var(--green); } .bar-blue { background: #5b9bd5; } .bar-yellow { background: var(--yellow); }
-.bar-gray { background: var(--text-muted); } .bar-purple { background: var(--purple); } .bar-teal { background: var(--accent); } .bar-orange { background: #ffab5e; }
-
-/* ── Filter bar ── */
-.li-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-.li-search-input {
-    all: unset !important;
-    display: inline-block !important; box-sizing: border-box !important;
-    flex: 1 !important; min-width: 180px !important; max-width: 360px !important;
-    padding: 8px 14px !important; font-size: 0.82rem !important;
-    color: var(--text-primary) !important; background: var(--bg-input) !important;
-    border: 1px solid var(--border-color) !important; border-radius: 8px !important;
-    font-family: "Sora", sans-serif !important;
-}
-.li-search-input:focus { border-color: var(--accent-border) !important; box-shadow: 0 0 0 3px rgba(52,211,196,0.12) !important; }
-[data-theme="light"] .li-search-input:focus { box-shadow: 0 0 0 3px rgba(13,148,136,0.1) !important; }
-.li-search-input::placeholder { color: var(--text-placeholder) !important; }
-
-/* ── Chips ── */
-.li-chip {
-    display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
-    border-radius: 999px; font-size: 0.72rem; font-weight: 600; cursor: pointer;
-    border: 1px solid var(--border-color); background: var(--chip-bg);
-    color: var(--text-secondary); font-family: "IBM Plex Mono", monospace;
-    transition: all 150ms ease;
-}
-.li-chip:hover { color: var(--text-primary); border-color: var(--accent-border); }
-.li-chip.active { color: var(--chip-active-text); border-color: var(--accent); background: linear-gradient(145deg, #62eee1, #35c9bb); }
-[data-theme="light"] .li-chip.active { background: linear-gradient(145deg, #14b8a6, #0d9488); }
-.li-chip-count { background: rgba(255,255,255,0.15); border-radius: 999px; padding: 1px 7px; font-size: 0.65rem; }
-.li-chip.active .li-chip-count { background: rgba(0,0,0,0.2); }
-.li-chip.chip-rec { border-color: rgba(245,200,66,0.4); color: var(--yellow); }
-.li-chip.chip-rec:hover { border-color: var(--yellow); }
-.li-chip.chip-rec.active { background: linear-gradient(145deg, #f5d862, #d4a832); color: #1a1500; border-color: var(--yellow); }
-[data-theme="light"] .li-chip.chip-rec.active { background: linear-gradient(145deg, #eab308, #ca8a04); color: #fff; }
-
-/* ── Search term select ── */
-.li-term-select {
-    all: unset !important; display: inline-block !important; box-sizing: border-box !important;
-    padding: 5px 28px 5px 10px !important; font-size: 0.72rem !important;
-    color: var(--text-primary) !important; background: var(--bg-input) !important;
-    border: 1px solid var(--border-color) !important; border-radius: 8px !important;
-    font-family: "IBM Plex Mono", monospace !important; cursor: pointer !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238fa4be' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") !important;
-    background-repeat: no-repeat !important; background-position: right 8px center !important;
-    -webkit-appearance: none !important; appearance: none !important;
-}
-.li-term-select option { background: var(--option-bg); color: var(--text-primary); }
-
-/* ── Summary ── */
-.li-summary { color: var(--text-secondary); font-size: 0.75rem; font-family: "IBM Plex Mono", monospace; margin-bottom: 10px; letter-spacing: 0.02em; }
-.li-summary b { color: var(--text-primary); }
-.li-summary-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
-.li-summary-row .li-summary { margin-bottom: 0; }
-.bulk-actions { display: inline-flex; align-items: center; gap: 8px; padding: 5px 8px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); }
-.bulk-count { min-width: 72px; color: var(--text-secondary); font-size: 0.7rem; font-family: "IBM Plex Mono", monospace; }
-.bulk-btn { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color); background: transparent; color: var(--text-secondary); font-size: 0.68rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; cursor: pointer; transition: all 140ms; }
-.bulk-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text-primary); background: var(--bg-hover); }
-.bulk-btn.danger:hover:not(:disabled) { border-color: var(--red); color: var(--red); background: var(--red-bg); }
-.bulk-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-/* ── Table ── */
-.li-table-wrap { border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; background: var(--bg-secondary); }
-.li-table-scroll { overflow-x: auto; max-height: calc(100vh - 220px); min-height: 300px; }
-.li-table { width: 100%; border-collapse: collapse; min-width: 740px; }
-.li-table thead th {
-    position: sticky; top: 0; z-index: 2;
-    background: var(--bg-table-head); color: var(--text-secondary);
-    text-align: left; font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase;
-    font-family: "IBM Plex Mono", monospace; font-weight: 600;
-    padding: 10px 12px; white-space: nowrap; user-select: none; cursor: pointer;
-    border-bottom: 1px solid var(--border-strong);
-}
-.li-table thead th:hover { color: var(--text-primary); }
-.li-table thead th.th-select { cursor: default; }
-.li-table thead th.th-select:hover { color: var(--text-secondary); }
-.li-table thead th .sort-i { margin-left: 3px; opacity: 0.3; font-size: 0.6rem; }
-.li-table thead th.s-asc .sort-i::after { content: "\25B2"; opacity: 1; }
-.li-table thead th.s-desc .sort-i::after { content: "\25BC"; opacity: 1; }
-.li-table tbody tr { border-bottom: 1px solid var(--border-subtle); }
-.li-table tbody tr:last-child { border-bottom: none; }
-.li-table tbody tr:hover { background: var(--bg-hover); }
-.li-table tbody tr.is-selected { background: var(--accent-bg); }
-.li-table tbody tr[data-key] { cursor: default; }
-body.is-drag-selecting, body.is-drag-selecting * { user-select: none !important; }
-.li-table tbody.is-loading { opacity: 0.55; transition: opacity 120ms ease; }
-.li-table td { padding: 10px 12px; font-size: 0.82rem; vertical-align: middle; color: var(--text-primary); }
-
-/* ── Row entrance animation ── */
-@keyframes rowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-.li-table tbody tr { animation: rowIn 0.25s ease both; }
-.li-table tbody tr:nth-child(1) { animation-delay: 0ms; }
-.li-table tbody tr:nth-child(2) { animation-delay: 25ms; }
-.li-table tbody tr:nth-child(3) { animation-delay: 50ms; }
-.li-table tbody tr:nth-child(4) { animation-delay: 75ms; }
-.li-table tbody tr:nth-child(5) { animation-delay: 100ms; }
-.li-table tbody tr:nth-child(6) { animation-delay: 125ms; }
-.li-table tbody tr:nth-child(7) { animation-delay: 150ms; }
-.li-table tbody tr:nth-child(8) { animation-delay: 175ms; }
-.li-table tbody tr:nth-child(9) { animation-delay: 200ms; }
-.li-table tbody tr:nth-child(10) { animation-delay: 225ms; }
-.li-table tbody tr:nth-child(n+11) { animation-delay: 250ms; }
-
-/* ── Row cells ── */
-.td-select { width: 36px; text-align: center; padding-right: 4px !important; }
-.td-n { color: var(--text-muted); font-size: 0.72rem; font-family: "IBM Plex Mono", monospace; width: 28px; text-align: right; padding-right: 6px; }
-.job-select, #select-all-jobs { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; vertical-align: middle; }
-.co-avatar { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.72rem; color: #fff; flex-shrink: 0; }
-.role-cell { display: flex; align-items: center; gap: 10px; min-width: 240px; }
-.role-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.role-title { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
-.role-title a { color: inherit; text-decoration: none; }
-.role-title a:hover { color: var(--accent); }
-.role-sub { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-muted); font-family: "IBM Plex Mono", monospace; flex-wrap: wrap; }
-.role-sub .sep { color: var(--sep-color); }
-
-/* ── Badges ── */
-.li-badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 5px; font-size: 0.62rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
-.badge-linkedin { background: var(--accent-bg); color: var(--accent); }
-.badge-gh { background: var(--green-bg); color: var(--green); }
-.badge-lever { background: var(--purple-bg); color: var(--purple); }
-.badge-ashby { background: var(--yellow-bg); color: var(--yellow); }
-.badge-wd { background: var(--orange-bg); color: var(--orange-text); }
-.badge-other { background: rgba(143,164,190,0.1); color: var(--text-secondary); }
-.badge-h1b { background: var(--green-bg); color: var(--green); }
-.badge-exp-tag { background: rgba(143,164,190,0.1); color: var(--text-secondary); }
-[data-theme="light"] .badge-exp-tag { background: rgba(0,0,0,0.04); }
-.badge-rec-tag { background: var(--yellow-bg); color: var(--yellow); }
-
-/* ── Match % ── */
-.match-val { font-size: 0.85rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
-.match-high { color: var(--match-high); }
-.match-med { color: var(--match-med); }
-.match-low { color: var(--match-low); }
-.ai-model-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-left: 4px; vertical-align: middle; opacity: 0.7; }
-.ai-model-claude { background: #d4a574; color: #1a1a2e; }
-.ai-model-groq { background: #5b9bd5; color: #1a1a2e; }
-
-/* ── Score ── */
-.score-val { font-size: 0.82rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
-.score-val.sv-high { color: var(--purple); }
-.score-val.sv-med { color: #5b9bd5; }
-.score-val.sv-low { color: var(--text-muted); }
-
-/* ── Level badge ── */
-.lvl-badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
-.lvl-newgrad { color: var(--green-text); background: var(--green-bg); }
-.lvl-entry { color: var(--purple); background: var(--purple-bg); }
-.lvl-mid { color: var(--orange-text); background: var(--orange-bg); }
-.lvl-unknown { color: var(--text-muted); background: rgba(107,127,150,0.1); }
-[data-theme="light"] .lvl-unknown { background: rgba(0,0,0,0.04); }
-
-/* ── Apply button ── */
-.apply-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 14px; border-radius: 7px; border: none; background: var(--accent-bg); color: var(--accent); font-size: 0.72rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; letter-spacing: 0.03em; text-decoration: none; cursor: pointer; transition: background 140ms, color 140ms; }
-.apply-btn:hover { background: rgba(52,211,196,0.28); color: var(--accent-hover); }
-[data-theme="light"] .apply-btn:hover { background: rgba(13,148,136,0.15); }
-.apply-btn::after { content: " \2197"; font-size: 0.65rem; }
-
-/* ── Dismiss ── */
-.dismiss-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; border: none; background: var(--red-bg); color: var(--red); font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-left: 4px; transition: background 140ms, color 140ms; }
-.dismiss-btn:hover { background: rgba(224,96,96,0.35); color: #ff8a8a; }
-[data-theme="light"] .dismiss-btn:hover { background: rgba(220,38,38,0.15); color: #dc2626; }
-@keyframes dismissOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(30px); } }
-tr.dismissing { animation: dismissOut 0.3s ease forwards; }
-
-/* ── Status select ── */
-.li-status-sel {
-    all: unset !important; display: inline-block !important; box-sizing: border-box !important;
-    padding: 3px 22px 3px 8px !important; font-size: 0.7rem !important; cursor: pointer !important;
-    color: var(--text-secondary) !important; background: var(--bg-input) !important;
-    border: 1px solid var(--border-color) !important; border-radius: 6px !important;
-    font-family: "IBM Plex Mono", monospace !important;
-    -webkit-appearance: none !important; appearance: none !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%236b7f96' stroke-width='1.2' fill='none'/%3E%3C/svg%3E") !important;
-    background-repeat: no-repeat !important; background-position: right 6px center !important;
-}
-.li-status-sel option { background: var(--option-bg); color: var(--text-primary); }
-.li-status-sel.status-not-interested,
-.li-status-sel.status-not-needed {
-    color: #ff9aa2 !important;
-    background-color: rgba(224, 96, 96, 0.16) !important;
-    border-color: rgba(224, 96, 96, 0.55) !important;
-}
-[data-theme="light"] .li-status-sel.status-not-interested,
-[data-theme="light"] .li-status-sel.status-not-needed {
-    color: #b42318 !important;
-    background-color: rgba(220, 38, 38, 0.09) !important;
-    border-color: rgba(220, 38, 38, 0.34) !important;
-}
-
-/* ── Empty state ── */
-.li-empty { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 48px 16px; font-family: "IBM Plex Mono", monospace; }
-
-/* ── Refresh / Scan buttons ── */
-.li-refresh { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 7px; border: 1px solid var(--border-color); background: transparent; color: var(--text-secondary); font-size: 0.72rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; cursor: pointer; transition: all 150ms; }
-.li-refresh:hover { border-color: var(--accent); color: var(--text-primary); }
-.li-scan-btn { border-color: var(--accent-border); color: var(--accent); }
-.li-scan-btn:hover { border-color: var(--accent); color: var(--accent-hover); }
-.li-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(52,211,196,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── Time Tabs ── */
-.time-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
-.time-tabs { display: inline-flex; align-items: center; border: 1px solid var(--border-color); border-radius: 999px; overflow: hidden; background: var(--chip-bg); }
-.time-tab { appearance: none; border: 0; background: transparent; color: var(--text-secondary); font-size: 0.72rem; font-weight: 600; padding: 6px 14px; cursor: pointer; transition: background 160ms, color 160ms; font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
-.time-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
-.time-tab.active { color: #fff; background: linear-gradient(145deg, #6c5ce7, #a78bfa); }
-.time-tab .t-count { font-size: 0.62rem; background: rgba(255,255,255,0.2); border-radius: 999px; padding: 1px 6px; margin-left: 4px; }
-.sort-tabs { display: inline-flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-left: auto; }
-.sort-tab { appearance: none; border: 0; background: transparent; color: var(--text-secondary); font-size: 0.7rem; font-weight: 600; padding: 5px 12px; cursor: pointer; font-family: "IBM Plex Mono", monospace; transition: all 150ms; }
-.sort-tab:hover { color: var(--text-primary); }
-.sort-tab.active { color: var(--text-primary); background: var(--bg-hover); }
-
-/* ── Hourly Cards ── */
-.hourly-strip { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
-.hourly-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; flex: 1; min-width: 0; scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
-.hourly-scroll::-webkit-scrollbar { height: 4px; }
-.hourly-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
-.hour-card { flex: 0 0 auto; min-width: 72px; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 10px; text-align: center; cursor: pointer; transition: all 150ms; background: var(--bg-card); }
-.hour-card:hover { border-color: var(--accent-border); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-.hour-card.active { border-color: var(--accent); background: var(--accent-bg); }
-.hour-card .h-time { font-size: 0.7rem; font-weight: 700; color: var(--text-primary); font-family: "IBM Plex Mono", monospace; }
-.hour-card .h-count { font-size: 0.62rem; color: var(--text-muted); font-family: "IBM Plex Mono", monospace; margin-top: 2px; }
-.hourly-nav { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.7rem; }
-.hourly-nav:hover { border-color: var(--accent); color: var(--text-primary); }
-
-/* ── Auto-refresh indicator ── */
-.auto-refresh-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: inline-block; margin-left: 6px; animation: ar-blink 2s ease infinite; }
-@keyframes ar-blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-
-/* ══════════════════════════════════════════
-   MOBILE RESPONSIVE
-   ══════════════════════════════════════════ */
-@media (max-width: 768px) {
-    .li-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .li-meta { width: 100%; flex-wrap: wrap; gap: 8px; }
-    .li-filters { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-    .li-filters::-webkit-scrollbar { display: none; }
-    .li-search-input { min-width: 140px !important; max-width: 200px !important; flex-shrink: 0 !important; }
-    .li-chip { flex-shrink: 0; }
-    .li-summary-row { align-items: stretch; }
-    .bulk-actions { width: 100%; justify-content: space-between; }
-    .bulk-count { min-width: 0; }
-    .time-bar { gap: 8px; }
-    .time-tabs { overflow-x: auto; scrollbar-width: none; }
-    .time-tabs::-webkit-scrollbar { display: none; }
-    .time-tab { padding: 5px 10px; font-size: 0.65rem; }
-    .sort-tabs { margin-left: 0; }
-    .hourly-strip { margin-bottom: 10px; }
-    .hourly-nav { display: none; }
-
-    /* Table → Card layout on mobile */
-    .li-table { min-width: 0; }
-    .li-table-scroll { max-height: none; overflow-x: visible; }
-    .li-table thead { display: none; }
-    .li-table, .li-table tbody { display: block; }
-    .li-table tbody tr {
-        display: flex; flex-wrap: wrap; align-items: center;
-        gap: 8px; padding: 12px; margin-bottom: 6px;
-        border: 1px solid var(--border-subtle); border-radius: 10px;
-        background: var(--bg-card);
-    }
-    .li-table tbody tr:hover { background: var(--bg-card); }
-    .li-table tbody tr.is-selected { background: var(--accent-bg); }
-    .li-table td { padding: 0; border: none; }
-    .li-table td.td-select { flex: 0 0 auto; order: 0; padding-top: 2px !important; }
-    .li-table td.td-n { display: none; }
-    .li-table td:nth-child(3) { flex: 1 1 calc(100% - 28px); order: 1; }
-    .li-table td:nth-child(3) .role-cell { min-width: 0; }
-    .li-table td:nth-child(4) { order: 2; }
-    .li-table td:nth-child(5) { order: 3; }
-    .li-table td:nth-child(6) { order: 4; margin-left: auto; }
-    .co-avatar { width: 28px; height: 28px; font-size: 0.65rem; }
-    .role-title { font-size: 0.8rem; }
-    .apply-btn { padding: 4px 10px; font-size: 0.68rem; }
-    .dismiss-btn { width: 22px; height: 22px; font-size: 0.7rem; }
-}
-
-@media (max-width: 480px) {
-    .li-header hgroup h2 { font-size: 1.2rem; }
-    .li-meta { gap: 6px; }
-    .li-refresh, .li-scan-btn { font-size: 0.65rem; padding: 4px 8px; }
-    .li-live { font-size: 0.6rem; padding: 4px 8px; }
-}
-</style>
-
-<div class="li-page">
-    <!-- Header -->
-    <div class="li-header">
-        <hgroup>
+<div class="cascade">
+    <!-- ── Header ── -->
+    <div class="feed-head">
+        <div>
             <h2>{{ page_title }}</h2>
-            <p>{{ page_subtitle }}</p>
-        </hgroup>
-        <div class="li-meta">
-            <span class="li-live"><span class="li-live-dot"></span>Live Feed<span class="auto-refresh-dot" title="Auto-refreshing every 60s"></span></span>
-            <small style="color:var(--text-muted); font-family:'IBM Plex Mono',monospace; font-size:0.72rem;" id="last-updated">
-                {% if last_updated %}<span class="utc-time" data-utc="{{ last_updated }}"></span>{% endif %}
-            </small>
-            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle dark/light theme">
-                <span class="theme-icon">&#9790;</span>
-            </button>
-            <button class="li-refresh"
-                    hx-post="{{ api_base }}/refresh"
-                    hx-target="#last-updated"
-                    hx-swap="innerHTML"
-                    hx-on::after-request="triggerFilter({timeMeta: true}); showToast('Refreshed')">
+            <div class="sub">
+                <span class="live-dot" title="Auto-refreshing every 60s"></span>
+                <span>{{ page_subtitle }}</span>
+                <span class="updated-at" id="last-updated">
+                    {% if last_updated %}<span class="utc-time" data-utc="{{ last_updated }}"></span>{% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="feed-actions">
+            <button class="btn btn-ghost" id="refresh-btn" onclick="refreshFeed(this)">
                 Refresh
             </button>
-            <button class="li-refresh li-scan-btn" id="scan-btn" onclick="scanNow(this)"
+            <button class="btn" id="scan-btn" onclick="scanNow(this)"
                 {% if scan_running %}disabled{% endif %}>
-                {% if scan_running %}<span class="spinner"></span> Scanning...{% else %}Scan Now{% endif %}
+                {% if scan_running %}<span class="spinner"></span> Scanning…{% else %}Scan Now{% endif %}
+            </button>
+            <button class="btn btn-primary" id="ai-score-btn" onclick="openAiModal()">
+                ✦ AI Score
             </button>
         </div>
     </div>
 
-    <!-- Time tabs + sort -->
-    <div class="time-bar">
-        <div class="time-tabs" role="tablist" aria-label="Time range">
-            <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('hour')" data-time="hour">This Hour <span class="t-count" id="tc-hour">{{ time_counts.get('this_hour', 0) }}</span></button>
-            <button class="time-tab active" role="tab" aria-selected="true" onclick="setTime('today')" data-time="today">Today <span class="t-count" id="tc-today">{{ time_counts.get('today', 0) }}</span></button>
-            <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('yesterday')" data-time="yesterday">Yesterday <span class="t-count" id="tc-yesterday">{{ time_counts.get('yesterday', 0) }}</span></button>
-            <button class="time-tab" role="tab" aria-selected="false" onclick="setTime('')" data-time="">All Time</button>
+    <!-- ── Stat strip ── -->
+    <div class="stat-strip">
+        <button class="stat" data-stat="hour" onclick="setTime('hour')" title="Jobs found in the last hour">
+            <span class="k">This Hour</span>
+            <span class="v" id="stat-hour">{{ time_counts.get('this_hour', 0) }}</span>
+        </button>
+        <button class="stat active" data-stat="today" onclick="setTime('today')" title="Jobs found since midnight">
+            <span class="k">Today</span>
+            <span class="v" id="stat-today">{{ time_counts.get('today', 0) }}</span>
+        </button>
+        <button class="stat" data-stat="rec" onclick="setFilter('status', 'Recommended')" title="High-confidence matches">
+            <span class="k">★ Recommended</span>
+            <span class="v" id="stat-rec">{{ counts.get('Recommended', 0) }}</span>
+        </button>
+        <button class="stat" data-stat="total" onclick="setTime('')" title="All jobs in the store">
+            <span class="k">All Jobs</span>
+            <span class="v" id="stat-total">{{ counts.get('All', 0) }}</span>
+        </button>
+    </div>
+
+    <!-- ── Toolbar: search + chips ── -->
+    <div class="toolbar" role="toolbar" aria-label="Job filters">
+        <div class="search-box">
+            <input type="text" id="filter-q" placeholder="Search roles, companies, locations…"
+                   oninput="debounceFilter()" aria-label="Search jobs">
         </div>
-        <div class="sort-tabs" role="tablist" aria-label="Sort order">
-            <button class="sort-tab" role="tab" onclick="quickSort('ai_score')" data-qsort="ai_score">★ Best Match</button>
-            <button class="sort-tab active" role="tab" onclick="quickSort('first_seen')" data-qsort="first_seen">↓ Recent</button>
+        <button class="chip active" onclick="setFilter('status', '')" data-status="" aria-pressed="true">All <span class="chip-n">{{ counts.get('All', 0) }}</span></button>
+        <button class="chip chip-rec" onclick="setFilter('status', 'Recommended')" data-status="Recommended" aria-pressed="false">★ Rec <span class="chip-n">{{ counts.get('Recommended', 0) }}</span></button>
+        {% for lvl in ['New Grad', 'Entry', 'Mid'] %}
+        <button class="chip" onclick="setFilter('level', '{{ lvl }}')" data-level="{{ lvl }}" aria-pressed="false">{{ lvl }} <span class="chip-n">{{ level_counts.get(lvl, 0) }}</span></button>
+        {% endfor %}
+        {% if search_terms %}
+        <select id="filter-search-term" class="term-select" onchange="triggerFilter()" aria-label="Filter by search term">
+            <option value="">All search terms</option>
+            {% for t in search_terms %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+        </select>
+        {% endif %}
+    </div>
+
+    <!-- ── Time + sort tabs ── -->
+    <div class="time-bar">
+        <div class="seg" role="tablist" aria-label="Time range">
+            <button role="tab" aria-selected="false" onclick="setTime('hour')" data-time="hour">This Hour <span class="t-count" id="tc-hour">{{ time_counts.get('this_hour', 0) }}</span></button>
+            <button class="active" role="tab" aria-selected="true" onclick="setTime('today')" data-time="today">Today <span class="t-count" id="tc-today">{{ time_counts.get('today', 0) }}</span></button>
+            <button role="tab" aria-selected="false" onclick="setTime('yesterday')" data-time="yesterday">Yesterday <span class="t-count" id="tc-yesterday">{{ time_counts.get('yesterday', 0) }}</span></button>
+            <button role="tab" aria-selected="false" onclick="setTime('')" data-time="">All Time</button>
+        </div>
+        <div class="seg sort-seg" role="tablist" aria-label="Sort order">
+            <button role="tab" onclick="quickSort('ai_score')" data-qsort="ai_score">★ Best Match</button>
+            <button class="active" role="tab" onclick="quickSort('first_seen')" data-qsort="first_seen">↓ Recent</button>
         </div>
     </div>
 
-    <!-- Hourly cards -->
+    <!-- ── Hourly buckets ── -->
     <div class="hourly-strip">
         <button class="hourly-nav" aria-label="Scroll left" onclick="document.getElementById('hourly-scroll').scrollBy({left:-200,behavior:'smooth'})">&#8249;</button>
         <div class="hourly-scroll" id="hourly-scroll"></div>
         <button class="hourly-nav" aria-label="Scroll right" onclick="document.getElementById('hourly-scroll').scrollBy({left:200,behavior:'smooth'})">&#8250;</button>
     </div>
-    <script>
-    var BUCKET_DATA = {{ time_counts.get('buckets', [])|tojson }};
-    </script>
 
-    <div class="li-layout">
-        <div class="li-main">
-            <!-- Filters -->
-            <div class="li-filters" role="toolbar" aria-label="Job filters">
-                <input type="text" id="filter-q" placeholder="Search jobs, companies, locations..."
-                       class="li-search-input" oninput="debounceFilter()" aria-label="Search jobs">
-                <button class="li-chip active" onclick="setFilter('status', '')" data-status="" aria-pressed="true">All <span class="li-chip-count">{{ counts.get('All', 0) }}</span></button>
-                <button class="li-chip chip-rec" onclick="setFilter('status', 'Recommended')" data-status="Recommended" aria-pressed="false">★ Rec <span class="li-chip-count">{{ counts.get('Recommended', 0) }}</span></button>
-                {% for lvl in ['New Grad', 'Entry', 'Mid'] %}
-                <button class="li-chip" onclick="setFilter('level', '{{ lvl }}')" data-level="{{ lvl }}" aria-pressed="false">{{ lvl }} <span class="li-chip-count">{{ level_counts.get(lvl, 0) }}</span></button>
-                {% endfor %}
-                {% for st in statuses %}
-                {% if counts.get(st, 0) > 0 %}
-                <button class="li-chip" onclick="setFilter('status', '{{ st }}')" data-status="{{ st }}" aria-pressed="false">{{ st }} <span class="li-chip-count">{{ counts.get(st, 0) }}</span></button>
-                {% endif %}
-                {% endfor %}
-                {% if search_terms %}
-                <select id="filter-search-term" class="li-term-select" onchange="triggerFilter()" aria-label="Filter by search term">
-                    <option value="">All search terms</option>
-                    {% for t in search_terms %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
-                </select>
-                {% endif %}
+    <!-- ── Summary + bulk actions ── -->
+    <div class="summary-row">
+        <div class="summary" id="li-summary" aria-live="polite">
+            <b>{{ counts.get('All', 0) }}</b> jobs
+            {% if counts.get('Recommended', 0) %} · <b>{{ counts.get('Recommended', 0) }}</b> recommended{% endif %}
+        </div>
+        <div class="bulk" aria-label="Bulk job actions">
+            <span class="bulk-count" id="bulk-count">0 selected</span>
+            <button class="btn btn-sm btn-ghost" id="bulk-open-top-btn" onclick="openTopJobs(10)" disabled>Open top 10</button>
+            <button class="btn btn-sm btn-danger" id="bulk-delete-top-btn" onclick="deleteTopJobs(10)" disabled>Delete top 10</button>
+            <button class="btn btn-sm btn-ghost" id="bulk-open-btn" onclick="openSelectedJobs()" disabled>Open selected</button>
+            <button class="btn btn-sm btn-danger" id="bulk-delete-btn" onclick="deleteSelectedJobs()" disabled>Delete selected</button>
+        </div>
+    </div>
+
+    <!-- Hidden filter state -->
+    <input type="hidden" id="filter-status" value="">
+    <input type="hidden" id="filter-level" value="">
+    <input type="hidden" id="filter-sort" value="first_seen">
+    <input type="hidden" id="filter-dir" value="desc">
+    <input type="hidden" id="filter-time" value="today">
+    <input type="hidden" id="filter-bucket" value="">
+
+    <!-- ── Table ── -->
+    <div class="table-wrap">
+        <div class="table-scroll">
+            <table class="jobs-table" role="grid">
+                <thead>
+                    <tr>
+                        <th class="td-select" width="34">
+                            <input type="checkbox" id="select-all-jobs" aria-label="Select all displayed jobs" onchange="toggleAllDisplayedJobs(this.checked)">
+                        </th>
+                        <th width="26"></th>
+                        <th class="th-sort" onclick="toggleSort('title')">Role <span class="sort-i" data-col="title"></span></th>
+                        <th class="th-sort" onclick="toggleSort('score_pct')" width="80">Match <span class="sort-i" data-col="score_pct"></span></th>
+                        <th class="th-sort" onclick="toggleSort('level')" width="86">Level <span class="sort-i" data-col="level"></span></th>
+                        <th width="110"></th>
+                    </tr>
+                </thead>
+                <tbody id="linkedin-body">
+                    <tr><td colspan="6"><div class="empty">Loading…</div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ════════ AI Score Runner modal ════════ -->
+<div class="modal-backdrop" id="ai-modal" onclick="if(event.target===this) closeAiModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
+        <div class="modal-head">
+            <div>
+                <h3 id="ai-modal-title">AI Score</h3>
+                <div class="hint">Local CLI · no API key</div>
+            </div>
+            <button class="modal-x" onclick="closeAiModal()" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-body">
+            <div id="ai-form">
+                <div class="opt-grid">
+                    <div>
+                        <label>Engine</label>
+                        <div class="engine-seg" id="ai-engine-seg">
+                            <button type="button" class="active" data-engine="claude" onclick="setAiEngine('claude')">Claude<span class="eng-sub">claude -p</span></button>
+                            <button type="button" data-engine="codex" onclick="setAiEngine('codex')">Codex<span class="eng-sub">codex exec</span></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="ai-hours">Jobs from</label>
+                        <select id="ai-hours">
+                            <option value="6">Last 6 hours</option>
+                            <option value="12" selected>Last 12 hours</option>
+                            <option value="24">Last 24 hours</option>
+                            <option value="48">Last 48 hours</option>
+                            <option value="0">All time</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="opt-grid">
+                    <div>
+                        <label for="ai-limit">Max jobs <span style="font-weight:400;color:var(--text-3)">(0 = no limit)</span></label>
+                        <input type="number" id="ai-limit" min="0" step="5" value="0">
+                    </div>
+                    <div class="check-row" style="align-self:end; margin-bottom:6px;">
+                        <input type="checkbox" id="ai-rescore">
+                        <label for="ai-rescore">Re-score <span class="why">include already-scored jobs</span></label>
+                    </div>
+                </div>
             </div>
 
-            <!-- Summary + bulk actions -->
-            <div class="li-summary-row">
-                <div class="li-summary" id="li-summary" aria-live="polite">
-                    <b>{{ counts.get('All', 0) }}</b> jobs
-                    {% if counts.get('Recommended', 0) %} · <b>{{ counts.get('Recommended', 0) }}</b> recommended{% endif %}
-                    {% if counts.get('Applied', 0) %} · Applied: <b>{{ counts.get('Applied', 0) }}</b>{% endif %}
-                </div>
-                <div class="bulk-actions" aria-label="Bulk job actions">
-                    <span class="bulk-count" id="bulk-count">0 selected</span>
-                    <button class="bulk-btn" id="bulk-open-top-btn" onclick="openTopJobs(10)" disabled>Open top 10</button>
-                    <button class="bulk-btn danger" id="bulk-delete-top-btn" onclick="deleteTopJobs(10)" disabled>Delete top 10</button>
-                    <button class="bulk-btn" id="bulk-open-btn" onclick="openSelectedJobs()" disabled>Open selected</button>
-                    <button class="bulk-btn danger" id="bulk-delete-btn" onclick="deleteSelectedJobs()" disabled>Delete selected</button>
-                </div>
+            <div class="run-panel" id="ai-run-panel" style="display:none;">
+                <div class="run-status" id="ai-run-status"></div>
+                <div class="run-bar" id="ai-run-bar"><i></i></div>
+                <div class="run-meta" id="ai-run-meta"></div>
+                <div class="run-log" id="ai-run-log" aria-live="polite"></div>
             </div>
 
-            <!-- Hidden filter state -->
-            <input type="hidden" id="filter-status" value="">
-            <input type="hidden" id="filter-level" value="">
-            <input type="hidden" id="filter-sort" value="first_seen">
-            <input type="hidden" id="filter-dir" value="desc">
-            <input type="hidden" id="filter-time" value="today">
-            <input type="hidden" id="filter-bucket" value="">
-
-            <!-- Table -->
-            <div class="li-table-wrap">
-                <div class="li-table-scroll">
-                    <table class="li-table" role="grid">
-                        <thead>
-                            <tr>
-                                <th class="th-select" width="36">
-                                    <input type="checkbox" id="select-all-jobs" aria-label="Select all displayed jobs" onchange="toggleAllDisplayedJobs(this.checked)">
-                                </th>
-                                <th width="28"></th>
-                                <th class="th-sort" onclick="toggleSort('title')">Role <span class="sort-i" data-col="title"></span></th>
-                                <th class="th-sort" onclick="toggleSort('score_pct')" width="70">Match <span class="sort-i" data-col="score_pct"></span></th>
-                                <th class="th-sort" onclick="toggleSort('level')" width="80">Level <span class="sort-i" data-col="level"></span></th>
-                                <th width="75">Apply</th>
-                            </tr>
-                        </thead>
-                        <tbody id="linkedin-body">
-                            <tr><td colspan="6"><div class="li-empty">Loading...</div></td></tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="run-actions">
+                <button class="btn btn-danger" id="ai-cancel-btn" style="display:none;" onclick="cancelAiRun()">Cancel run</button>
+                <button class="btn btn-ghost" onclick="closeAiModal()">Close</button>
+                <button class="btn btn-primary" id="ai-run-btn" onclick="startAiRun()">▶ Run scoring</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-var API_BASE = "{{ api_base }}";
+var BUCKET_DATA = {{ time_counts.get('buckets', [])|tojson }};
+var API_BASE = "/api/linkedin";
+var AI_RUNNING_ON_LOAD = {{ 'true' if ai_running else 'false' }};
 var _debounceTimer = null;
 var _autoRefreshInterval = null;
 var _filterController = null;
@@ -461,20 +211,29 @@ var _dragPointerX = 0;
 var _dragPointerY = 0;
 var _dragAutoScrollFrame = null;
 var _selectedJobKeys = new Set();
-var AVATAR_COLORS = ['#e06060','#f5b85a','#52d98a','#5b9bd5','#a78bfa','#34d3c4','#ff7eb3','#ff9f43','#6c5ce7','#00b894'];
 
-// ── Theme icon sync ──
-(function() {
-    var t = document.documentElement.getAttribute('data-theme');
-    var icon = document.querySelector('.theme-icon');
-    if (icon) icon.innerHTML = t === 'dark' ? '&#9788;' : '&#9790;';
-})();
+/* ── Stat count-up animation ────────────── */
+function tweenStat(el, target) {
+    var from = parseInt(el.dataset.val || el.textContent, 10) || 0;
+    target = parseInt(target, 10) || 0;
+    if (from === target) { el.textContent = target; el.dataset.val = target; return; }
+    el.dataset.val = target;
+    var start = performance.now(), dur = 420;
+    function frame(now) {
+        var t = Math.min((now - start) / dur, 1);
+        var eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(from + (target - from) * eased);
+        if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+}
 
+/* ── Filters ────────────────────────────── */
 function setFilter(name, value) {
     if (name === 'status') document.getElementById('filter-level').value = '';
     if (name === 'level') document.getElementById('filter-status').value = '';
     document.getElementById('filter-' + name).value = value;
-    document.querySelectorAll('.li-chip').forEach(function(c) {
+    document.querySelectorAll('.chip').forEach(function(c) {
         var isStatus = c.dataset.status !== undefined;
         var isLevel = c.dataset.level !== undefined;
         if (name === 'status' && isStatus) {
@@ -487,6 +246,7 @@ function setFilter(name, value) {
         if (name === 'status' && isLevel) { c.classList.remove('active'); c.setAttribute('aria-pressed', 'false'); }
         if (name === 'level' && isStatus) { c.classList.remove('active'); c.setAttribute('aria-pressed', 'false'); }
     });
+    syncStatTiles();
     triggerFilter();
 }
 
@@ -508,18 +268,73 @@ function toggleSort(col) {
 function setTime(val) {
     document.getElementById('filter-time').value = val;
     document.getElementById('filter-bucket').value = '';
-    document.querySelectorAll('.time-tab').forEach(function(t) {
+    document.querySelectorAll('.seg [data-time]').forEach(function(t) {
         var isActive = t.dataset.time === val;
         t.classList.toggle('active', isActive);
         t.setAttribute('aria-selected', isActive);
     });
     document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.remove('active'); });
+    syncStatTiles();
     triggerFilter({timeMeta: true});
 }
 
+function syncStatTiles() {
+    var time = document.getElementById('filter-time').value;
+    var status = document.getElementById('filter-status').value;
+    document.querySelectorAll('.stat').forEach(function(s) { s.classList.remove('active'); });
+    if (status === 'Recommended') {
+        document.querySelector('.stat[data-stat="rec"]').classList.add('active');
+    } else if (time === 'hour') {
+        document.querySelector('.stat[data-stat="hour"]').classList.add('active');
+    } else if (time === 'today') {
+        document.querySelector('.stat[data-stat="today"]').classList.add('active');
+    } else if (time === '') {
+        document.querySelector('.stat[data-stat="total"]').classList.add('active');
+    }
+}
+
+function quickSort(col) {
+    document.getElementById('filter-sort').value = col;
+    document.getElementById('filter-dir').value = 'desc';
+    document.querySelectorAll('[data-qsort]').forEach(function(t) { t.classList.toggle('active', t.dataset.qsort === col); });
+    document.querySelectorAll('.th-sort').forEach(function(th) { th.classList.remove('s-asc','s-desc'); });
+    var icon = document.querySelector('.sort-i[data-col="' + col + '"]');
+    if (icon) icon.closest('th').classList.add('s-desc');
+    triggerFilter();
+}
+
+function setBucket(key) {
+    var current = document.getElementById('filter-bucket').value;
+    document.getElementById('filter-bucket').value = (current === key) ? '' : key;
+    document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.toggle('active', c.dataset.bucket === document.getElementById('filter-bucket').value); });
+    triggerFilter({timeMeta: true});
+}
+
+function debounceFilter() {
+    clearTimeout(_debounceTimer);
+    _debounceTimer = setTimeout(triggerFilter, 250);
+}
+
+/* ── Refresh ────────────────────────────── */
+function refreshFeed(btn) {
+    btn.disabled = true;
+    fetch(API_BASE + '/refresh', {method: 'POST'}).then(function(r) {
+        return r.json();
+    }).then(function(data) {
+        if (data.ok) showToast('Refreshed');
+        else showToast(data.error || 'Refresh failed', 'error');
+        triggerFilter({timeMeta: true});
+    }).catch(function() {
+        showToast('Refresh failed', 'error');
+    }).finally(function() {
+        btn.disabled = false;
+    });
+}
+
+/* ── Scan ───────────────────────────────── */
 function scanNow(btn) {
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Scanning...';
+    btn.innerHTML = '<span class="spinner"></span> Scanning…';
     fetch('/api/scan/trigger', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -530,15 +345,16 @@ function scanNow(btn) {
 }
 function pollScanStatus(btn) {
     var poll = setInterval(function() {
-        fetch('/api/scan/status').then(function(r) { return r.text(); }).then(function(html) {
-            if (html.indexOf('aria-busy') === -1) {
+        fetch('/api/scan/status').then(function(r) { return r.json(); }).then(function(state) {
+            if (!state.running) {
                 clearInterval(poll);
                 btn.disabled = false;
                 btn.innerHTML = 'Scan Now';
                 triggerFilter({timeMeta: true});
-                showToast('Scan complete \u2014 new jobs loaded');
+                if (state.error) showToast('Scan failed: ' + state.error, 'error');
+                else showToast('Scan complete — ' + (state.relevant || 0) + ' relevant jobs');
             }
-        });
+        }).catch(function() {});
     }, 3000);
 }
 {% if scan_running %}
@@ -547,17 +363,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 {% endif %}
 
+/* ── Bulk selection ─────────────────────── */
 function displayedJobRows() {
     return Array.prototype.slice.call(document.querySelectorAll('#linkedin-body tr[data-key]'));
 }
-
 function selectedJobRows() {
     return displayedJobRows().filter(function(row) {
         var cb = row.querySelector('.job-select');
         return cb && cb.checked;
     });
 }
-
 function syncSelectedJobKeysFromRows() {
     displayedJobRows().forEach(function(row) {
         var key = row.dataset.key || '';
@@ -567,21 +382,18 @@ function syncSelectedJobKeysFromRows() {
         else _selectedJobKeys.delete(key);
     });
 }
-
 function restoreSelectedRowsFromKeys() {
     displayedJobRows().forEach(function(row) {
         var cb = row.querySelector('.job-select');
         if (cb) cb.checked = _selectedJobKeys.has(row.dataset.key || '');
     });
 }
-
 function pruneSelectedKeysToDisplayedRows() {
     var displayed = new Set(displayedJobRows().map(function(row) { return row.dataset.key || ''; }));
     Array.from(_selectedJobKeys).forEach(function(key) {
         if (!displayed.has(key)) _selectedJobKeys.delete(key);
     });
 }
-
 function updateBulkSelectionState(options) {
     options = options || {};
     if (options.restore) restoreSelectedRowsFromKeys();
@@ -613,7 +425,6 @@ function updateBulkSelectionState(options) {
     if (openTopBtn) openTopBtn.disabled = rows.length === 0;
     if (deleteTopBtn) deleteTopBtn.disabled = rows.length === 0;
 }
-
 function toggleAllDisplayedJobs(checked) {
     displayedJobRows().forEach(function(row) {
         var cb = row.querySelector('.job-select');
@@ -621,7 +432,6 @@ function toggleAllDisplayedJobs(checked) {
     });
     updateBulkSelectionState();
 }
-
 function clearBulkSelection() {
     _selectedJobKeys.clear();
     displayedJobRows().forEach(function(row) {
@@ -630,7 +440,6 @@ function clearBulkSelection() {
     });
     updateBulkSelectionState();
 }
-
 function selectOnlyRows(rows) {
     _selectedJobKeys.clear();
     rows.forEach(function(row) {
@@ -639,17 +448,16 @@ function selectOnlyRows(rows) {
     });
     updateBulkSelectionState({restore: true, sync: false, prune: true});
 }
-
 function topJobRows(limit) {
     return displayedJobRows().filter(function(row) {
         return !row.classList.contains('dismissing');
     }).slice(0, limit);
 }
 
+/* ── Drag selection ─────────────────────── */
 function isBulkDragIgnoredTarget(target) {
     return !!(target && target.closest('a, button, select, input, textarea, label'));
 }
-
 function setRowSelected(row, selected) {
     if (!row) return;
     var cb = row.querySelector('.job-select');
@@ -657,40 +465,29 @@ function setRowSelected(row, selected) {
     cb.checked = selected;
     updateBulkSelectionState();
 }
-
 function rowFromEventTarget(target) {
     return target ? target.closest('#linkedin-body tr[data-key]') : null;
 }
-
 function rowFromPointer(event) {
     if (event.clientX === undefined || event.clientY === undefined) return rowFromEventTarget(event.target);
     var el = document.elementFromPoint(event.clientX, event.clientY);
     return rowFromEventTarget(el || event.target);
 }
-
 function rememberDragPointer(event) {
     if (event.clientX !== undefined) _dragPointerX = event.clientX;
     if (event.clientY !== undefined) _dragPointerY = event.clientY;
 }
-
 function tableScrollContainer() {
-    return document.querySelector('.li-table-scroll');
+    return document.querySelector('.table-scroll');
 }
-
 function selectRowAtDragPointer() {
     var el = document.elementFromPoint(_dragPointerX, _dragPointerY);
     setRowSelected(rowFromEventTarget(el), _dragSelectionMode);
 }
-
 function startDragAutoScroll() {
     if (_dragAutoScrollFrame !== null) return;
-
     function tick() {
-        if (!_dragSelecting) {
-            _dragAutoScrollFrame = null;
-            return;
-        }
-
+        if (!_dragSelecting) { _dragAutoScrollFrame = null; return; }
         var scroller = tableScrollContainer();
         if (scroller) {
             var rect = scroller.getBoundingClientRect();
@@ -699,39 +496,32 @@ function startDragAutoScroll() {
             var threshold = 64;
             var maxStep = 26;
             var delta = 0;
-
             if (_dragPointerY > visibleBottom - threshold && _dragPointerY <= visibleBottom + threshold) {
                 delta = Math.ceil((threshold - (visibleBottom - _dragPointerY)) / threshold * maxStep);
             } else if (_dragPointerY < visibleTop + threshold && _dragPointerY >= visibleTop - threshold) {
                 delta = -Math.ceil((threshold - (_dragPointerY - visibleTop)) / threshold * maxStep);
             }
-
             if (delta !== 0) {
                 var before = scroller.scrollTop;
                 scroller.scrollTop += delta;
                 if (scroller.scrollTop !== before) selectRowAtDragPointer();
             }
         }
-
         _dragAutoScrollFrame = window.requestAnimationFrame(tick);
     }
-
     _dragAutoScrollFrame = window.requestAnimationFrame(tick);
 }
-
 function stopDragAutoScroll() {
     if (_dragAutoScrollFrame === null) return;
     window.cancelAnimationFrame(_dragAutoScrollFrame);
     _dragAutoScrollFrame = null;
 }
-
 function startBulkDragSelection(event) {
     if (event.button !== 0 || isBulkDragIgnoredTarget(event.target)) return;
     var row = rowFromEventTarget(event.target);
     if (!row) return;
     var cb = row.querySelector('.job-select');
     if (!cb) return;
-
     rememberDragPointer(event);
     _dragSelecting = true;
     _dragSelectionMode = !cb.checked;
@@ -740,7 +530,6 @@ function startBulkDragSelection(event) {
     startDragAutoScroll();
     event.preventDefault();
 }
-
 function continueBulkDragSelection(event) {
     if (!_dragSelecting) return;
     rememberDragPointer(event);
@@ -748,7 +537,6 @@ function continueBulkDragSelection(event) {
     if (!row) return;
     setRowSelected(row, _dragSelectionMode);
 }
-
 function stopBulkDragSelection() {
     if (!_dragSelecting) return;
     _dragSelecting = false;
@@ -756,25 +544,21 @@ function stopBulkDragSelection() {
     document.body.classList.remove('is-drag-selecting');
 }
 
+/* ── Open / delete actions ──────────────── */
 function openSelectedJobs() {
     openJobRows(selectedJobRows(), 'selected');
 }
-
 function openTopJobs(limit) {
     var rows = topJobRows(limit);
     selectOnlyRows(rows);
     openJobRows(rows, 'top ' + rows.length);
 }
-
 function openJobRows(rows, label) {
     var opened = 0;
     var skipped = 0;
     rows.forEach(function(row) {
         var url = row.dataset.url || '';
-        if (!url) {
-            skipped += 1;
-            return;
-        }
+        if (!url) { skipped += 1; return; }
         var win = window.open(url, '_blank', 'noopener');
         if (win) win.opener = null;
         opened += 1;
@@ -783,11 +567,9 @@ function openJobRows(rows, label) {
     if (!opened && skipped) showToast('No ' + label + ' jobs have links', 'error');
     if (opened && skipped) showToast('Skipped ' + skipped + ' job' + (skipped === 1 ? '' : 's') + ' without links');
 }
-
 function deleteSelectedJobs() {
     deleteJobRows(selectedJobRows(), 'selected');
 }
-
 function deleteTopJobs(limit) {
     var rows = topJobRows(limit);
     selectOnlyRows(rows);
@@ -795,7 +577,6 @@ function deleteTopJobs(limit) {
         deleteJobRows(rows, 'highlighted top ' + rows.length);
     }, 0);
 }
-
 function deleteJobRows(rows, label) {
     var keys = rows.map(function(row) { return row.dataset.key || ''; }).filter(Boolean);
     if (!keys.length) return;
@@ -818,14 +599,13 @@ function deleteJobRows(rows, label) {
             updateBulkSelectionState();
             showToast('Deleted ' + (payload.deleted || 0) + ' job' + (payload.deleted === 1 ? '' : 's'));
             refreshCounts({timeMeta: true});
-        }, 300);
+        }, 280);
     }).catch(function() {
         rows.forEach(function(row) { row.classList.remove('dismissing'); });
         updateBulkSelectionState();
         showToast('Failed to delete selected jobs', 'error');
     });
 }
-
 function dismissJob(btn, key) {
     var row = btn.closest('tr');
     row.classList.add('dismissing');
@@ -839,35 +619,14 @@ function dismissJob(btn, key) {
             updateBulkSelectionState();
             showToast('Deleted');
             refreshCounts({timeMeta: true});
-        }, 300);
+        }, 280);
     }).catch(function() {
         row.classList.remove('dismissing');
         showToast('Failed to delete', 'error');
     });
 }
 
-function setBucket(key) {
-    var current = document.getElementById('filter-bucket').value;
-    document.getElementById('filter-bucket').value = (current === key) ? '' : key;
-    document.querySelectorAll('.hour-card').forEach(function(c) { c.classList.toggle('active', c.dataset.bucket === document.getElementById('filter-bucket').value); });
-    triggerFilter({timeMeta: true});
-}
-
-function quickSort(col) {
-    document.getElementById('filter-sort').value = col;
-    document.getElementById('filter-dir').value = 'desc';
-    document.querySelectorAll('.sort-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.qsort === col); });
-    document.querySelectorAll('.th-sort').forEach(function(th) { th.classList.remove('s-asc','s-desc'); });
-    var icon = document.querySelector('.sort-i[data-col="' + col + '"]');
-    if (icon) icon.closest('th').classList.add('s-desc');
-    triggerFilter();
-}
-
-function debounceFilter() {
-    clearTimeout(_debounceTimer);
-    _debounceTimer = setTimeout(triggerFilter, 250);
-}
-
+/* ── Feed fetch + meta ──────────────────── */
 function currentParams(includeTimeMeta) {
     var params = new URLSearchParams();
     params.set('status', document.getElementById('filter-status').value);
@@ -888,8 +647,8 @@ function currentParams(includeTimeMeta) {
 function applyFeedMeta(meta) {
     var counts = meta.counts || {};
     var levelCounts = meta.level_counts || {};
-    document.querySelectorAll('.li-chip').forEach(function(c) {
-        var badge = c.querySelector('.li-chip-count');
+    document.querySelectorAll('.chip').forEach(function(c) {
+        var badge = c.querySelector('.chip-n');
         if (!badge) return;
         if (c.dataset.status !== undefined) {
             var key = c.dataset.status === '' ? 'All' : c.dataset.status;
@@ -900,15 +659,15 @@ function applyFeedMeta(meta) {
         }
     });
 
+    if (counts.Recommended !== undefined) tweenStat(document.getElementById('stat-rec'), counts.Recommended);
+
     var summaryEl = document.getElementById('li-summary');
     if (summaryEl && meta.total !== undefined) {
         var rec = counts.Recommended || 0;
-        var applied = counts.Applied || 0;
         var displayed = meta.displayed || meta.total;
         var html_parts = '<b>' + meta.total + '</b> jobs';
         if (displayed < meta.total) html_parts += ' &middot; showing <b>' + displayed + '</b>';
         if (rec > 0) html_parts += ' &middot; <b>' + rec + '</b> recommended';
-        if (applied > 0) html_parts += ' &middot; Applied: <b>' + applied + '</b>';
         summaryEl.innerHTML = html_parts;
     }
 
@@ -918,6 +677,13 @@ function applyFeedMeta(meta) {
         el = document.getElementById('tc-hour'); if (el) el.textContent = tc.this_hour || 0;
         el = document.getElementById('tc-today'); if (el) el.textContent = tc.today || 0;
         el = document.getElementById('tc-yesterday'); if (el) el.textContent = tc.yesterday || 0;
+        tweenStat(document.getElementById('stat-hour'), tc.this_hour || 0);
+        tweenStat(document.getElementById('stat-today'), tc.today || 0);
+    }
+    if (meta.total !== undefined && !document.getElementById('filter-status').value &&
+        !document.getElementById('filter-level').value && !document.getElementById('filter-time').value &&
+        !document.getElementById('filter-q').value) {
+        tweenStat(document.getElementById('stat-total'), meta.total);
     }
     if (meta.buckets) {
         BUCKET_DATA = meta.buckets;
@@ -961,36 +727,6 @@ function formatRecency(root) {
     });
 }
 
-function rowMatchesFilters(row) {
-    var status = document.getElementById('filter-status').value;
-    var level = document.getElementById('filter-level').value;
-    var q = document.getElementById('filter-q').value.trim().toLowerCase();
-    var termEl = document.getElementById('filter-search-term');
-    var term = termEl ? termEl.value : '';
-    if (status === 'Recommended' && !(row.dataset.recommended === '1' && row.dataset.status !== 'Not Interested')) return false;
-    if (status && status !== 'Recommended' && row.dataset.status !== status) return false;
-    if (level && row.dataset.level !== level) return false;
-    if (q && (row.dataset.search || '').indexOf(q) === -1) return false;
-    if (term && row.dataset.searchTerm !== term) return false;
-    return true;
-}
-
-function pruneMismatchedRows() {
-    document.querySelectorAll('#linkedin-body tr[data-search]').forEach(function(row) {
-        if (!rowMatchesFilters(row)) {
-            row.classList.add('dismissing');
-            setTimeout(function() {
-                _selectedJobKeys.delete(row.dataset.key || '');
-                row.remove();
-                updateBulkSelectionState();
-            }, 180);
-        } else {
-            formatRecency(row);
-        }
-    });
-    updateBulkSelectionState();
-}
-
 function refreshCounts(options) {
     options = options || {};
     var params = currentParams(!!options.timeMeta);
@@ -1019,10 +755,8 @@ function triggerFilter(options) {
         if (seq !== _filterSeq) return;
         applyFeedMeta(payload.meta);
         document.getElementById('linkedin-body').innerHTML = payload.html;
-        htmx.process(document.getElementById('linkedin-body'));
         formatRecency(document.getElementById('linkedin-body'));
         updateBulkSelectionState({restore: !!options.preserveSelection, sync: !options.preserveSelection, prune: !!options.preserveSelection});
-        // Update last-updated timestamp
         var updEl = document.getElementById('last-updated');
         if (updEl) {
             var now = new Date();
@@ -1035,20 +769,18 @@ function triggerFilter(options) {
     });
 }
 
-// ── Timezone helpers ──
+/* ── Timezone helpers ───────────────────── */
 function formatLocalTime(utcStr) {
     if (!utcStr) return '';
     var d = new Date(utcStr.replace(' ', 'T') + (utcStr.includes('+') || utcStr.includes('Z') ? '' : 'Z'));
     if (isNaN(d)) return utcStr;
     return 'Updated ' + d.toLocaleString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
 }
-
 function renderUtcTimes() {
     document.querySelectorAll('.utc-time').forEach(function(el) {
         el.textContent = formatLocalTime(el.dataset.utc);
     });
 }
-
 function renderBucketCards() {
     var container = document.getElementById('hourly-scroll');
     if (!container) return;
@@ -1061,12 +793,166 @@ function renderBucketCards() {
                '<div class="h-count">' + c.count + ' jobs</div></div>';
     }).join('');
 }
-
 function getUserTzOffset() {
     return new Date().getTimezoneOffset();
 }
 
-// ── Auto-refresh (60s, pauses when tab hidden) ──
+/* ════════ AI Score Runner ════════ */
+var _aiPoll = null;
+var _aiEngine = 'claude';
+
+function openAiModal() {
+    document.getElementById('ai-modal').classList.add('open');
+    pollAiStatus(true);
+}
+function closeAiModal() {
+    document.getElementById('ai-modal').classList.remove('open');
+}
+function setAiEngine(engine) {
+    _aiEngine = engine;
+    document.querySelectorAll('#ai-engine-seg button').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.engine === engine);
+    });
+}
+
+function startAiRun() {
+    var hours = document.getElementById('ai-hours').value;
+    var limit = document.getElementById('ai-limit').value || '0';
+    var rescore = document.getElementById('ai-rescore').checked;
+    var btn = document.getElementById('ai-run-btn');
+    btn.disabled = true;
+
+    var body = new URLSearchParams();
+    body.set('engine', _aiEngine);
+    body.set('hours', hours);
+    body.set('limit', limit);
+    body.set('rescore', rescore ? 'true' : 'false');
+
+    fetch('/api/aiscore/trigger', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: body.toString()
+    }).then(function(resp) {
+        return resp.json().then(function(data) { return {ok: resp.ok, data: data}; });
+    }).then(function(r) {
+        if (!r.ok) {
+            btn.disabled = false;
+            showToast(r.data.error || 'Could not start scoring', 'error');
+            return;
+        }
+        renderAiState(r.data);
+        startAiPolling();
+    }).catch(function() {
+        btn.disabled = false;
+        showToast('Could not reach the server', 'error');
+    });
+}
+
+function cancelAiRun() {
+    fetch('/api/aiscore/cancel', {method: 'POST'})
+        .then(function(r) { return r.json(); })
+        .then(renderAiState)
+        .catch(function() {});
+}
+
+function startAiPolling() {
+    clearInterval(_aiPoll);
+    _aiPoll = setInterval(function() { pollAiStatus(false); }, 2000);
+}
+
+function pollAiStatus(once) {
+    fetch('/api/aiscore/status')
+        .then(function(r) { return r.json(); })
+        .then(function(state) {
+            renderAiState(state);
+            if (state.running && !once && !_aiPoll) startAiPolling();
+            if (state.running && once) startAiPolling();
+        })
+        .catch(function() {});
+}
+
+function renderAiState(state) {
+    var panel = document.getElementById('ai-run-panel');
+    var statusEl = document.getElementById('ai-run-status');
+    var bar = document.getElementById('ai-run-bar');
+    var barFill = bar.querySelector('i');
+    var metaEl = document.getElementById('ai-run-meta');
+    var logEl = document.getElementById('ai-run-log');
+    var runBtn = document.getElementById('ai-run-btn');
+    var cancelBtn = document.getElementById('ai-cancel-btn');
+    var headerBtn = document.getElementById('ai-score-btn');
+
+    var hasActivity = state.running || state.ok !== null;
+    panel.style.display = hasActivity ? '' : 'none';
+    panel.classList.toggle('failed', state.ok === false);
+
+    // Header button reflects run state from anywhere
+    if (state.running) {
+        headerBtn.classList.add('btn-scoring');
+        headerBtn.innerHTML = '<span class="spinner"></span> Scoring…';
+    } else {
+        headerBtn.classList.remove('btn-scoring');
+        headerBtn.innerHTML = '✦ AI Score';
+    }
+
+    runBtn.disabled = !!state.running;
+    runBtn.textContent = state.running ? 'Running…' : (state.ok !== null ? '▶ Run again' : '▶ Run scoring');
+    cancelBtn.style.display = state.running ? '' : 'none';
+
+    if (!hasActivity) return;
+
+    // Progress percent: batches are the most reliable signal. A batch in
+    // flight counts as half-done so a 1-batch run doesn't show 100% early.
+    var pct = 0;
+    if (state.batches > 0) pct = Math.min((state.batch - (state.running ? 0.5 : 0)) / state.batches, 1);
+    if (!state.running && state.ok !== null) pct = 1;
+
+    bar.classList.remove('indeterminate', 'ok', 'fail');
+    if (state.running && state.batches === 0) {
+        bar.classList.add('indeterminate');
+    } else {
+        barFill.style.setProperty('--p', pct);
+        if (!state.running) bar.classList.add(state.ok ? 'ok' : 'fail');
+    }
+
+    if (state.running) {
+        var label = 'Scoring with ' + state.engine;
+        if (state.batches > 0) label += ' — batch ' + state.batch + '/' + state.batches;
+        statusEl.innerHTML = '<span class="spinner"></span> ' + label +
+            '<span class="pct">' + (state.batches > 0 ? Math.round(pct * 100) + '%' : 'starting…') + '</span>';
+    } else if (state.ok) {
+        var doneLabel = state.total === 0 ? 'Nothing to score — all jobs already scored' : 'Done — scored ' + state.scored + ' job' + (state.scored === 1 ? '' : 's');
+        statusEl.innerHTML = '<span class="done-glyph run-done-ok">✓</span> <span class="run-done-ok">' + doneLabel + '</span><span class="pct">100%</span>';
+    } else {
+        statusEl.innerHTML = '<span class="done-glyph run-done-fail">✕</span> <span class="run-done-fail">Not done — ' + (state.error || 'scoring failed') + '</span>';
+    }
+
+    var metaBits = [];
+    if (state.total) metaBits.push('<span><b>' + state.total + '</b> jobs</span>');
+    if (state.scored) metaBits.push('<span class="run-done-ok"><b>' + state.scored + '</b> scored</span>');
+    if (state.failed) metaBits.push('<span class="run-done-fail"><b>' + state.failed + '</b> failed</span>');
+    if (state.engine) metaBits.push('<span>engine: <b>' + state.engine + '</b></span>');
+    if (state.hours) metaBits.push('<span>window: <b>' + state.hours + 'h</b></span>');
+    metaEl.innerHTML = metaBits.join('');
+
+    var atBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 30;
+    logEl.textContent = (state.log || []).join('\n');
+    if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+
+    // Run just finished → stop polling, refresh feed so new scores show up
+    if (!state.running && _aiPoll) {
+        clearInterval(_aiPoll);
+        _aiPoll = null;
+        if (state.ok) {
+            showToast('AI scoring complete — ' + state.scored + ' scored');
+            triggerFilter({timeMeta: true, preserveSelection: true});
+        } else if (state.error !== 'Cancelled by user.') {
+            showToast('AI scoring did not finish: ' + (state.error || 'unknown error'), 'error');
+        }
+    }
+}
+
+/* ── Auto-refresh (60s, pauses when tab hidden) ── */
 function startAutoRefresh() {
     clearInterval(_autoRefreshInterval);
     _autoRefreshInterval = setInterval(function() {
@@ -1083,6 +969,14 @@ document.addEventListener('visibilitychange', function() {
     }
 });
 
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAiModal();
+    if (e.key === '/' && !e.target.closest('input, textarea, select')) {
+        e.preventDefault();
+        document.getElementById('filter-q').focus();
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     renderUtcTimes();
     renderBucketCards();
@@ -1096,6 +990,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('mouseup', stopBulkDragSelection);
     triggerFilter({timeMeta: true});
     startAutoRefresh();
+    if (AI_RUNNING_ON_LOAD) pollAiStatus(true);
 });
 </script>
 

@@ -243,7 +243,7 @@ class TestScannerDedup:
                 location="SF", description="",
             )
             res = FilterResult(
-                score=50, score_pct=50, should_apply=True,
+                score=50, score_pct=50,
                 reason="", resume_variant="se",
             )
             return job, res
@@ -269,7 +269,7 @@ class TestScannerDedup:
             title="SWE", company="Stripe", location="SF", description="",
         )
         res = FilterResult(
-            score=50, score_pct=50, should_apply=True,
+            score=50, score_pct=50,
             reason="", resume_variant="se",
         )
         new, seen = deduplicate_results([(job, res)], seen)

@@ -5,13 +5,14 @@ The scoring engine (`jobflow/filter.py`) evaluates each job posting against the 
 ## Score Calculation
 
 ```
-raw = keyword_score + synergy_bonus + level_points + experience_score
-      + recency_score + location_score + h1b_bonus + senior_penalty
+raw = keyword_score + synergy_bonus + title_fit_bonus + title_keyword_boost
+      + poor_fit_penalty + level_points + experience_score + recency_score
+      + location_score + h1b_bonus + senior_desc_penalty
 
-score_pct = min(100, max(0, round(raw / 130 * 100)))
+score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
 ```
 
-`SCORE_MAX_RAW = 130` is the practical ceiling (not every keyword firing at once).
+`SCORE_MAX_RAW = 140` is the practical ceiling (not every signal firing at once).
 
 ## Scoring Signals
 
@@ -95,20 +96,28 @@ Separate from main score — estimates applicant competition:
 
 ## Hard Disqualifiers
 
-Jobs are instantly rejected (score=0) if they match:
-- "no visa sponsorship", "will not sponsor", "cannot sponsor"
-- "US citizen required", "security clearance"
-- "permanent resident only", "green card required"
-- "authorized to work without sponsorship"
-- Non-US location (India, UK, Germany, etc.)
+A job is flagged (score=0, `reject_reason` set) if any of these fire, in order:
+
+1. **Company / URL blocklist** — staffing agencies & aggregators (Dice, Turing, Jobot, jobright.ai, …)
+2. **Title** — senior / staff / principal / lead / manager / director / architect / VP / QA-SDET
+3. **Sponsorship / citizenship / clearance** — "no sponsorship", "US citizen only", "security clearance", green card, etc.
+4. **Non-US location** — anything not matching a US city/state/remote signal (India, UK, Germany, …)
+5. **Overqualified** — minimum experience ≥ 4 years (or "5-8 years"-style phrasing)
+6. **Senior salary** — $130K+ floor with zero entry-level signals
+
+> Flagged jobs are **not dropped**. They are kept (with `reject_reason`) so the
+> AI scorer — the real quality gate — can override a rule-based false positive.
+> The same six checks run at scan time (`filter.evaluate_job`) and on every store
+> re-score (`linkedin_store._rescore_entry`), kept in lockstep.
 
 ## Thresholds
 
 | Threshold | Value | Usage |
 |-----------|-------|-------|
-| `should_apply` | score_pct >= 30 | Job appears in scan results |
-| `recommended` | score_pct >= 25 | Gold star on LinkedIn dashboard |
-| Senior reject | 3+ senior phrases, 0 entry signals | -30 penalty |
+| `reject_reason` | any hard-reject rule fires | Job flagged (score=0) but kept for AI re-scoring |
+| `recommended` (no AI score) | `score_pct >= 65` AND level New Grad/Entry | "Recommended" chip (`filter.algo_recommended`) |
+| `recommended` (AI-scored) | `ai_score >= 7` | "Recommended" chip |
+| Senior description penalty | 3+ senior phrases, 0 entry signals | −30 (graded: −15 / −30 / −35 by count) |
 
 ## Variant Selection
 

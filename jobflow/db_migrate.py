@@ -12,7 +12,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from .db import init_db, get_conn, put_conn, TTL_DAYS, SEEN_TTL_HOURS
+from .db import init_db, get_conn, put_conn, TTL_DAYS
 from .linkedin_store import KEEP_STATUSES
 
 

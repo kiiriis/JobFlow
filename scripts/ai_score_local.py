@@ -41,6 +41,7 @@ if env_path.exists():
 
 from jobflow.db import get_conn, put_conn, init_db
 from jobflow.linkedin_store import save_store
+from jobflow.filter import STAFFING_BLOCK_REASON, text_has_blocked_source
 
 PROFILE_PATH = ROOT / "config" / "profile.txt"
 PROFILE_EXAMPLE_PATH = ROOT / "config" / "profile.example.txt"
@@ -51,22 +52,6 @@ ENGINES = ("claude", "codex")
 # Models considered provisional: a job scored by one of these is eligible to be
 # re-scored by a *different* engine (and unscored jobs are always eligible).
 PROVISIONAL_MODELS = frozenset({"groq", "claude", "codex"})
-STAFFING_BLOCK_REASON = "Blocked staffing/spam source."
-STAFFING_SOURCE_BLOCKLIST = (
-    "jobright.ai",
-    "remotehunter",
-    "quik hire staffing",
-    "beacon fire",
-    "helic & co.",
-    "helic and co",
-    "jack & jill",
-    "jack and jill",
-    "jobs via dice",
-)
-STAFFING_SOURCE_BLOCKLIST_COMPACT = tuple(
-    re.sub(r"[^a-z0-9]+", "", source.lower())
-    for source in STAFFING_SOURCE_BLOCKLIST
-)
 
 BATCH_PROMPT = """You are a job relevance scorer for a new grad / entry-level software engineer on F1 OPT visa looking for their first full-time role in the US.
 
@@ -197,14 +182,8 @@ def normalize_row_score(score_data: dict) -> tuple[int, str, int, bool]:
 def is_blocked_staffing_source(row):
     """Return True if a DB job row came from a blocked staffing/spam source."""
     url, company, title, location, desc, *_ = row
-    haystack = " ".join(
-        str(value or "")
-        for value in (url, company, title, location, desc)
-    ).lower()
-    compact_haystack = re.sub(r"[^a-z0-9]+", "", haystack)
-    return any(source in haystack for source in STAFFING_SOURCE_BLOCKLIST) or any(
-        source in compact_haystack for source in STAFFING_SOURCE_BLOCKLIST_COMPACT
-    )
+    haystack = " ".join(str(value or "") for value in (url, company, title, location, desc))
+    return text_has_blocked_source(haystack)
 
 
 def load_profile() -> str:

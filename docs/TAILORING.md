@@ -2,7 +2,7 @@
 
 ## Overview
 
-JobFlow tailors LaTeX resumes to specific job descriptions using Claude AI. It supports three resume variants, iterative refinement, and auto-condensing to ensure a single-page output.
+JobFlow tailors LaTeX resumes to specific job descriptions using Claude AI. It supports three resume variants. Tailoring is CLI-only: `jobflow apply` builds a prompt you feed to Claude, then `jobflow save` merges the returned sections and compiles a PDF with pdflatex.
 
 ## Resume Variants
 
@@ -14,51 +14,25 @@ JobFlow tailors LaTeX resumes to specific job descriptions using Claude AI. It s
 
 Variant is auto-selected based on JD keywords (ML keywords → ml, React/Vue/frontend → appdev, else → se).
 
-## Tailoring Flow
+## Tailoring Flow (CLI-only)
 
-### Via Web Dashboard (`/tailor`)
+```bash
+# 1. Structure the JD, score it, and write a tailoring prompt
+jobflow apply "https://..." --paste -t "SWE" -c "Stripe" -l "SF"
 
-1. User pastes JD text
-2. Selects model (sonnet/opus/haiku) and effort (low/medium/high)
-3. **Pre-filter check**:
-   - Reject if JD contains visa disqualifiers
-   - Reject if 3+ senior signals AND 0 entry signals
-4. Session created with UUID
-5. Background thread runs Claude CLI:
-   ```
-   claude --model sonnet --output-format text "prompt..."
-   ```
-6. Claude returns complete `.tex` file
-7. META line parsed: `META: company=X | role=Y | location=Z`
-8. LaTeX extracted from output (strips markdown fences)
-9. Saved to `data/output/tailor_<session_id>/`
-10. Compiled with pdflatex (runs twice for cross-refs)
-11. **Page count check**: If PDF > 1 page, auto-condense triggered
-12. PDF served via iframe preview
+# 2. Feed the generated prompt to Claude to get tailored LaTeX sections
+
+# 3. Merge sections with the base preamble + education and compile the PDF
+jobflow save --dir data/output/Stripe_SWE_2026-04-08
+```
+
+1. `jobflow apply` scrapes/structures the JD, auto-selects a resume variant, scores the role, and writes a tailoring prompt to the output directory.
+2. You paste the prompt into Claude and copy the returned tailored `.tex` sections back into the output directory.
+3. `jobflow save --dir <path>` extracts the base-resume preamble + education, merges in the tailored sections, and runs pdflatex (twice for cross-refs) to produce the final PDF.
 
 ### Refinement
 
-User can submit feedback (e.g., "emphasize AWS experience"):
-1. Current `.tex` + feedback sent to Claude
-2. New iteration generated
-3. Re-compiled and page-checked
-4. Iteration counter incremented
-
-### Cancellation
-
-- Sessions can be cancelled mid-generation
-- Claude subprocess killed via `SIGKILL`
-- Session marked as cancelled
-
-### Via CLI
-
-```bash
-# Process a job
-jobflow apply "https://..." --paste -t "SWE" -c "Stripe" -l "SF"
-
-# Save tailored resume
-jobflow save --dir data/output/Stripe_SWE_2026-04-08
-```
+To revise, edit the tailored sections in the output directory and re-run `jobflow save --dir <path>` to recompile.
 
 ## Key Functions
 
@@ -74,25 +48,9 @@ jobflow save --dir data/output/Stripe_SWE_2026-04-08
 ### `latex.py`
 
 - `compile_pdf(tex_path, final_name)` — Run pdflatex, clean artifacts
-- `get_page_count(pdf_path)` — Count pages via PDF bytes regex
-
-### `web/__init__.py` (tailor routes)
-
-- `_run_tailor(session_id, config)` — Main tailoring thread
-- `_run_tailor_refine(session_id, config, feedback)` — Refinement thread
-- `_auto_condense(session_id, config)` — Page reduction thread
-- `_run_claude(session, prompt)` — Subprocess wrapper for Claude CLI
-- `_extract_tex_from_output(output)` — Parse LaTeX from Claude response
-- `_parse_meta_line(output)` — Extract company/role/location from META line
-
-## Session Management
-
-- Stored in-memory: `tailor_sessions` dict
-- Max 20 sessions (oldest completed evicted via `_evict_old_sessions()`)
-- Session fields: id, status, jd_text, variant, company, role, location, pdf_path, current_tex, iteration, model, effort, feedback_history, output_dir, _process, _cancelled, _created_at
 
 ## Dependencies
 
 - **Claude CLI** — must be installed and authenticated (`claude` command)
 - **pdflatex** — from MacTeX/TexLive (`pdflatex` command)
-- Only works locally, not on Render deployment
+- Tailoring runs locally via the CLI, not on the Render deployment

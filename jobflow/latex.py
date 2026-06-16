@@ -1,20 +1,16 @@
 """pdflatex compilation wrapper — compiles .tex files to PDF.
 
-Used by both the CLI (jobflow save) and web dashboard (/api/tailor/generate)
-to compile tailored resumes into PDFs. Runs pdflatex twice to resolve
-cross-references (page numbers, hyperlinks).
+Used by the CLI resume workflow (`jobflow save`) to compile a tailored resume
+into a PDF. Runs pdflatex twice to resolve cross-references (page numbers,
+hyperlinks). Resume tailoring is CLI-only — the web dashboard's tailor page
+was removed.
 
 Requirements:
-    - pdflatex must be on PATH (from MacTeX on macOS, texlive on Linux)
-    - Not available on Render free tier — the web dashboard will show the
-      .tex file but skip PDF compilation if pdflatex is missing.
-
-The get_page_count() function uses a regex on raw PDF bytes to count pages.
-This is used by the auto-condense feature: if a tailored resume compiles to
-2+ pages, Claude is asked to shorten it to fit on exactly one page.
+    - pdflatex must be on PATH (from MacTeX on macOS, texlive on Linux).
+      If it's missing, compile_pdf() returns None and the caller keeps the
+      .tex file.
 """
 
-import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -78,20 +74,6 @@ def compile_pdf(tex_path: Path, final_name: str = "") -> Path | None:
             log_content = log_path.read_text(errors="replace")
             errors = [l for l in log_content.split("\n") if l.startswith("!")]
             if errors:
-                print(f"LaTeX errors:\n" + "\n".join(errors[:5]))
+                print("LaTeX errors:\n" + "\n".join(errors[:5]))
 
     return None
-
-
-def get_page_count(pdf_path: Path) -> int:
-    """Return the number of pages in a PDF file.
-
-    Uses a simple regex on raw PDF bytes — reliable for pdflatex output.
-    Returns 0 if the file can't be read.
-    """
-    try:
-        data = pdf_path.read_bytes()
-        # Match /Type /Page but not /Type /Pages (the page-tree root)
-        return len(re.findall(rb"/Type\s*/Page(?!s)", data))
-    except Exception:
-        return 0

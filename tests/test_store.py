@@ -9,7 +9,7 @@ from jobflow.linkedin_store import (
     load_store, save_store, merge_scan_results, prune_old_jobs,
     update_job_status, get_filtered_jobs, get_status_counts,
     get_level_counts, get_filtered_counts, get_search_terms, format_recency,
-    backfill_job, LINKEDIN_STATUSES, RECOMMENDED_THRESHOLD,
+    backfill_job, LINKEDIN_STATUSES,
     RETENTION_DAYS, KEEP_STATUSES,
 )
 

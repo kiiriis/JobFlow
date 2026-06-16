@@ -3,7 +3,7 @@
 This is the core evaluation logic that decides whether a job is worth applying
 to. Every scanned job passes through evaluate_job(), which works in two phases:
 
-Phase 1 — Hard Reject (instant score=0, should_apply=False):
+Phase 1 — Hard Reject (instant score=0, reject_reason set):
     Six ordered checks that disqualify a job immediately:
     1. Company blocklist    — spam aggregators (Dice, Turing, Jobot, etc.)
     2. Title patterns       — senior/staff/principal/lead/QA/architect/VP
@@ -28,7 +28,11 @@ Phase 2 — Scoring (if all hard filters pass):
     - senior_penalty:   3+ senior signals with 0 entry signals = -30
 
     Raw score (max ~130) is normalized: score_pct = raw / 130 * 100
-    should_apply = True (all jobs passing hard rejects are kept for AI scoring)
+
+Note on hard rejects: a hard-rejected job is NOT dropped. evaluate_job() still
+returns a FilterResult (with score=0 and reject_reason set) so the job flows
+into the store, where the AI scorer can override the rule-based verdict. Callers
+distinguish rejected jobs by checking `reject_reason`, not by a boolean gate.
 
 Variant Selection:
     select_variant() picks which base resume to use:
@@ -132,6 +136,22 @@ COMPANY_BLOCKLIST = {
 # URL fragments that identify aggregator/staffing reposts even when the
 # company field looks legitimate (e.g. jobright.ai deep links).
 BLOCKED_URL_SIGNS = ("jobright.ai", "jobs-via-dice")
+
+# Substring blocklist used by the AI scorers (jobflow/ai_scorer.py and
+# scripts/ai_score_local.py) to short-circuit obvious aggregator/staffing
+# reposts to a score of 0 without spending a model call. Unlike COMPANY_BLOCKLIST
+# (exact company-name match), this is matched as a substring against a haystack
+# built from a job's url/company/title/location/description.
+STAFFING_SOURCE_BLOCKLIST = (
+    "jobright.ai", "remotehunter", "quik hire staffing", "beacon fire",
+    "helic & co.", "helic and co", "jack & jill", "jack and jill",
+    "jobs via dice",
+)
+_STAFFING_SOURCE_BLOCKLIST_COMPACT = tuple(
+    re.sub(r"[^a-z0-9]+", "", s.lower()) for s in STAFFING_SOURCE_BLOCKLIST
+)
+# Standard ai_reason recorded for a blocked-source job.
+STAFFING_BLOCK_REASON = "Blocked staffing/spam source."
 
 # ── Senior salary pattern (>= $130K suggests non-entry) ────────────────────
 # A salary floor of $130K+ without any entry-level signals strongly indicates
@@ -296,6 +316,40 @@ H1B_PREFER = [
     "sponsorship available", "sponsorship provided", "open to sponsorship",
 ]
 
+# ── US location detection ───────────────────────────────────────────────────
+# Allowlist approach: a location counts as US if it names the country, a US
+# state abbreviation, a known major US city, or a remote/hybrid arrangement.
+# Anything else (London, Bangalore, Toronto, ...) is treated as non-US without
+# having to enumerate every foreign place.
+US_STATE_ABBREVS = {
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
+    "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS",
+    "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK",
+    "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV",
+    "WI", "WY", "DC",
+}
+US_LOCATION_PATTERNS = [
+    r"\bunited\s+states\b", r"\busa\b", r"\bus\b", r"\bu\.s\.?\b",
+    r"\bremote\b", r"\bhybrid\b",
+    # Major US cities
+    r"\bnew\s+york\b", r"\bsan\s+francisco\b", r"\bseattle\b",
+    r"\baustin\b", r"\bboston\b", r"\bchicago\b", r"\blos\s+angeles\b",
+    r"\bdenver\b", r"\batlanta\b", r"\bsunnyvale\b", r"\bmountain\s+view\b",
+    r"\bpalo\s+alto\b", r"\bsan\s+jose\b", r"\bsan\s+diego\b",
+    r"\bportland\b", r"\bphiladelphia\b", r"\bwashington\b",
+    r"\braleigh\b", r"\bcharlotte\b", r"\bmiami\b", r"\bdallas\b",
+    r"\bhouston\b", r"\bphoenix\b", r"\bsalt\s+lake\b", r"\bdetroit\b",
+    r"\bminneapolis\b", r"\bpittsburgh\b", r"\bcleveland\b", r"\bcolumbus\b",
+    r"\bindianapolis\b", r"\bnashville\b", r"\bsan\s+antonio\b",
+    r"\bjacksonville\b", r"\bmemphis\b", r"\bsacramento\b",
+    r"\bkansas\s+city\b", r"\btampa\b", r"\borlando\b", r"\bcincinnati\b",
+    r"\bst\.?\s*louis\b", r"\bsaint\s+louis\b", r"\bbaltimore\b",
+    r"\brichmond\b", r"\bdurham\b", r"\bchapel\s+hill\b", r"\bboulder\b",
+    r"\bann\s+arbor\b", r"\bprovo\b", r"\bredmond\b", r"\bkirkland\b",
+    r"\birvine\b", r"\bsanta\s+clara\b", r"\bcupertino\b", r"\bmenlo\s+park\b",
+    r"\bcambridge\b", r"\bbellevue\b", r"\barlington\b",
+]
+
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -406,9 +460,39 @@ def is_blocked_source(company: str, url: str = "") -> bool:
     return any(sign in url_lower for sign in BLOCKED_URL_SIGNS)
 
 
+def text_has_blocked_source(text: str) -> bool:
+    """True when free text mentions a blocked staffing/spam source.
+
+    Checks both the lowercased text and an alphanumeric-only ("compact") form so
+    punctuation/spacing variants ("Helic & Co." vs. "helicandco") still match.
+    Used by the AI scorers against a haystack of a job's text fields.
+    """
+    low = text.lower()
+    if any(s in low for s in STAFFING_SOURCE_BLOCKLIST):
+        return True
+    compact = re.sub(r"[^a-z0-9]+", "", low)
+    return any(s in compact for s in _STAFFING_SOURCE_BLOCKLIST_COMPACT)
+
+
 def algo_recommended(score_pct: int, level: str) -> bool:
     """Fallback 'recommended' flag when no AI score exists yet."""
     return score_pct >= RECOMMENDED_MIN_PCT and level in ("New Grad", "Entry")
+
+
+def is_us_location(location: str) -> bool:
+    """True when a location string looks US-based (or remote/hybrid).
+
+    A blank location returns True: an absent location is not evidence of a
+    foreign role, so we never hard-reject on it. Used by both the scan-time
+    scorer (evaluate_job) and the store re-scorer (linkedin_store._rescore_entry)
+    so the two stay consistent.
+    """
+    if not location or not location.strip():
+        return True
+    if has_match(location.lower(), US_LOCATION_PATTERNS):
+        return True
+    # State abbreviations are matched against the original (upper) case.
+    return any(word in US_STATE_ABBREVS for word in re.findall(r"\b[A-Z]{2}\b", location))
 
 
 def level_tag(title: str, description: str = "") -> str:
@@ -518,7 +602,7 @@ def competition_estimate(company: str, hours_old: float = 0) -> int:
     """Estimate applicant competition (0-10) for prioritization.
 
     Big Tech companies (+5) and older postings (+2-5) tend to have more
-    applicants. This score is informational — it doesn't affect should_apply,
+    applicants. This score is informational — it doesn't affect filtering,
     but helps the user prioritize which jobs to apply to first.
     """
     company_lower = company.lower()
@@ -551,7 +635,7 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
         # (scripts/ai_score_local.py) can correct false positives. The AI
         # handles sponsorship/seniority nuance better than regex phrase matching.
         return FilterResult(
-            score=0, score_pct=0, should_apply=True, reason=reason,
+            score=0, score_pct=0, reason=reason,
             resume_variant=variant, level=level, reject_reason=reason,
         )
 
@@ -569,42 +653,7 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
         return _reject("No visa sponsorship or requires citizenship/clearance")
 
     # ── 4. Non-US location ──
-    # Allowlist approach: if location doesn't match any US signal, reject it.
-    # This catches Peru, Brazil, Canada, etc. without needing to enumerate them.
-    US_STATE_ABBREVS = {
-        "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN",
-        "IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV",
-        "NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN",
-        "TX","UT","VT","VA","WA","WV","WI","WY","DC",
-    }
-    us_location_patterns = [
-        r"\bunited\s+states\b", r"\busa\b", r"\bus\b", r"\bu\.s\.?\b",
-        r"\bremote\b", r"\bhybrid\b",
-        # Major US cities
-        r"\bnew\s+york\b", r"\bsan\s+francisco\b", r"\bseattle\b",
-        r"\baustin\b", r"\bboston\b", r"\bchicago\b", r"\blos\s+angeles\b",
-        r"\bdenver\b", r"\batlanta\b", r"\bsunnyvale\b", r"\bmountain\s+view\b",
-        r"\bpalo\s+alto\b", r"\bsan\s+jose\b", r"\bsan\s+diego\b",
-        r"\bportland\b", r"\bphiladelphia\b", r"\bwashington\b",
-        r"\braleigh\b", r"\bcharlotte\b", r"\bmiami\b", r"\bdallas\b",
-        r"\bhouston\b", r"\bphoenix\b", r"\bsalt\s+lake\b", r"\bdetroit\b",
-        r"\bminneapolis\b", r"\bpittsburgh\b", r"\bcleveland\b", r"\bcolumbus\b",
-        r"\bindianapolis\b", r"\bnashville\b", r"\bsan\s+antonio\b",
-        r"\bjacksonville\b", r"\bmemphis\b", r"\bsacramento\b",
-        r"\bkansas\s+city\b", r"\btampa\b", r"\borlando\b", r"\bcincinnati\b",
-        r"\bst\.?\s*louis\b", r"\bsaint\s+louis\b", r"\bbaltimore\b",
-        r"\brichmond\b", r"\bdurham\b", r"\bchapel\s+hill\b", r"\bboulder\b",
-        r"\bann\s+arbor\b", r"\bprovo\b", r"\bredmond\b", r"\bkirkland\b",
-        r"\birvine\b", r"\bsanta\s+clara\b", r"\bcupertino\b", r"\bmenlo\s+park\b",
-        r"\bcambridge\b", r"\bbellevue\b", r"\barlington\b",
-    ]
-    loc_lower = job.location.lower()
-    # Check for US state abbreviation (e.g. "CA", "NY") — must be real US state
-    has_state_abbrev = any(
-        word in US_STATE_ABBREVS
-        for word in re.findall(r"\b[A-Z]{2}\b", job.location)
-    )
-    if loc_lower and not has_match(loc_lower, us_location_patterns) and not has_state_abbrev:
+    if not is_us_location(job.location):
         return _reject(f"Non-US location: {job.location}")
 
     # ── 5. Overqualified experience (hard reject) ──
@@ -710,12 +759,10 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     raw = ks + sb + tf + tb + pf + lp + es + rs + loc_score + h1b_bonus + senior_penalty
     score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
     score = max(0, min(100, raw))
-    # All jobs that pass hard rejects are kept — AI scoring is the real quality gate
-    should_apply = True
     reason = "; ".join(reasons) if reasons else "Meets basic criteria"
 
     return FilterResult(
-        score=score, score_pct=score_pct, should_apply=should_apply,
+        score=score, score_pct=score_pct,
         reason=reason, resume_variant=variant, level=level,
         min_exp=min_exp, max_exp=max_exp, competition=comp, keyword_hits=hits,
     )

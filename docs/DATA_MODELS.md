@@ -22,7 +22,6 @@ class JobPosting:
 class FilterResult:
     score: int              # Raw score (0-100)
     score_pct: int          # Normalized percentage (0-100)
-    should_apply: bool      # True if score_pct >= 30
     reason: str             # Human-readable scoring breakdown
     resume_variant: str     # "se", "ml", or "appdev"
     level: str              # "New Grad" / "Entry" / "Mid" / "Unknown"
@@ -30,7 +29,12 @@ class FilterResult:
     max_exp: int | None     # Maximum years parsed from JD
     competition: int        # 0-10 competition estimate
     keyword_hits: int       # Count of matched stack keywords
+    reject_reason: str      # Non-empty when a hard-reject rule fired ("" otherwise).
+                            # The job is still kept; the AI scorer can override it.
 ```
+
+> There is no `should_apply` field. Hard rejects set `reject_reason` (and score 0)
+> rather than dropping the job — every scanned job is stored for the AI scorer.
 
 ## JSON Store: `data/ci/linkedin_jobs.json`
 

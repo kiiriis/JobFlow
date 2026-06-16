@@ -1,8 +1,15 @@
 """AI-powered job relevance scoring using Groq (Llama 4 Scout).
 
-This is an optional scoring layer that runs AFTER the algorithmic filter
-(filter.py). While the algo scorer uses keyword matching and rule-based
-heuristics, the AI scorer reads the full JD and makes a holistic judgment.
+LEGACY/OPTIONAL PATH. The canonical AI scorer is scripts/ai_score_local.py,
+which drives the signed-in Claude/Codex CLI (no API key) and is what the
+dashboard's "AI Score" button runs. This module is a separate, optional layer
+used only by `jobflow scan` when GROQ_API_KEY is set — handy for unattended
+CI scoring without a CLI session. Both paths write the same fields
+(ai_score / ai_reason / ai_model) consumed by linkedin_store._rescore_entry().
+
+This runs AFTER the algorithmic filter (filter.py). While the algo scorer uses
+keyword matching and rule-based heuristics, the AI scorer reads the full JD and
+makes a holistic judgment.
 
 How it integrates:
     1. scan command calls ai_score_jobs() after saving scan_results.json
@@ -26,23 +33,7 @@ import re
 import time
 from pathlib import Path
 
-
-AI_BLOCK_REASON = "Blocked staffing/spam source."
-AI_SOURCE_BLOCKLIST = (
-    "jobright.ai",
-    "remotehunter",
-    "quik hire staffing",
-    "beacon fire",
-    "helic & co.",
-    "helic and co",
-    "jack & jill",
-    "jack and jill",
-    "jobs via dice",
-)
-AI_SOURCE_BLOCKLIST_COMPACT = tuple(
-    re.sub(r"[^a-z0-9]+", "", source.lower())
-    for source in AI_SOURCE_BLOCKLIST
-)
+from .filter import STAFFING_BLOCK_REASON, text_has_blocked_source
 
 SCORE_PROMPT = """You are a job relevance scorer for a new grad / entry-level software engineer on F1 OPT visa looking for their first full-time role in the US.
 
@@ -149,17 +140,14 @@ def _is_blocked_ai_source(job: dict) -> bool:
             job.get("description_preview", ""),
             job.get("description", ""),
         )
-    ).lower()
-    compact_haystack = re.sub(r"[^a-z0-9]+", "", haystack)
-    return any(source in haystack for source in AI_SOURCE_BLOCKLIST) or any(
-        source in compact_haystack for source in AI_SOURCE_BLOCKLIST_COMPACT
     )
+    return text_has_blocked_source(haystack)
 
 
 def score_single_job(client, profile: str, job: dict, max_retries: int = 3) -> dict | None:
     """Score a single job with Llama 4 Scout via Groq. Returns {"ai_score": int, "ai_reason": str} or None."""
     if _is_blocked_ai_source(job):
-        return {"ai_score": 0, "ai_reason": AI_BLOCK_REASON}
+        return {"ai_score": 0, "ai_reason": STAFFING_BLOCK_REASON}
 
     prompt = SCORE_PROMPT.format(
         profile=profile,

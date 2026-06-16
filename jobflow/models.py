@@ -5,7 +5,7 @@ can be round-tripped to JSON (scan_results.json, linkedin_jobs.json) and
 displayed in both the CLI (Rich tables) and web dashboard (Jinja2 templates).
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
@@ -30,17 +30,19 @@ class FilterResult:
 
     score:          Raw points (0-130 scale, clamped to 0-100 for storage)
     score_pct:      Normalized percentage (0-100), used for display and threshold checks
-    should_apply:   True for all jobs passing hard rejects (AI is the real quality gate)
     reason:         Human-readable explanation of score components or rejection reason
     resume_variant: Which base resume to use — "se" (default), "ml", or "appdev"
     level:          Detected seniority — "New Grad", "Entry", "Mid", or "Unknown"
     min_exp/max_exp: Parsed experience requirements from JD (None = not specified)
     competition:    Estimated applicant competition (0-10), based on company tier + age
     keyword_hits:   Count of tech stack keywords found in the JD
+    reject_reason:  Non-empty when a hard-reject fired (e.g. "Non-US location: ...").
+                    Hard-rejected jobs are still returned (and kept downstream) so the
+                    AI scorer can rescue false positives — reject_reason is the signal
+                    that the rule-based pass flagged the job, not score alone.
     """
     score: int
     score_pct: int
-    should_apply: bool
     reason: str
     resume_variant: str
     level: str = "Unknown"

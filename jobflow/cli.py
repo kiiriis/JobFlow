@@ -32,7 +32,6 @@ from rich.panel import Panel
 from .config import load_config
 from .filter import evaluate_job, algo_recommended
 from .latex import check_pdflatex, compile_pdf
-from .models import JobPosting
 from .scraper import parse_job_text, save_job_description
 from .tailor import (
     build_tailor_prompt,
@@ -77,7 +76,7 @@ def apply(
         if not url:
             url = "manual-paste"
     elif url:
-        console.print(f"\n[bold cyan]Step 1: Scrape job posting[/bold cyan]")
+        console.print("\n[bold cyan]Step 1: Scrape job posting[/bold cyan]")
         console.print(f"URL: {url}")
         console.print(
             "\n[yellow]Use Playwright MCP to scrape this URL, then call:[/yellow]\n"
@@ -97,22 +96,13 @@ def apply(
 
     # Filter step
     if not skip_filter:
-        console.print(f"\n[bold cyan]Step 2: Filter[/bold cyan]")
+        console.print("\n[bold cyan]Step 2: Filter[/bold cyan]")
         result = evaluate_job(job)
         console.print(f"  Score: {result.score}/100")
-        console.print(f"  Should apply: {'Yes' if result.should_apply else 'No'}")
+        if result.reject_reason:
+            console.print(f"  [yellow]Filter flag:[/yellow] {result.reject_reason} (kept — AI scoring is the real gate)")
         console.print(f"  Reason: {result.reason}")
         console.print(f"  Recommended variant: {result.resume_variant}")
-
-        if not result.should_apply:
-            append_job(
-                config["csv_path"], company, title, url,
-                result.score, "Skipped",
-                variant=result.resume_variant, source="manual",
-                notes=result.reason,
-            )
-            console.print("\n[red]Job filtered out. Added to tracker as 'Skipped'.[/red]")
-            return
 
         if variant is None:
             variant = result.resume_variant
@@ -145,7 +135,7 @@ def apply(
     (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
 
     # Load base resume and master prompt
-    console.print(f"\n[bold cyan]Step 3: Tailor resume[/bold cyan]")
+    console.print("\n[bold cyan]Step 3: Tailor resume[/bold cyan]")
     console.print(f"  Using variant: {variant}")
     base_tex = load_base_resume(variant, config)
     master_prompt = load_master_prompt(config)
@@ -267,12 +257,13 @@ def scan(
 
     print_scan_results(results)
 
-    # Save relevant jobs to a JSON file for easy processing
-    apply_jobs = [(j, r) for j, r in results if r.should_apply]
-    if apply_jobs and save_results:
+    # Save all scanned jobs to a JSON file for easy processing. Hard-rejected
+    # jobs (those with a reject_reason) are kept too — the AI scorer is the real
+    # quality gate and can override a rule-based rejection.
+    if results and save_results:
         import json
         new_entries = []
-        for job, filt in sorted(apply_jobs, key=lambda x: x[1].score, reverse=True):
+        for job, filt in sorted(results, key=lambda x: x[1].score, reverse=True):
             new_entries.append({
                 "company": job.company,
                 "title": job.title,
@@ -321,7 +312,9 @@ def scan(
         results_path.write_text(json.dumps(existing, indent=2))
         console.print(f"\n[green]Results saved to:[/green] {results_path} ({len(existing)} total jobs)")
 
-        # AI scoring with Llama 4 Scout via Groq (only if GROQ_API_KEY is set)
+        # Optional legacy AI scoring with Llama 4 Scout via Groq (only if
+        # GROQ_API_KEY is set). The canonical scorer is scripts/ai_score_local.py
+        # (signed-in Claude/Codex CLI), run from the dashboard's "AI Score" button.
         if os.environ.get("GROQ_API_KEY"):
             from .ai_scorer import ai_score_jobs
             console.print("\n[bold cyan]Running AI relevance scoring (Llama 4 Scout via Groq)...[/bold cyan]")

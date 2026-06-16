@@ -1,19 +1,12 @@
 """Resume LaTeX manipulation — merging, tailoring, and file management.
 
-The resume tailoring workflow has two paths:
-
-CLI path (jobflow apply → jobflow save):
+Resume tailoring is CLI-only (the web dashboard's tailor page was removed).
+The workflow is `jobflow apply` → `jobflow save`:
     1. build_tailor_prompt() assembles: master_prompt + JD + base .tex
     2. User feeds this to Claude externally
     3. extract_preamble_and_education() splits base .tex at \\section{Experience}
     4. merge_resume() combines preamble with Claude's tailored sections
     5. save_tailored_resume() writes the final .tex file
-
-Web path (POST /api/tailor/generate):
-    1. _build_tailor_prompt() in web/__init__.py uses a different prompt format
-       that asks Claude to output the COMPLETE .tex file (not just sections)
-    2. _extract_tex_from_output() strips markdown artifacts
-    3. The full .tex is saved directly (no preamble merge needed)
 
 The merge_resume() function handles cleanup of Claude's output:
     - Strips markdown code fences (```) that Claude sometimes adds

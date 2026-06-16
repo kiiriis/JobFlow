@@ -36,7 +36,6 @@ def is_db_enabled() -> bool:
     return bool(os.environ.get("DATABASE_URL")) and not disabled
 
 
-USE_DB = is_db_enabled()
 STORE_LOCK = threading.RLock()
 
 
@@ -61,7 +60,6 @@ def normalize_url(url: str) -> str:
     return urlunparse((p.scheme.lower(), p.netloc.lower(), path, "", "", ""))
 
 LINKEDIN_STATUSES = ["Tracking", "Applied", "Not Interested"]
-RECOMMENDED_THRESHOLD = 25  # score_pct >= this marks job as "recommended"
 RETENTION_DAYS = 3
 # Jobs with these statuses survive TTL pruning — the user explicitly
 # marked them as important, so we keep them regardless of age.
@@ -136,16 +134,17 @@ def _rescore_entry(entry: dict) -> dict:
     so that score changes (e.g., updated filter rules, new synergy combos)
     retroactively apply to all stored jobs.
 
-    If the job has an AI score (from GPT-4o-mini), that takes priority:
-    ai_score (0-10) is converted to score_pct (0-100%) and only AI-scored
-    jobs can be marked as "recommended" (ai_score >= 7).
+    If the job has an AI score (from the AI scorer — see scripts/ai_score_local.py
+    or jobflow/ai_scorer.py), that takes priority: ai_score (0-10) is converted to
+    score_pct (0-100%) and only AI-scored jobs can be marked "recommended"
+    (ai_score >= 7).
     """
     from .filter import (
         keyword_score, synergy_bonus, level_tag, extract_experience,
         competition_estimate, experience_score, recency_score,
         has_match, _has_phrase, count_matches,
         title_fit_bonus, title_keyword_boost, poor_fit_penalty,
-        senior_desc_penalty, is_blocked_source, algo_recommended,
+        senior_desc_penalty, is_blocked_source, is_us_location, algo_recommended,
         DISQUALIFYING_PHRASES, OVERQUALIFIED_PATTERNS,
         TITLE_REJECT_PATTERNS, SENIOR_SALARY_PATTERN,
         ENTRY_LEVEL_SIGNALS, SENIOR_DESC_SIGNALS,
@@ -155,7 +154,6 @@ def _rescore_entry(entry: dict) -> dict:
 
     title = entry.get("title", "")
     title_lower = title.lower()
-    company_lower = entry.get("company", "").lower().strip()
     text = f"{title} {entry.get('description_preview', '')}"
     text_lower = text.lower()
 
@@ -189,14 +187,20 @@ def _rescore_entry(entry: dict) -> dict:
     if _has_phrase(text_lower, DISQUALIFYING_PHRASES):
         return _hard_reject("No visa sponsorship or requires citizenship/clearance")
 
-    # 4. Overqualified experience
+    # 4. Non-US location (kept in lockstep with evaluate_job; matters for
+    #    GitHub-sourced rows, which — unlike the LinkedIn US search — can be foreign)
+    location = entry.get("location", "")
+    if not is_us_location(location):
+        return _hard_reject(f"Non-US location: {location}")
+
+    # 5. Overqualified experience
     if min_exp is not None and min_exp >= 4:
         return _hard_reject(f"Requires {min_exp}+ years experience")
     for pattern in OVERQUALIFIED_PATTERNS:
         if re.search(pattern, text_lower):
             return _hard_reject("Overqualified: high experience requirement")
 
-    # 5. Senior salary with no entry signals
+    # 6. Senior salary with no entry signals
     has_senior_salary = bool(re.search(SENIOR_SALARY_PATTERN, text))
     has_entry_signals = has_match(text_lower, ENTRY_LEVEL_SIGNALS)
     if has_senior_salary and not has_entry_signals:
@@ -210,7 +214,7 @@ def _rescore_entry(entry: dict) -> dict:
     pf = poor_fit_penalty(text_lower)
     es = experience_score(min_exp, max_exp)
     rs = recency_score(entry.get("first_seen"))
-    loc_score = 10  # assume US (LinkedIn US search)
+    loc_score = 10  # US: any non-US job was hard-rejected above
     h1b = 8 if any(p in text_lower for p in H1B_PREFER) else 0
     comp = competition_estimate(entry.get("company", ""), 24)
 
@@ -725,17 +729,17 @@ def format_recency(iso_timestamp: str) -> str:
 
 
 def _bucket_minutes(local_dt: datetime) -> int:
-    """Return bucket size in minutes based on local day/hour.
+    """Return the time-bucket size in minutes — always 30.
 
-    Cron runs every 30 minutes, so buckets are always 30 min.
+    The CI scan cron runs every 30 minutes (`*/30 * * * *`), so each bucket maps
+    to roughly one scan window. The argument is accepted (and the indirection
+    kept) only so callers don't need to special-case a constant.
     """
     return 30
 
 
 def _bucket_start(local_dt: datetime) -> datetime:
-    """Snap a local datetime to its bucket start."""
-    bm = _bucket_minutes(local_dt)
-    # 30-min: snap to :00 or :30
+    """Snap a local datetime down to its 30-minute bucket start (:00 or :30)."""
     m = 0 if local_dt.minute < 30 else 30
     return local_dt.replace(minute=m, second=0, microsecond=0)
 
@@ -759,11 +763,8 @@ def get_time_counts(store: dict, tz_offset: int = 0, time_range: str = "", sourc
     - yesterday: count from yesterday (local time)
     - buckets: list of {key, label, count, minutes, start_iso} matching the active time range
 
-    Bucket sizes match the CI scan schedule so each bucket roughly corresponds
-    to one scan window:
-    - Weekday 9AM-9PM: 30-min buckets (CI scans every 30 min)
-    - Weekday 9PM-9AM: 60-min buckets (CI scans every 60 min)
-    - Weekend: 4-hour buckets (CI scans every 4 hours)
+    Buckets are a uniform 30 minutes (see _bucket_minutes), matching the
+    every-30-minute CI scan cron so each bucket ≈ one scan window.
     """
     now_utc = datetime.now(tz=timezone.utc)
     user_tz = timezone(timedelta(minutes=-tz_offset))
@@ -836,56 +837,6 @@ def get_time_counts(store: dict, tz_offset: int = 0, time_range: str = "", sourc
         "today": today_count,
         "yesterday": yesterday_count,
         "buckets": bucket_list,
-    }
-
-
-def get_sidebar_stats(store: dict) -> dict:
-    """Compute sidebar statistics for the dashboard.
-
-    Returns match score distribution, top companies by job count,
-    and experience requirement breakdown — all used for the sidebar
-    analytics panel on the /linkedin page.
-    """
-    jobs = list(store.get("jobs", {}).values())
-    total = len(jobs)
-
-    # Match score distribution
-    match_dist = {"80-100%": 0, "60-79%": 0, "40-59%": 0, "< 40%": 0}
-    for j in jobs:
-        pct = int(j.get("score_pct", 0) or 0)
-        if pct >= 80:
-            match_dist["80-100%"] += 1
-        elif pct >= 60:
-            match_dist["60-79%"] += 1
-        elif pct >= 40:
-            match_dist["40-59%"] += 1
-        else:
-            match_dist["< 40%"] += 1
-
-    # Top companies
-    from collections import Counter
-    company_counts = Counter(j.get("company", "Unknown") for j in jobs)
-    top_companies = company_counts.most_common(8)
-
-    # Experience distribution
-    exp_dist = {"0-1 yr": 0, "1-2 yrs": 0, "2-3 yrs": 0, "Not listed": 0}
-    for j in jobs:
-        mn = j.get("min_exp")
-        mx = j.get("max_exp")
-        if mn is None and mx is None:
-            exp_dist["Not listed"] += 1
-        elif mn is not None and mn <= 1:
-            exp_dist["0-1 yr"] += 1
-        elif mn is not None and mn <= 2:
-            exp_dist["1-2 yrs"] += 1
-        else:
-            exp_dist["2-3 yrs"] += 1
-
-    return {
-        "total": total,
-        "match_dist": match_dist,
-        "top_companies": top_companies,
-        "exp_dist": exp_dist,
     }
 
 

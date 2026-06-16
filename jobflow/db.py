@@ -18,9 +18,9 @@ import psycopg2.extras
 
 from .linkedin_store import (
     LINKEDIN_STATUSES, KEEP_STATUSES,
-    _rescore_entry, _dedup_key, _parse_iso, format_recency,
+    _rescore_entry, format_recency,
     _bucket_minutes, _bucket_start, _bucket_label, _bucket_key,
-    backfill_job, normalize_url,
+    normalize_url,
 )
 
 TTL_DAYS = 3
@@ -699,7 +699,7 @@ def get_filtered_counts(
 
 
 def get_time_counts(tz_offset: int = 0, time_range: str = "", source: str = "") -> dict:
-    """Return time tab counts + dynamic bucket breakdown matching the active time range."""
+    """Return time tab counts + 30-min bucket breakdown matching the active time range."""
     now_utc = datetime.now(tz=timezone.utc)
     user_tz = timezone(timedelta(minutes=-tz_offset))
     now_local = now_utc.astimezone(user_tz)

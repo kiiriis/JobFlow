@@ -1,4 +1,6 @@
-"""Comprehensive tests for dynamic bucket logic in linkedin_store.py.
+"""Comprehensive tests for time-bucket logic in linkedin_store.py.
+
+Buckets are a uniform 30 minutes (the CI scan cron runs every 30 min).
 
 Covers: _bucket_minutes, _bucket_start, _bucket_label, _bucket_key,
 get_time_counts (bucket generation), get_filtered_jobs (bucket_filter),
@@ -74,98 +76,30 @@ def _make_store_with_jobs(job_times_utc: list[datetime]) -> dict:
 # ═══════════════════════════════════════════════════════════════════════════
 
 class TestBucketMinutes:
-    """_bucket_minutes(local_dt) → 30 | 60 | 240"""
+    """_bucket_minutes(local_dt) → always 30.
 
-    # ── Weekday peak (9AM-9PM) → 30 min ─────────────────────────
-    def test_weekday_9am_exactly(self):
-        # Monday 9:00 AM → peak starts → 30 min
-        dt = _local(2026, 4, 13, 9, 0)  # Monday
-        assert dt.weekday() == 0  # Monday
-        assert _bucket_minutes(dt) == 30
+    The CI scan cron runs every 30 minutes (`*/30 * * * *`), so buckets are a
+    uniform 30 minutes regardless of weekday or hour. (Earlier versions used
+    dynamic 30/60/240-min buckets; that was simplified when the cron cadence
+    became constant.)
+    """
 
-    def test_weekday_noon(self):
+    def test_weekday_peak(self):
         dt = _local(2026, 4, 14, 12, 0)  # Tuesday noon
         assert _bucket_minutes(dt) == 30
 
-    def test_weekday_2_30_pm(self):
-        dt = _local(2026, 4, 15, 14, 30)  # Wednesday 2:30 PM
+    def test_weekday_offpeak(self):
+        dt = _local(2026, 4, 15, 3, 0)  # Wednesday 3 AM
         assert _bucket_minutes(dt) == 30
 
-    def test_weekday_8_59_pm(self):
-        # 20:59 — last minute of peak
-        dt = _local(2026, 4, 16, 20, 59)  # Thursday
-        assert _bucket_minutes(dt) == 30
-
-    # ── Weekday off-peak (9PM-9AM) → 60 min ─────────────────────
-    def test_weekday_9pm_exactly(self):
-        # 21:00 — peak ends, off-peak starts → 60 min
-        dt = _local(2026, 4, 13, 21, 0)  # Monday 9 PM
-        assert _bucket_minutes(dt) == 60
-
-    def test_weekday_11pm(self):
-        dt = _local(2026, 4, 14, 23, 0)  # Tuesday 11 PM
-        assert _bucket_minutes(dt) == 60
-
-    def test_weekday_midnight(self):
-        dt = _local(2026, 4, 15, 0, 0)  # Wednesday midnight
-        assert dt.weekday() == 2  # Wednesday
-        assert _bucket_minutes(dt) == 60
-
-    def test_weekday_3am(self):
-        dt = _local(2026, 4, 16, 3, 0)  # Thursday 3 AM
-        assert _bucket_minutes(dt) == 60
-
-    def test_weekday_8am(self):
-        dt = _local(2026, 4, 17, 8, 0)  # Friday 8 AM
-        assert _bucket_minutes(dt) == 60
-
-    def test_weekday_8_59_am(self):
-        # 8:59 — last minute before peak
-        dt = _local(2026, 4, 13, 8, 59)  # Monday
-        assert _bucket_minutes(dt) == 60
-
-    # ── Weekend → 240 min ────────────────────────────────────────
-    def test_saturday_noon(self):
-        dt = _local(2026, 4, 11, 12, 0)  # Saturday
+    def test_weekend(self):
+        dt = _local(2026, 4, 11, 12, 0)  # Saturday noon
         assert dt.weekday() == 5
-        assert _bucket_minutes(dt) == 240
+        assert _bucket_minutes(dt) == 30
 
-    def test_sunday_3am(self):
-        dt = _local(2026, 4, 12, 3, 0)  # Sunday
-        assert dt.weekday() == 6
-        assert _bucket_minutes(dt) == 240
-
-    def test_saturday_midnight(self):
-        dt = _local(2026, 4, 11, 0, 0)  # Saturday midnight
-        assert _bucket_minutes(dt) == 240
-
-    def test_sunday_11_59_pm(self):
+    def test_weekend_midnight(self):
         dt = _local(2026, 4, 12, 23, 59)  # Sunday 11:59 PM
-        assert _bucket_minutes(dt) == 240
-
-    # ── Boundaries: Friday night → Saturday ──────────────────────
-    def test_friday_11_59_pm(self):
-        # Friday 23:59 → weekday off-peak → 60 min
-        dt = _local(2026, 4, 17, 23, 59)  # Friday
-        assert dt.weekday() == 4  # Friday
-        assert _bucket_minutes(dt) == 60
-
-    def test_saturday_12_01_am(self):
-        # Saturday 00:01 → weekend → 240 min
-        dt = _local(2026, 4, 18, 0, 1)  # Saturday
-        assert dt.weekday() == 5
-        assert _bucket_minutes(dt) == 240
-
-    # ── Boundary: Sunday night → Monday ──────────────────────────
-    def test_sunday_11_59_pm_is_weekend(self):
-        dt = _local(2026, 4, 12, 23, 59)
-        assert dt.weekday() == 6  # Sunday
-        assert _bucket_minutes(dt) == 240
-
-    def test_monday_12_01_am_is_weekday_offpeak(self):
-        dt = _local(2026, 4, 13, 0, 1)
-        assert dt.weekday() == 0  # Monday
-        assert _bucket_minutes(dt) == 60
+        assert _bucket_minutes(dt) == 30
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -211,70 +145,26 @@ class TestBucketStart:
         result = _bucket_start(dt)
         assert result.second == 0 and result.microsecond == 0
 
-    # ── 60-min snapping ──────────────────────────────────────────
-    def test_60min_on_hour(self):
-        dt = _local(2026, 4, 14, 23, 0)  # 11:00 PM Tue (off-peak)
+    # ── Snapping is 30-min everywhere (off-peak / weekend included) ──
+    def test_late_night_on_hour(self):
+        dt = _local(2026, 4, 14, 23, 0)  # 11:00 PM Tue
         result = _bucket_start(dt)
         assert result.hour == 23 and result.minute == 0
 
-    def test_60min_at_30(self):
-        dt = _local(2026, 4, 14, 23, 30)  # 11:30 PM → snaps to 11:00 PM
+    def test_late_night_at_45_snaps_to_30(self):
+        dt = _local(2026, 4, 14, 23, 45)  # 11:45 PM → snaps to 11:30 PM
         result = _bucket_start(dt)
-        assert result.hour == 23 and result.minute == 0
+        assert result.hour == 23 and result.minute == 30
 
-    def test_60min_at_59(self):
-        dt = _local(2026, 4, 14, 23, 59)  # 11:59 PM → snaps to 11:00 PM
-        result = _bucket_start(dt)
-        assert result.hour == 23 and result.minute == 0
-
-    def test_60min_at_midnight(self):
-        dt = _local(2026, 4, 15, 0, 0)  # Midnight Wed
-        result = _bucket_start(dt)
-        assert result.hour == 0 and result.minute == 0
-
-    # ── 240-min snapping ─────────────────────────────────────────
-    def test_240min_block_0(self):
-        dt = _local(2026, 4, 11, 1, 30)  # Sat 1:30 AM → block 0
-        result = _bucket_start(dt)
-        assert result.hour == 0 and result.minute == 0
-
-    def test_240min_block_4(self):
-        dt = _local(2026, 4, 11, 5, 15)  # Sat 5:15 AM → block 4
-        result = _bucket_start(dt)
-        assert result.hour == 4 and result.minute == 0
-
-    def test_240min_block_8(self):
-        dt = _local(2026, 4, 11, 10, 0)  # Sat 10:00 AM → block 8
-        result = _bucket_start(dt)
-        assert result.hour == 8 and result.minute == 0
-
-    def test_240min_block_12(self):
-        dt = _local(2026, 4, 11, 13, 45)  # Sat 1:45 PM → block 12
-        result = _bucket_start(dt)
-        assert result.hour == 12 and result.minute == 0
-
-    def test_240min_block_16(self):
-        dt = _local(2026, 4, 11, 17, 0)  # Sat 5:00 PM → block 16
-        result = _bucket_start(dt)
-        assert result.hour == 16 and result.minute == 0
-
-    def test_240min_block_20(self):
-        dt = _local(2026, 4, 11, 23, 59)  # Sat 11:59 PM → block 20
-        result = _bucket_start(dt)
-        assert result.hour == 20 and result.minute == 0
-
-    # ── Cross-boundary: peak→off-peak at bucket_start ────────────
-    def test_peak_boundary_snap(self):
-        """Job at 8:59 PM (peak) snaps to 8:30 PM (still peak)."""
+    def test_evening_boundary_snap(self):
+        """Job at 8:59 PM snaps to 8:30 PM."""
         dt = _local(2026, 4, 14, 20, 59)  # Tue 8:59 PM
-        assert _bucket_minutes(dt) == 30
         result = _bucket_start(dt)
         assert result.hour == 20 and result.minute == 30
 
-    def test_offpeak_boundary_snap(self):
-        """Job at 9:15 PM (off-peak) snaps to 9:00 PM (off-peak)."""
+    def test_post_9pm_snap(self):
+        """Job at 9:15 PM snaps to 9:00 PM (minute < 30)."""
         dt = _local(2026, 4, 14, 21, 15)  # Tue 9:15 PM
-        assert _bucket_minutes(dt) == 60
         result = _bucket_start(dt)
         assert result.hour == 21 and result.minute == 0
 
@@ -302,43 +192,16 @@ class TestBucketLabel:
         dt = _local(2026, 4, 14, 12, 0)
         assert _bucket_label(dt, 30) == "12:00 PM"
 
-    def test_60min_label(self):
+    def test_late_night_label(self):
         dt = _local(2026, 4, 14, 23, 0)
-        assert _bucket_label(dt, 60) == "11 PM"
-
-    def test_60min_label_midnight(self):
-        dt = _local(2026, 4, 14, 0, 0)
-        assert _bucket_label(dt, 60) == "12 AM"
-
-    def test_60min_label_1am(self):
-        dt = _local(2026, 4, 14, 1, 0)
-        assert _bucket_label(dt, 60) == "1 AM"
-
-    def test_240min_label_morning(self):
-        dt = _local(2026, 4, 11, 8, 0)  # Saturday
-        # 8 AM - 12 PM
-        assert _bucket_label(dt, 240) == "8 AM-12 PM"
-
-    def test_240min_label_evening(self):
-        dt = _local(2026, 4, 11, 20, 0)  # Saturday
-        # 8 PM - 12 AM (next day, but strftime still works)
-        label = _bucket_label(dt, 240)
-        assert label == "8 PM-12 AM"
-
-    def test_240min_label_midnight_block(self):
-        dt = _local(2026, 4, 11, 0, 0)  # Saturday midnight
-        assert _bucket_label(dt, 240) == "12 AM-4 AM"
-
-    def test_240min_label_afternoon(self):
-        dt = _local(2026, 4, 11, 12, 0)  # Saturday noon
-        assert _bucket_label(dt, 240) == "12 PM-4 PM"
+        assert _bucket_label(dt, 30) == "11:00 PM"
 
     def test_no_leading_zero(self):
-        """Labels should NOT have leading zeros (e.g., '9 AM' not '09 AM')."""
+        """Labels should NOT have leading zeros (e.g., '9:00 AM' not '09:00 AM')."""
         dt = _local(2026, 4, 14, 9, 0)
         assert _bucket_label(dt, 30) == "9:00 AM"
         dt2 = _local(2026, 4, 14, 3, 0)
-        assert _bucket_label(dt2, 60) == "3 AM"
+        assert _bucket_label(dt2, 30) == "3:00 AM"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -391,17 +254,18 @@ class TestGetTimeCounts:
         starts = [b["start_iso"] for b in tc["buckets"]]
         assert starts == sorted(starts, reverse=True)
 
-    def test_jobs_older_than_24h_excluded_from_buckets(self):
+    def test_all_jobs_bucketed_when_no_time_range(self):
+        # With no time_range, get_time_counts buckets every job (no age cutoff).
         now = datetime.now(UTC)
         times = [
-            now - timedelta(hours=1),   # in buckets
-            now - timedelta(hours=23),  # in buckets
-            now - timedelta(hours=25),  # NOT in buckets
+            now - timedelta(hours=1),
+            now - timedelta(hours=23),
+            now - timedelta(hours=25),
         ]
         store = _make_store_with_jobs(times)
         tc = get_time_counts(store, tz_offset=0)
         total_in_buckets = sum(b["count"] for b in tc["buckets"])
-        assert total_in_buckets == 2
+        assert total_in_buckets == 3
 
     def test_yesterday_count(self):
         """Jobs from yesterday (user local) counted in yesterday tab."""
@@ -963,24 +827,24 @@ class TestTimezoneEdgeCases:
         assert len(jobs) == 1
 
     def test_midnight_crossover_bucket_assignment(self):
-        """Job at 11:55 PM should be in the 11 PM bucket (60-min off-peak)."""
+        """Job at 11:55 PM should land in the 11:30 PM 30-min bucket."""
         # Tuesday 11:55 PM EST = Wednesday 3:55 AM UTC
         utc_time = datetime(2026, 4, 15, 3, 55, tzinfo=UTC)
         store = _make_store_with_jobs([utc_time])
-        # Local time 11:55 PM Tue → off-peak → 60-min → bucket 23:00
+        # Local 11:55 PM Tue → 30-min bucket starting 23:30
         jobs = get_filtered_jobs(
-            store, bucket_filter="2026-04-14_23:00", tz_offset=240,
+            store, bucket_filter="2026-04-14_23:30", tz_offset=240,
         )
         assert len(jobs) == 1
 
-    def test_weekend_4hour_bucket_filter(self):
-        """Weekend 4-hour bucket filter works."""
+    def test_weekend_bucket_filter(self):
+        """Weekend job lands in its 30-min bucket (buckets are uniform)."""
         # Saturday 2:15 PM EST = 18:15 UTC
         utc_time = datetime(2026, 4, 11, 18, 15, tzinfo=UTC)
         store = _make_store_with_jobs([utc_time])
-        # Saturday 2:15 PM → 240-min → block 12 (12:00-16:00)
+        # Saturday 2:15 PM → 30-min bucket starting 14:00
         jobs = get_filtered_jobs(
-            store, bucket_filter="2026-04-11_12:00", tz_offset=240,
+            store, bucket_filter="2026-04-11_14:00", tz_offset=240,
         )
         assert len(jobs) == 1
 

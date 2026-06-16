@@ -20,7 +20,7 @@ data/ci/scan_results.json  ──push──>  GitHub repo
 Flask Web Dashboard  <──merge──  data/ci/linkedin_jobs.json
     |
     v
-User browses jobs, sets statuses, tailors resumes
+User browses and filters jobs (tailoring is CLI-only)
 ```
 
 ## Directory Structure
@@ -78,18 +78,16 @@ JobFlow/
 5. Background thread (local only) does `git pull` every hour for fresh data
 6. On Render: data updates via auto-redeploy on GitHub push
 
-### Resume Tailoring Flow
-1. User pastes JD on `/tailor` page
-2. Pre-filter rejects no-sponsorship / senior-only JDs
-3. Claude CLI generates tailored LaTeX sections
-4. Sections merged with base resume preamble
-5. pdflatex compiles to PDF
-6. Auto-condense if PDF > 1 page
-7. User can refine iteratively
+### Resume Tailoring Flow (CLI-only)
+1. `jobflow apply <url> --paste` scrapes/structures the JD, scores it, and writes a tailoring prompt
+2. User feeds the prompt to Claude to get tailored LaTeX sections
+3. `jobflow save --dir <path>` merges the base-resume preamble + education with the tailored sections and compiles a PDF with pdflatex
+
+The web dashboard no longer tailors resumes — tailoring lives entirely in the CLI.
 
 ## Key Design Decisions
 
-- **JSON file storage** (no database) — simple, git-friendly, works on Render free tier
+- **Dual-backend storage** — PostgreSQL/Neon when `DATABASE_URL` is set, else JSON files (simple, git-friendly, works on Render free tier)
 - **Server-side rendering with HTMX** — no SPA complexity, partial HTML swaps
 - **Multi-signal scoring** — adapted from Atriveo's approach but tuned for Python/ML/Backend stack
 - **Deduplication by company+title** — same role posted in multiple cities collapsed to one

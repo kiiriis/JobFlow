@@ -18,7 +18,9 @@ Modules:
     linkedin_store.py - Persistent job store with merge, dedup, prune, and filtering
     cli.py           - Typer CLI (scan, apply, save, process, list, status, init, web)
     web/__init__.py  - Flask app factory with HTMX-powered dashboard
-    ai_scorer.py     - Optional Llama 4 Scout relevance scoring via Groq (0-10 scale)
+    ai_scorer.py     - Legacy/optional Groq (Llama 4 Scout) relevance scoring (0-10);
+                       the canonical AI scorer is scripts/ai_score_local.py, which
+                       drives the signed-in Claude/Codex CLI from the dashboard
     tailor.py        - LaTeX resume manipulation (merge preamble + tailored sections)
     latex.py         - pdflatex compilation wrapper
     tracker.py       - CSV-based application tracking

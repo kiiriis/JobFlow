@@ -25,7 +25,7 @@ The dashboard shows jobs ranked by relevance to your profile, with filtering by 
 
 - **Hourly LinkedIn scanning** via GitHub Actions + python-jobspy
 - **Multi-signal scoring** — keyword matching, synergy combos, level detection, experience fit, recency, H1B bonus
-- **Real-time web dashboard** — Atriveo-inspired dark theme with sidebar stats, hourly cards, sortable table
+- **Real-time web dashboard** — Atriveo-inspired dark theme with hourly cards, filter chips, sortable table
 - **Resume tailoring** — Claude AI rewrites your LaTeX resume per job description
 - **Application tracking** — CSV-based status management
 - **Auto-deployment** — Render free tier with GitHub Actions keep-alive
@@ -97,15 +97,14 @@ The LinkedIn feed at `/linkedin` features:
 - **Sortable table** — Sort by match %, score, level, recency
 - **Filter chips** — All / Recommended / New Grad / Entry / Mid / Tracking / Applied
 - **Search** — Real-time text search across company, title, location
-- **Sidebar stats** — Match score distribution, level breakdown, top companies, experience required
+- **Filter chips** — Filter by status, level, and time bucket
 - **Status tracking** — Mark jobs as Tracking / Applied / Not Interested
 - **Timezone-aware** — All times shown in your local timezone
 
 ## Resume Tailoring
 
 ```bash
-# Via web dashboard: paste JD at /tailor
-# Via CLI:
+# CLI-only:
 jobflow apply "https://..." --paste -t "SWE" -c "Stripe" -l "SF"
 jobflow save --dir data/output/Stripe_SWE_2026-04-09
 ```
@@ -114,7 +113,7 @@ Claude AI tailors your LaTeX resume:
 1. Auto-selects variant (SE / ML / AppDev) based on JD keywords
 2. Preserves preamble + header + education
 3. Rewrites experience, projects, skills sections
-4. Compiles to PDF, auto-condenses if > 1 page
+4. Compiles to a one-page PDF with pdflatex
 
 ## Deployment
 

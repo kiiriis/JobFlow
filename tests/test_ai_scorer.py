@@ -1,6 +1,7 @@
 """Tests for Groq-backed AI scoring helpers."""
 
-from jobflow.ai_scorer import AI_BLOCK_REASON, _is_blocked_ai_source, score_single_job
+from jobflow.ai_scorer import _is_blocked_ai_source, score_single_job
+from jobflow.filter import STAFFING_BLOCK_REASON
 
 
 class _UnexpectedClient:
@@ -22,4 +23,4 @@ def test_blocked_ai_source_scores_zero_without_model_call():
         {"company": "Jack and Jill", "title": "Software Engineer"},
     )
 
-    assert result == {"ai_score": 0, "ai_reason": AI_BLOCK_REASON}
+    assert result == {"ai_score": 0, "ai_reason": STAFFING_BLOCK_REASON}

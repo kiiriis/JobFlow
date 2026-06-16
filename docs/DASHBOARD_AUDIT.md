@@ -1,5 +1,7 @@
 # Dashboard Logic Audit
 
+> **Historical (superseded).** This audit predates the June 2026 single-page dashboard refactor and the move to local Claude/Codex CLI scoring. Some findings (e.g. the OpenAI/OPENAI_API_KEY references, removed /tailor and /scan pages) no longer apply. See docs/CODE_AUDIT.md for the current code-quality audit.
+
 **Date:** 2026-04-15
 **Scope:** Web dashboard (`/linkedin` feed), scoring engine, LinkedIn store, scanner pipeline, CI workflow
 **Store size at time of audit:** 1,061 jobs across 23,178 lines of JSON

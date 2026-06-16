@@ -4,9 +4,10 @@ This is a simple append-only CSV that tracks the full lifecycle of each
 application: from initial discovery (date_found) through status changes
 (Pending → Applied → Interview → Offer/Rejected) to final outcome.
 
-The CSV is the source of truth for the `jobflow list` command and the
-/api/stats endpoint. It's separate from linkedin_jobs.json — that store
-tracks discovered jobs, while this CSV tracks jobs the user has acted on.
+The CSV is the source of truth for the `jobflow list` command (CLI-only;
+application tracking was removed from the web dashboard). It's separate from
+linkedin_jobs.json — that store tracks discovered jobs, while this CSV tracks
+jobs the user has acted on.
 
 Deduplication: Jobs are deduped by URL first, then by company+role combo
 to prevent the same application from being tracked twice.

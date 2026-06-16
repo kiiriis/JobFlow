@@ -44,7 +44,7 @@ class TestHardRejectTitle:
         job = JobPosting(url="x", title=title, company="Acme", location="US", description="Python")
         result = evaluate_job(job)
         assert result.score == 0
-        assert result.should_apply is False
+        assert result.reject_reason
         assert "Title disqualified" in result.reason
 
     @pytest.mark.parametrize("title", [
@@ -108,7 +108,7 @@ class TestHardRejectSponsorship:
         job = JobPosting(url="x", title="SWE", company="Acme", location="US", description=f"Python role. {phrase}")
         result = evaluate_job(job)
         assert result.score == 0
-        assert result.should_apply is False
+        assert result.reject_reason
 
     def test_sponsorship_positive_passes(self):
         """Job that offers sponsorship should NOT be rejected."""
@@ -133,7 +133,7 @@ class TestHardRejectExperience:
         job = JobPosting(url="x", title="Software Engineer", company="Acme", location="Remote, US", description=desc)
         result = evaluate_job(job)
         assert result.score == 0
-        assert result.should_apply is False
+        assert result.reject_reason
         assert "Overqualified" in result.reason or "years experience" in result.reason
 
     @pytest.mark.parametrize("desc", [
@@ -161,7 +161,7 @@ class TestHardRejectLocation:
         job = JobPosting(url="x", title="SWE", company="Acme", location=location, description="Python")
         result = evaluate_job(job)
         assert result.score == 0 or result.score == 10
-        assert result.should_apply is False
+        assert result.reject_reason
         assert "Non-US" in result.reason
 
     @pytest.mark.parametrize("location", [
@@ -380,30 +380,30 @@ class TestEvaluateJobIntegration:
 
     def test_perfect_new_grad_ml(self, new_grad_ml_job):
         result = evaluate_job(new_grad_ml_job, first_seen=(datetime.now(tz=timezone.utc) - timedelta(hours=2)).isoformat())
-        assert result.should_apply is True
+        assert not result.reject_reason
         assert result.score_pct >= 50
         assert result.level == "New Grad"
         assert result.resume_variant == "ml"
 
     def test_entry_backend(self, entry_backend_job):
         result = evaluate_job(entry_backend_job)
-        assert result.should_apply is True
+        assert not result.reject_reason
         assert result.level == "Entry"
 
     def test_senior_rejected(self, senior_job):
         result = evaluate_job(senior_job)
         assert result.score == 0
-        assert result.should_apply is False
+        assert result.reject_reason
 
     def test_overqualified_rejected(self, overqualified_job):
         result = evaluate_job(overqualified_job)
         assert result.score == 0
-        assert result.should_apply is False
+        assert result.reject_reason
 
     def test_no_sponsorship_rejected(self, no_sponsorship_job):
         result = evaluate_job(no_sponsorship_job)
         assert result.score == 0
-        assert result.should_apply is False
+        assert result.reject_reason
 
     def test_clearance_rejected(self, clearance_job):
         result = evaluate_job(clearance_job)
@@ -419,7 +419,7 @@ class TestEvaluateJobIntegration:
 
     def test_non_us_rejected(self, non_us_job):
         result = evaluate_job(non_us_job)
-        assert result.should_apply is False
+        assert result.reject_reason
 
     def test_mid_level_passes_but_lower(self, mid_level_job):
         result = evaluate_job(mid_level_job)
@@ -448,7 +448,7 @@ class TestEvaluateJobIntegration:
         )
         result = evaluate_job(job)
         assert result.score == 0
-        assert result.should_apply is False
+        assert result.reject_reason
 
     def test_walmart_entry_level_passes(self):
         """Walmart SWE with '1+ years' should pass (not be falsely rejected)."""
@@ -462,5 +462,5 @@ class TestEvaluateJobIntegration:
             ),
         )
         result = evaluate_job(job)
-        assert result.should_apply is True
+        assert not result.reject_reason
         assert result.score > 0

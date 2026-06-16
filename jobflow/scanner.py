@@ -23,7 +23,6 @@ Deduplication (seen_jobs.json):
 """
 
 import json
-import os
 import random
 import re
 import ssl
@@ -40,7 +39,7 @@ from rich.table import Table
 
 from .filter import evaluate_job
 from .linkedin_store import is_db_enabled
-from .models import JobPosting
+from .models import JobPosting, FilterResult
 
 console = Console()
 
@@ -318,10 +317,7 @@ def scan_all_api_boards(
         List of (JobPosting, FilterResult) tuples — includes both passing and
         rejected jobs so callers can show skip counts.
     """
-    from .filter import evaluate_job
-
     boards = load_job_boards(config)
-    ats = boards.get("ats_platforms", {})
     keywords = boards.get("scraping_tips", {}).get("keyword_filters_for_new_grad", [])
 
     if max_age_hours > 0:
@@ -343,7 +339,7 @@ def scan_all_api_boards(
         ng = boards.get("new_grad_aggregators", {})
         gh_repos = ng.get("github_repos", {})
         if gh_repos:
-            console.print(f"\n[bold cyan]Scanning GitHub new-grad repos...[/bold cyan]")
+            console.print("\n[bold cyan]Scanning GitHub new-grad repos...[/bold cyan]")
             jobs = scan_github_repos(gh_repos, keywords)
             console.print(f"  [green]{len(jobs)} matches[/green]")
             for job in jobs:
@@ -734,12 +730,14 @@ def print_scan_results(results: list[tuple[JobPosting, 'FilterResult']]) -> None
         console.print("[yellow]No jobs found.[/yellow]")
         return
 
-    # Separate into apply / skip
-    apply_jobs = [(j, r) for j, r in results if r.should_apply]
-    skip_jobs = [(j, r) for j, r in results if not r.should_apply]
+    # Split for display only: jobs flagged by a hard-reject rule carry a
+    # reject_reason. They are still kept downstream (the AI scorer can rescue
+    # them), but showing them apart from clean matches keeps the table readable.
+    relevant = [(j, r) for j, r in results if not r.reject_reason]
+    flagged = [(j, r) for j, r in results if r.reject_reason]
 
-    if apply_jobs:
-        table = Table(title=f"Relevant Jobs ({len(apply_jobs)})", border_style="green")
+    if relevant:
+        table = Table(title=f"Relevant Jobs ({len(relevant)})", border_style="green")
         table.add_column("#", style="dim", width=4)
         table.add_column("Company", style="cyan", max_width=15)
         table.add_column("Role", max_width=40)
@@ -748,7 +746,7 @@ def print_scan_results(results: list[tuple[JobPosting, 'FilterResult']]) -> None
         table.add_column("Variant", width=8)
         table.add_column("URL", max_width=50)
 
-        for i, (job, filt) in enumerate(sorted(apply_jobs, key=lambda x: x[1].score, reverse=True), 1):
+        for i, (job, filt) in enumerate(sorted(relevant, key=lambda x: x[1].score, reverse=True), 1):
             table.add_row(
                 str(i), job.company, job.title, job.location,
                 str(filt.score), filt.resume_variant,
@@ -756,7 +754,7 @@ def print_scan_results(results: list[tuple[JobPosting, 'FilterResult']]) -> None
             )
         console.print(table)
 
-    if skip_jobs:
-        console.print(f"\n[dim]Filtered out: {len(skip_jobs)} jobs (no sponsorship, senior-level, etc.)[/dim]")
+    if flagged:
+        console.print(f"\n[dim]Flagged by filter rules: {len(flagged)} jobs (sponsorship, senior-level, non-US, etc.) — kept for AI re-scoring[/dim]")
 
-    console.print(f"\n[bold]Total: {len(results)} scanned, {len(apply_jobs)} relevant, {len(skip_jobs)} skipped[/bold]")
+    console.print(f"\n[bold]Total: {len(results)} scanned, {len(relevant)} relevant, {len(flagged)} flagged[/bold]")

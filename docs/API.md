@@ -1,134 +1,105 @@
 # API Reference
 
-All routes are defined in `jobflow/web/__init__.py`.
+All routes are defined in `jobflow/web/__init__.py`. The dashboard is a single
+page (the LinkedIn job feed); everything else is a JSON/HTML-fragment API that
+the feed's JavaScript calls.
+
+Storage is dual-backend: PostgreSQL (Neon) when `DATABASE_URL` is set, otherwise
+the JSON store at `data/ci/linkedin_jobs.json`. Every endpoint tries the DB first
+and transparently falls back to JSON.
 
 ## Page Routes
 
 | Route | Method | Description |
 |-------|--------|-------------|
 | `/` | GET | Redirects to `/linkedin` |
-| `/linkedin` | GET | LinkedIn job feed dashboard |
-| `/boards` | GET | Job Boards placeholder page |
-| `/scan` | GET | Scanner page |
-| `/tailor` | GET | Resume tailor page |
+| `/health` | GET | JSON health check (`{"status": "ok"}`) for uptime monitoring |
+| `/linkedin` | GET | The job feed (the only page) |
 
-## LinkedIn Jobs API
+## Feed API
 
 ### GET /api/linkedin/jobs
 
-Fetch filtered LinkedIn jobs. Returns HTML table body fragment.
+Filtered, sorted job rows. Returns the `_partials/linkedin_tbody.html` fragment;
+count metadata rides along in response headers so the page can update chips and
+tiles without a second request.
 
 **Query Parameters:**
 
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
-| `status` | string | `""` | Filter by status: "Tracking", "Applied", "Not Interested", "Recommended" |
-| `level` | string | `""` | Filter by level: "New Grad", "Entry", "Mid" |
+| `status` | string | `""` | "Tracking", "Applied", "Not Interested", or "Recommended" (virtual, AI-score based) |
+| `level` | string | `""` | "New Grad", "Entry", "Mid", "Unknown" |
 | `q` | string | `""` | Text search (company, title, location) |
-| `search_term` | string | `""` | Filter by LinkedIn search term that found the job |
-| `time` | string | `""` | Time range: "hour", "today", "yesterday", "" (all) |
-| `hour` | string | `""` | Specific hour filter (0-23, local hour) |
-| `sort` | string | `"last_seen"` | Sort column: "first_seen", "score_pct", "score", "company", "level", "title" |
-| `dir` | string | `"desc"` | Sort direction: "asc" or "desc" |
-| `tz` | int | `0` | User's timezone offset in minutes from UTC (e.g., 240 for EDT) |
+| `search_term` | string | `""` | Filter by the LinkedIn search term that found the job |
+| `time` | string | `""` | "hour", "today", "yesterday", or "" (all) |
+| `bucket` | string | `""` | Exact 30-min bucket key, e.g. `2026-06-16_13:30` |
+| `sort` | string | `"first_seen"` | "first_seen", "last_seen", "score_pct", "score", "ai_score", "competition", "min_exp", "level", "company", "title" |
+| `dir` | string | `"desc"` | "asc" or "desc" |
+| `tz` | int | `0` | Browser timezone offset in minutes from UTC (`new Date().getTimezoneOffset()`) |
+| `limit` | int | `250` | Max rows (clamped to 50–500) |
+| `meta` | string | `"1"` | `"1"` to include time-bucket headers |
 
 **Response Headers:**
 
-| Header | Content | Description |
-|--------|---------|-------------|
-| `X-Counts` | JSON | `{"All": N, "Tracking": N, "Applied": N, "Not Interested": N, "Recommended": N}` |
-| `X-Level-Counts` | JSON | `{"All": N, "New Grad": N, "Entry": N, "Mid": N, "Unknown": N}` |
-| `X-Time-Counts` | JSON | `{"this_hour": N, "today": N, "yesterday": N}` |
+| Header | Content |
+|--------|---------|
+| `X-Counts` | `{"All", "Tracking", "Applied", "Not Interested", "Recommended"}` |
+| `X-Level-Counts` | `{"All", "New Grad", "Entry", "Mid", "Unknown"}` |
+| `X-Time-Counts` | `{"this_hour", "today", "yesterday"}` (only when `meta=1`) |
+| `X-Buckets` | JSON list of `{key, label, count, minutes, start_iso}` (only when `meta=1`) |
+| `X-Total` | Total jobs matching the filters |
+| `X-Displayed` | Rows actually returned (after `limit`) |
 
-### PATCH /api/linkedin/jobs/\<key\>/status
+### GET /api/linkedin/meta
 
-Update a job's status.
+The same count metadata as JSON (no table rows). Accepts the same query params.
 
-**Form Parameters:**
-- `status`: One of "Tracking", "Applied", "Not Interested", "" (clear)
+### DELETE /api/linkedin/jobs/&lt;key&gt;
 
-**Returns:** Updated HTML row fragment.
+Delete one job (`key` is the canonical URL). The URL is also recorded as
+dismissed so it never reappears on a later scan. Returns `204 No Content`.
+
+### POST /api/linkedin/jobs/bulk-delete
+
+Delete many jobs. Body: `{"keys": [<url>, ...]}`. Returns
+`{"requested": N, "deleted": M}`.
 
 ### POST /api/linkedin/refresh
 
-Trigger manual git pull + merge of latest scan results.
+Refresh the feed. On the DB backend, prunes expired jobs. On the JSON backend,
+runs `git pull --rebase` then re-merges scan results. Returns `{"ok": true}`.
 
-**Returns:** HTML status message.
-
-## Scanner API
+## Scan API (the feed's "Scan Now" button)
 
 ### POST /api/scan/trigger
 
-Start a background scan.
-
-**Form Parameters:**
-- `platform`: "lever", "greenhouse", "ashby", "linkedin", "github", or empty for all
-- `hours`: Max age in hours (0 = no limit)
-- `new_only`: "true"/"on" to dedup against seen jobs
+Start a background scan. Body (form or JSON): `hours` (max age, 0 = no limit),
+`new_only` (`"true"`/`"on"`/`"1"` to dedup against seen jobs). Returns
+`{"running": true}`, or `409` if a scan is already running.
 
 ### GET /api/scan/status
 
-Poll scan progress. Returns HTML fragment showing:
-- Running state with spinner
-- Error with message
-- Results table with Track buttons
+Poll scan progress: `{"running", "error", "total", "relevant", "skipped"}`.
+`relevant` is jobs not flagged by a hard-reject rule; `skipped` is flagged jobs
+(still saved — the AI scorer is the real quality gate).
 
-### POST /api/scan/track
+## AI Scoring API (the feed's "AI Score" button)
 
-Add a scanned job to the CSV tracker.
+Runs `scripts/ai_score_local.py` as a subprocess against the signed-in
+Claude/Codex CLI (no API key). One run at a time.
 
-**Form Parameters:**
-- `company`, `role`, `url`, `score`, `variant`, `source`
+### POST /api/aiscore/trigger
 
-## Tailor API
+Body (form or JSON): `engine` ("claude" | "codex"), `hours` (window, 0 = all),
+`limit` (max jobs, 0 = no limit), `rescore` (re-score already-scored rows).
+Returns a JSON status snapshot, or `400`/`409` on bad input / already running.
 
-### POST /api/tailor/generate
+### GET /api/aiscore/status
 
-Start resume tailoring session.
+JSON snapshot: `running`, `engine`, `total`, `batch`, `batches`, `scored`,
+`failed`, `log` (tail of output lines), `ok`, `error`, timestamps.
 
-**Form Parameters:**
-- `jd_text`: Full job description text (required)
-- `model`: "sonnet" (default), "opus", "haiku"
-- `effort`: "low" (default), "medium", "high"
+### POST /api/aiscore/cancel
 
-**Returns:** HTML status fragment with session ID for polling.
-
-### GET /api/tailor/status/\<session_id\>
-
-Poll tailoring progress.
-
-**Returns:** HTML fragment — running spinner, error, or completed with PDF preview + refine form.
-
-### POST /api/tailor/refine/\<session_id\>
-
-Refine the tailored resume.
-
-**Form Parameters:**
-- `feedback`: Description of changes to make
-
-### POST /api/tailor/cancel/\<session_id\>
-
-Cancel a running tailoring session.
-
-### GET /api/tailor/pdf/\<session_id\>
-
-View the generated PDF inline.
-
-### GET /api/tailor/download/\<session_id\>
-
-Download the PDF as an attachment.
-
-## Stats API
-
-### GET /api/stats
-
-**Returns:** JSON with application statistics.
-
-```json
-{
-  "status_counts": {"Pending": 5, "Applied": 3, ...},
-  "week_labels": ["Mar 3", "Mar 10", ...],
-  "week_values": [2, 5, ...],
-  "total": 15
-}
-```
+Request cancellation and kill the subprocess. Returns the latest snapshot.

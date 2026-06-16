@@ -616,16 +616,18 @@ def _run_scan(config, platforms, hours, new_only):
             results, seen = deduplicate_results(results, seen)
             save_seen_jobs(config, seen)
 
-        apply_jobs = [(j, r) for j, r in results if r.should_apply]
-        skip_jobs = [(j, r) for j, r in results if not r.should_apply]
+        # Jobs flagged by a hard-reject rule carry a reject_reason. They are
+        # still saved and merged (the AI scorer is the real quality gate), but
+        # counted separately so the UI can report clean matches vs. flagged.
+        flagged = [(j, r) for j, r in results if r.reject_reason]
 
         scan_state["total"] = len(results)
-        scan_state["relevant"] = len(apply_jobs)
-        scan_state["skipped"] = len(skip_jobs)
+        scan_state["relevant"] = len(results) - len(flagged)
+        scan_state["skipped"] = len(flagged)
 
-        # Save results
+        # Save every scanned job (flagged ones included).
         output = []
-        for i, (job, filt) in enumerate(sorted(apply_jobs, key=lambda x: x[1].score, reverse=True), 1):
+        for i, (job, filt) in enumerate(sorted(results, key=lambda x: x[1].score, reverse=True), 1):
             output.append({
                 "index": i,
                 "company": job.company,
@@ -640,6 +642,7 @@ def _run_scan(config, platforms, hours, new_only):
                 "competition": filt.competition,
                 "variant": filt.resume_variant,
                 "reason": filt.reason,
+                "reject_reason": filt.reject_reason,
                 "recommended": algo_recommended(filt.score_pct, filt.level),
                 "description_preview": job.description or "",
                 "date_posted": getattr(job, "date_posted", ""),

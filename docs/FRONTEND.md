@@ -4,10 +4,8 @@
 
 - **Flask + Jinja2** — server-side rendered HTML
 - **HTMX 2.0** — dynamic partial updates without JS frameworks
-- **PicoCSS** — base dark theme (used by Scanner/Tailor pages)
 - **Custom CSS** — Atriveo-inspired design for LinkedIn feed
 - **Sora + IBM Plex Mono** — Google Fonts (headings + monospace data)
-- **Chart.js** — imported but not actively used
 
 ## Page Templates
 
@@ -15,14 +13,9 @@
 templates/
 ├── base.html                  # Global layout: nav, toast, HTMX progress bar
 ├── linkedin.html              # LinkedIn feed (Atriveo-style design)
-├── boards.html                # Job Boards placeholder
-├── scan.html                  # Scanner page
-├── tailor.html                # Resume tailor page
 └── _partials/
     ├── linkedin_row.html      # Single LinkedIn job row
-    ├── linkedin_tbody.html    # Table body wrapper (loops over rows)
-    ├── scan_status.html       # Scan progress/results
-    └── tailor_status.html     # Tailor progress/PDF viewer
+    └── linkedin_tbody.html    # Table body wrapper (loops over rows)
 ```
 
 ## LinkedIn Feed Design

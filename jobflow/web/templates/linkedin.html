@@ -21,10 +21,6 @@
             <button class="btn btn-ghost" id="refresh-btn" onclick="refreshFeed(this)">
                 Refresh
             </button>
-            <button class="btn" id="scan-btn" onclick="scanNow(this)"
-                {% if scan_running %}disabled{% endif %}>
-                {% if scan_running %}<span class="spinner"></span> Scanning…{% else %}Scan Now{% endif %}
-            </button>
             <button class="btn btn-primary" id="ai-score-btn" onclick="openAiModal()">
                 ✦ AI Score
             </button>
@@ -330,38 +326,6 @@ function refreshFeed(btn) {
         btn.disabled = false;
     });
 }
-
-/* ── Scan ───────────────────────────────── */
-function scanNow(btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Scanning…';
-    fetch('/api/scan/trigger', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'hours=4&new_only=true'
-    }).then(function() {
-        pollScanStatus(btn);
-    });
-}
-function pollScanStatus(btn) {
-    var poll = setInterval(function() {
-        fetch('/api/scan/status').then(function(r) { return r.json(); }).then(function(state) {
-            if (!state.running) {
-                clearInterval(poll);
-                btn.disabled = false;
-                btn.innerHTML = 'Scan Now';
-                triggerFilter({timeMeta: true});
-                if (state.error) showToast('Scan failed: ' + state.error, 'error');
-                else showToast('Scan complete — ' + (state.relevant || 0) + ' relevant jobs');
-            }
-        }).catch(function() {});
-    }, 3000);
-}
-{% if scan_running %}
-document.addEventListener('DOMContentLoaded', function() {
-    pollScanStatus(document.getElementById('scan-btn'));
-});
-{% endif %}
 
 /* ── Bulk selection ─────────────────────── */
 function displayedJobRows() {

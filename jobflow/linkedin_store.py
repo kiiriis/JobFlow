@@ -126,124 +126,60 @@ def _dedup_key(entry: dict) -> str:
     return f"{co}_{title}"
 
 
-def _rescore_entry(entry: dict) -> dict:
-    """Re-score a job entry using the current filter logic, including hard-reject.
+def _rescore_entry(entry: dict, profile=None) -> dict:
+    """Re-score a store dict entry using the canonical filter.evaluate_job().
 
-    This duplicates the logic from filter.evaluate_job() but operates on
-    store dict entries instead of JobPosting objects. It runs on every merge
-    so that score changes (e.g., updated filter rules, new synergy combos)
-    retroactively apply to all stored jobs.
+    This is the single re-scoring path that runs on every merge so filter
+    changes (updated rules, new synergy combos, a different user's profile)
+    retroactively apply to stored jobs. It builds a JobPosting from the entry,
+    runs evaluate_job() with the given ``profile`` (defaults to DEFAULT_PROFILE,
+    i.e. the original single-user behaviour), then copies the FilterResult back
+    onto the dict. Routing through evaluate_job() keeps this in lockstep with
+    scan-time scoring instead of duplicating the hard-reject pipeline.
 
-    If the job has an AI score (from the AI scorer — see scripts/ai_score_local.py
-    or jobflow/ai_scorer.py), that takes priority: ai_score (0-10) is converted to
-    score_pct (0-100%) and only AI-scored jobs can be marked "recommended"
-    (ai_score >= 7).
+    AI-score override (unique to the store): if the entry has an ai_score (from
+    scripts/ai_score_local.py or jobflow/ai_scorer.py), it takes priority —
+    ai_score (0-10) becomes score_pct (0-100%) and only AI-scored jobs with
+    ai_score >= 7 are "recommended". Hard-rejected jobs stay at score_pct 0.
     """
-    from .filter import (
-        keyword_score, synergy_bonus, level_tag, extract_experience,
-        competition_estimate, experience_score, recency_score,
-        has_match, _has_phrase, count_matches,
-        title_fit_bonus, title_keyword_boost, poor_fit_penalty,
-        senior_desc_penalty, is_blocked_source, is_us_location, algo_recommended,
-        DISQUALIFYING_PHRASES, OVERQUALIFIED_PATTERNS,
-        TITLE_REJECT_PATTERNS, SENIOR_SALARY_PATTERN,
-        ENTRY_LEVEL_SIGNALS, SENIOR_DESC_SIGNALS,
-        H1B_PREFER, SCORE_MAX_RAW,
+    from .filter import evaluate_job, algo_recommended, DEFAULT_PROFILE
+    from .models import JobPosting
+
+    profile = profile if profile is not None else DEFAULT_PROFILE
+
+    job = JobPosting(
+        url=entry.get("url", ""),
+        title=entry.get("title", ""),
+        company=entry.get("company", ""),
+        location=entry.get("location", ""),
+        # The store keeps only a preview of the JD; score against what we have.
+        description=entry.get("description_preview", ""),
     )
-    import re
+    result = evaluate_job(job, first_seen=entry.get("first_seen"), profile=profile)
 
-    title = entry.get("title", "")
-    title_lower = title.lower()
-    text = f"{title} {entry.get('description_preview', '')}"
-    text_lower = text.lower()
+    entry["score"] = result.score
+    entry["level"] = result.level
+    entry["min_exp"] = result.min_exp
+    entry["max_exp"] = result.max_exp
+    entry["competition"] = result.competition
+    entry["keyword_hits"] = result.keyword_hits
 
-    level = level_tag(title, entry.get("description_preview", ""))
-    min_exp, max_exp = extract_experience(text_lower)
-
-    def _hard_reject(reason: str) -> dict:
-        entry["score"] = 0
+    if result.reject_reason:
+        # Hard-rejected jobs stay at 0 and are never recommended (the AI scorer
+        # only sees non-rejected jobs at scan time).
         entry["score_pct"] = 0
-        entry["level"] = level
-        entry["min_exp"] = min_exp
-        entry["max_exp"] = max_exp
-        entry["competition"] = 0
-        entry["keyword_hits"] = 0
         entry["recommended"] = False
-        entry["reject_reason"] = reason
+        entry["reject_reason"] = result.reject_reason
         return entry
 
-    # ── Hard-reject pipeline (same order as evaluate_job) ──
-
-    # 1. Company / staffing-source blocklist (company name or URL)
-    if is_blocked_source(entry.get("company", ""), entry.get("url", "")):
-        return _hard_reject(f"Blocked company: {entry.get('company', '')}")
-
-    # 2. Title-level reject (senior, QA, architect, VP)
-    for pattern in TITLE_REJECT_PATTERNS:
-        if re.search(pattern, title_lower):
-            return _hard_reject(f"Title disqualified: {title}")
-
-    # 3. Sponsorship / citizenship / clearance
-    if _has_phrase(text_lower, DISQUALIFYING_PHRASES):
-        return _hard_reject("No visa sponsorship or requires citizenship/clearance")
-
-    # 4. Non-US location (kept in lockstep with evaluate_job; matters for
-    #    GitHub-sourced rows, which — unlike the LinkedIn US search — can be foreign)
-    location = entry.get("location", "")
-    if not is_us_location(location):
-        return _hard_reject(f"Non-US location: {location}")
-
-    # 5. Overqualified experience
-    if min_exp is not None and min_exp >= 4:
-        return _hard_reject(f"Requires {min_exp}+ years experience")
-    for pattern in OVERQUALIFIED_PATTERNS:
-        if re.search(pattern, text_lower):
-            return _hard_reject("Overqualified: high experience requirement")
-
-    # 6. Senior salary with no entry signals
-    has_senior_salary = bool(re.search(SENIOR_SALARY_PATTERN, text))
-    has_entry_signals = has_match(text_lower, ENTRY_LEVEL_SIGNALS)
-    if has_senior_salary and not has_entry_signals:
-        return _hard_reject("Senior-level salary with no entry-level signals")
-
-    # ── Passed hard filters — compute score ──
-    ks, hits = keyword_score(text)
-    sb = synergy_bonus(text)
-    tf = title_fit_bonus(title)
-    tb = title_keyword_boost(title)
-    pf = poor_fit_penalty(text_lower)
-    es = experience_score(min_exp, max_exp)
-    rs = recency_score(entry.get("first_seen"))
-    loc_score = 10  # US: any non-US job was hard-rejected above
-    h1b = 8 if any(p in text_lower for p in H1B_PREFER) else 0
-    comp = competition_estimate(entry.get("company", ""), 24)
-
-    # Level points
-    lp = {"New Grad": 20, "Entry": 15, "Mid": 5}.get(level, 4)
-
-    # Senior description penalty (graded)
-    senior_count = count_matches(text_lower, SENIOR_DESC_SIGNALS)
-    entry_count = count_matches(text_lower, ENTRY_LEVEL_SIGNALS)
-    senior_penalty = senior_desc_penalty(senior_count, entry_count)
-
-    raw = ks + sb + tf + tb + pf + lp + es + rs + loc_score + h1b + senior_penalty
-    score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
-
-    entry["score"] = max(0, min(100, raw))
-    entry["level"] = level
-    entry["min_exp"] = min_exp
-    entry["max_exp"] = max_exp
-    entry["competition"] = comp
-    entry["keyword_hits"] = hits
-    # Match %: AI score (0-10 → 0-100%) takes priority, algo is fallback
+    # Match %: AI score (0-10 → 0-100%) takes priority, algo is the fallback.
     ai_score = entry.get("ai_score")
     if ai_score is not None:
         entry["score_pct"] = int(ai_score) * 10
         entry["recommended"] = int(ai_score) >= 7
     else:
-        entry["score_pct"] = score_pct
-        # No AI score yet — high-scoring entry-level jobs still get flagged
-        entry["recommended"] = algo_recommended(score_pct, level)
+        entry["score_pct"] = result.score_pct
+        entry["recommended"] = algo_recommended(result.score_pct, result.level, profile)
     entry.pop("reject_reason", None)
     return entry
 

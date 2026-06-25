@@ -396,17 +396,20 @@ def select_variant(description: str) -> str:
 
 # ── Scoring components ──────────────────────────────────────────────────────
 
-def keyword_score(text: str) -> tuple[int, int]:
+def keyword_score(text: str, stack=None) -> tuple[int, int]:
     """Binary presence match across all stack categories. Returns (raw_score, hit_count).
 
-    Scans title+description for each keyword in STACK_CATEGORIES. Each keyword
-    is checked once (binary: present or not). The score is the sum of weights
-    for all matched keywords. hit_count tracks how many distinct keywords matched.
+    Scans title+description for each keyword in ``stack`` (defaults to the
+    canonical STACK_CATEGORIES). Each keyword is checked once (binary: present
+    or not). The score is the sum of weights for all matched keywords; hit_count
+    tracks how many distinct keywords matched. Pass a per-user stack to score a
+    job against that user's tech preferences instead of the default.
     """
+    stack = stack if stack is not None else STACK_CATEGORIES
     lower = text.lower()
     score = 0
     hits = 0
-    for category in STACK_CATEGORIES.values():
+    for category in stack.values():
         for keyword, weight in category.items():
             if keyword in lower:
                 score += weight
@@ -414,39 +417,44 @@ def keyword_score(text: str) -> tuple[int, int]:
     return score, hits
 
 
-def synergy_bonus(text: str) -> int:
+def synergy_bonus(text: str, combos=None) -> int:
+    combos = combos if combos is not None else SYNERGY_COMBOS
     lower = text.lower()
     bonus = 0
-    for keywords, points in SYNERGY_COMBOS:
+    for keywords, points in combos:
         if all(k in lower for k in keywords):
             bonus += points
     return bonus
 
 
-def title_fit_bonus(title: str) -> int:
+def title_fit_bonus(title: str, profile=None) -> int:
     """Role-family fit from the title alone. Strong > adjacent > none."""
+    profile = profile if profile is not None else DEFAULT_PROFILE
     lower = title.lower()
-    if has_match(lower, TITLE_FIT_STRONG):
-        return TITLE_FIT_STRONG_POINTS
-    if has_match(lower, TITLE_FIT_ADJACENT):
-        return TITLE_FIT_ADJACENT_POINTS
+    if has_match(lower, profile.title_fit_strong):
+        return profile.title_fit_strong_points
+    if has_match(lower, profile.title_fit_adjacent):
+        return profile.title_fit_adjacent_points
     return 0
 
 
-def title_keyword_boost(title: str) -> int:
+def title_keyword_boost(title: str, profile=None) -> int:
     """Extra (capped) points when stack keywords appear in the title itself."""
-    score, _ = keyword_score(title)
-    return min(score, TITLE_KEYWORD_BOOST_MAX)
+    profile = profile if profile is not None else DEFAULT_PROFILE
+    score, _ = keyword_score(title, profile.stack_categories)
+    return min(score, profile.title_keyword_boost_max)
 
 
-def poor_fit_penalty(text_lower: str) -> int:
+def poor_fit_penalty(text_lower: str, patterns=None, cap=None) -> int:
     """Negative points for clearly off-profile stacks. Returns <= 0, capped."""
+    patterns = patterns if patterns is not None else POOR_FIT_PATTERNS
+    cap = cap if cap is not None else POOR_FIT_MAX_PENALTY
     penalty = 0
-    for pattern, points in POOR_FIT_PATTERNS:
+    for pattern, points in patterns:
         if re.search(pattern, text_lower):
             penalty += points
-            if penalty >= POOR_FIT_MAX_PENALTY:
-                return -POOR_FIT_MAX_PENALTY
+            if penalty >= cap:
+                return -cap
     return -penalty
 
 
@@ -497,9 +505,10 @@ def text_has_blocked_source(text: str) -> bool:
     return any(s in compact for s in _STAFFING_SOURCE_BLOCKLIST_COMPACT)
 
 
-def algo_recommended(score_pct: int, level: str) -> bool:
+def algo_recommended(score_pct: int, level: str, profile=None) -> bool:
     """Fallback 'recommended' flag when no AI score exists yet."""
-    return score_pct >= RECOMMENDED_MIN_PCT and level in ("New Grad", "Entry")
+    profile = profile if profile is not None else DEFAULT_PROFILE
+    return score_pct >= profile.recommended_min_pct and level in profile.recommended_levels
 
 
 def is_us_location(location: str) -> bool:
@@ -639,14 +648,23 @@ def competition_estimate(company: str, hours_old: float = 0) -> int:
     return min(10, score)
 
 
-def _level_points(level: str) -> int:
-    return {"New Grad": 20, "Entry": 15, "Mid": 5, "Unknown": 4}.get(level, 4)
+def _level_points(level: str, profile=None) -> int:
+    profile = profile if profile is not None else DEFAULT_PROFILE
+    return profile.level_points.get(level, 4)
 
 
 # ── Main evaluation ─────────────────────────────────────────────────────────
 
-def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult:
-    """Evaluate a job posting with multi-signal scoring and hard rejection."""
+def evaluate_job(job: JobPosting, first_seen: str | None = None,
+                 profile=None) -> FilterResult:
+    """Evaluate a job posting with multi-signal scoring and hard rejection.
+
+    ``profile`` (a :class:`~jobflow.filter_profile.FilterProfile`) selects the
+    per-user tunable knobs — tech stack, sponsorship/location gates, seniority
+    band, recommend bar. It defaults to ``DEFAULT_PROFILE``, which reproduces
+    the original single-user behaviour exactly.
+    """
+    profile = profile if profile is not None else DEFAULT_PROFILE
     title_lower = job.title.lower()
     text = f"{job.title} {job.description}"
     text_lower = text.lower()
@@ -672,20 +690,22 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
             return _reject(f"Title disqualified: {job.title}")
 
     # ── 3. Sponsorship / citizenship / clearance ──
-    if _has_phrase(text_lower, DISQUALIFYING_PHRASES):
+    # Only a hard reject for users who need sponsorship; a citizen/GC holder
+    # should still see these jobs.
+    if profile.requires_sponsorship and _has_phrase(text_lower, DISQUALIFYING_PHRASES):
         return _reject("No visa sponsorship or requires citizenship/clearance")
 
     # ── 4. Non-US location ──
-    if not is_us_location(job.location):
+    if profile.us_only and not is_us_location(job.location):
         return _reject(f"Non-US location: {job.location}")
 
     # ── 5. Overqualified experience (soft demotion, not a hard reject) ──
     # extract_experience occasionally over-counts ("3–8+ yrs" → false senior),
     # so instead of deleting the job we flag it for a penalty below and let the
-    # AI rescorer make the call.
+    # AI rescorer make the call. The acceptable band is per-user (max_min_exp).
     min_exp, max_exp = extract_experience(text_lower)
     overqualified = (
-        (min_exp is not None and min_exp >= 4)
+        (min_exp is not None and min_exp > profile.max_min_exp)
         or any(re.search(p, text_lower) for p in OVERQUALIFIED_PATTERNS)
     )
 
@@ -700,31 +720,31 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     reasons = []
 
     # Keyword matching — how well does this JD match the user's tech stack?
-    ks, hits = keyword_score(text)
+    ks, hits = keyword_score(text, profile.stack_categories)
     if ks > 0:
         reasons.append(f"Stack +{ks}")
 
     # Synergy bonus
-    sb = synergy_bonus(text)
+    sb = synergy_bonus(text, profile.synergy_combos)
     if sb > 0:
         reasons.append(f"Synergy +{sb}")
 
     # Title role-fit + title keyword boost — the title is the strongest
     # non-AI relevance signal, so it earns dedicated points.
-    tf = title_fit_bonus(job.title)
+    tf = title_fit_bonus(job.title, profile)
     if tf > 0:
         reasons.append(f"Title fit +{tf}")
-    tb = title_keyword_boost(job.title)
+    tb = title_keyword_boost(job.title, profile)
     if tb > 0:
         reasons.append(f"Title stack +{tb}")
 
     # Off-profile stack penalty (Salesforce, mainframe, FPGA, helpdesk, ...)
-    pf = poor_fit_penalty(text_lower)
+    pf = poor_fit_penalty(text_lower, profile.poor_fit_patterns, profile.poor_fit_max)
     if pf < 0:
         reasons.append(f"Poor fit {pf}")
 
     # Level
-    lp = _level_points(level)
+    lp = _level_points(level, profile)
     if level != "Unknown":
         reasons.append(f"{level} +{lp}")
 
@@ -738,25 +758,16 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     if rs != 0:
         reasons.append(f"Recency {'+' if rs > 0 else ''}{rs}")
 
-    # Location bonus
-    us_patterns = [
-        r"\bunited\s+states\b", r"\busa\b", r"\bu\.s\.\b",
-        r"\bremote\b", r"\bnew\s+york\b", r"\bsan\s+francisco\b",
-        r"\bseattle\b", r"\baustin\b", r"\bboston\b", r"\bchicago\b",
-        r"\blos\s+angeles\b", r"\bdenver\b", r"\batlanta\b",
-        r"\bsunnyvale\b", r"\bmountain\s+view\b", r"\bpalo\s+alto\b",
-        r"\bsan\s+jose\b", r"\bportland\b", r"\bphiladelphia\b",
-        r"\bwashington\b", r"\bdc\b", r"\braleigh\b", r"\bcharlotte\b",
-        r"\bmiami\b", r"\bdallas\b", r"\bhouston\b", r"\bphoenix\b",
-        r"\b[A-Z]{2}\b",
-    ]
-    loc_score = 10 if has_match(job.location.lower(), us_patterns) else -10
+    # Location bonus — use the shared is_us_location so the gate and the score
+    # agree (under us_only the only jobs reaching here are US, so this is +10;
+    # under us_only=False a non-US job still scores -10 to rank it lower).
+    loc_score = 10 if is_us_location(job.location) else -10
     if loc_score > 0:
         reasons.append("US +10")
 
-    # H1B bonus
+    # H1B bonus — only relevant to users who want visa sponsorship.
     h1b_bonus = 0
-    if any(p in text_lower for p in H1B_PREFER):
+    if profile.prefer_h1b_bonus and any(p in text_lower for p in profile.h1b_phrases):
         h1b_bonus = 8
         reasons.append("H1B +8")
 
@@ -801,3 +812,10 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
         reason=reason, resume_variant=variant, level=level,
         min_exp=min_exp, max_exp=max_exp, competition=comp, keyword_hits=hits,
     )
+
+
+# Imported at the bottom (after all constants/functions are defined) so that
+# filter_profile.py can import this module's constants without a cycle. The
+# helpers above reference DEFAULT_PROFILE by name at *call* time, not def time,
+# so it only needs to exist as a module global by the time they run.
+from .filter_profile import FilterProfile, DEFAULT_PROFILE  # noqa: E402,F401

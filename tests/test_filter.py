@@ -117,8 +117,12 @@ class TestHardRejectSponsorship:
         assert result.score > 0
 
 
-class TestHardRejectExperience:
-    """Jobs requiring 4+ years should be rejected."""
+class TestDemoteOverqualified:
+    """Jobs requiring 4+ years are DEMOTED (penalized), not hard rejected.
+
+    Experience text is an unreliable seniority proxy, so the job stays in the
+    pool (no reject_reason) but its score is pushed down for the AI to confirm.
+    """
 
     @pytest.mark.parametrize("desc", [
         "Requires at least 5 years of experience in software engineering.",
@@ -129,12 +133,12 @@ class TestHardRejectExperience:
         "5-8 years of experience in backend development.",
         "Requires 6 years of Python experience.",
     ])
-    def test_overqualified_reject(self, desc):
+    def test_overqualified_demoted(self, desc):
         job = JobPosting(url="x", title="Software Engineer", company="Acme", location="Remote, US", description=desc)
         result = evaluate_job(job)
-        assert result.score == 0
-        assert result.reject_reason
-        assert "Overqualified" in result.reason or "years experience" in result.reason
+        assert not result.reject_reason          # kept in the pool, not deleted
+        assert "Overqualified" in result.reason  # but penalized
+        assert result.score_pct < 65             # demoted below the recommend bar
 
     @pytest.mark.parametrize("desc", [
         "0-2 years of experience preferred.",
@@ -174,13 +178,18 @@ class TestHardRejectLocation:
         assert "Non-US" not in result.reason
 
 
-class TestHardRejectSalary:
-    """High salary with no entry signals should be rejected."""
+class TestDemoteSalary:
+    """High salary with no entry signals is DEMOTED, not hard rejected.
+
+    $130K+ is a weak seniority proxy (FAANG new-grad roles pay more), so the
+    job is penalized but stays in the pool for the AI to confirm.
+    """
 
     def test_high_salary_no_entry(self, high_salary_no_entry_signals):
         result = evaluate_job(high_salary_no_entry_signals)
-        assert result.score == 0
-        assert "salary" in result.reason.lower()
+        assert not result.reject_reason          # kept, not deleted
+        assert "Senior salary" in result.reason  # but penalized
+        assert result.score_pct < 65             # demoted below recommend bar
 
     def test_high_salary_with_entry_signals_passes(self):
         job = JobPosting(
@@ -395,10 +404,12 @@ class TestEvaluateJobIntegration:
         assert result.score == 0
         assert result.reject_reason
 
-    def test_overqualified_rejected(self, overqualified_job):
+    def test_overqualified_demoted(self, overqualified_job):
+        # Experience/salary are unreliable proxies — demoted, not hard rejected,
+        # so the AI rescorer can rescue misreads.
         result = evaluate_job(overqualified_job)
-        assert result.score == 0
-        assert result.reject_reason
+        assert not result.reject_reason
+        assert result.score_pct < 65
 
     def test_no_sponsorship_rejected(self, no_sponsorship_job):
         result = evaluate_job(no_sponsorship_job)
@@ -433,7 +444,11 @@ class TestEvaluateJobIntegration:
         assert result.score > 0
 
     def test_real_world_10a_labs(self):
-        """The exact JD that prompted the filter overhaul."""
+        """Senior ML JD ($150-250K, 8+ yrs): demoted hard, but kept for the AI.
+
+        Even with a strong ML stack, the experience + salary penalties push it
+        well below the recommend bar — without deleting it outright.
+        """
         job = JobPosting(
             url="x", title="ML Engineer", company="10a Labs",
             location="Fully remote, U.S.-based",
@@ -447,8 +462,9 @@ class TestEvaluateJobIntegration:
             ),
         )
         result = evaluate_job(job)
-        assert result.score == 0
-        assert result.reject_reason
+        assert not result.reject_reason
+        assert result.score_pct < 65
+        assert "Overqualified" in result.reason or "Senior salary" in result.reason
 
     def test_walmart_entry_level_passes(self):
         """Walmart SWE with '1+ years' should pass (not be falsely rejected)."""

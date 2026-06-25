@@ -39,7 +39,7 @@ if env_path.exists():
             key, _, val = line.partition("=")
             os.environ.setdefault(key.strip(), val.strip())
 
-from jobflow.db import get_conn, put_conn, init_db
+from jobflow.db import get_conn, put_conn, init_db, DEFAULT_USER_ID
 from jobflow.linkedin_store import save_store
 from jobflow.filter import STAFFING_BLOCK_REASON, text_has_blocked_source
 
@@ -122,6 +122,12 @@ def parse_args():
         "--rescore",
         action="store_true",
         help="Include jobs that already have any AI score. Default only scores unscored rows.",
+    )
+    parser.add_argument(
+        "--user-id",
+        type=int,
+        default=DEFAULT_USER_ID,
+        help="Which user's per-job state to score (DB backend). Default: operator.",
     )
     args = parser.parse_args()
     if args.limit < 0:
@@ -318,22 +324,23 @@ def connect_db():
 
 
 def fetch_db_rows(args):
-    """Fetch eligible rows from Postgres."""
-    conditions = []
-    params = []
+    """Fetch eligible rows for one user from Postgres (per-user state + posting)."""
+    conditions = ["s.user_id = %s"]
+    params = [args.user_id]
     if not args.rescore:
-        conditions.append("ai_score IS NULL")
+        conditions.append("s.ai_score IS NULL")
     if args.hours:
         since = datetime.now(timezone.utc) - timedelta(hours=args.hours)
-        conditions.append("first_seen >= %s")
+        conditions.append("s.first_seen >= %s")
         params.append(since)
 
-    where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    where_clause = f"WHERE {' AND '.join(conditions)}"
     sql = f"""
-        SELECT url, company, title, location, description_preview, ai_model
-        FROM jobs
+        SELECT j.url, j.company, j.title, j.location, j.description_preview, s.ai_model
+        FROM user_job_state s
+        JOIN jobs j ON j.url = s.url
         {where_clause}
-        ORDER BY first_seen DESC
+        ORDER BY s.first_seen DESC
     """
     if args.limit:
         sql += " LIMIT %s"
@@ -397,19 +404,19 @@ def fetch_json_rows(store: dict, args):
     return rows
 
 
-def update_db_blocked(blocked_rows, engine):
-    """Persist blocked-source scores to Postgres."""
+def update_db_blocked(blocked_rows, engine, user_id):
+    """Persist blocked-source scores to one user's per-job state."""
     conn = get_conn()
     try:
         with conn.cursor() as cur:
             for url, *_ in blocked_rows:
                 cur.execute("""
-                    UPDATE jobs
+                    UPDATE user_job_state
                     SET ai_score = 0, ai_reason = %s,
                         score_pct = 0, recommended = false,
                         ai_model = %s
-                    WHERE url = %s
-                """, (STAFFING_BLOCK_REASON, engine, url))
+                    WHERE user_id = %s AND url = %s
+                """, (STAFFING_BLOCK_REASON, engine, user_id, url))
         conn.commit()
     except Exception:
         conn.rollback()
@@ -418,20 +425,20 @@ def update_db_blocked(blocked_rows, engine):
         put_conn(conn)
 
 
-def update_db_scores(scored_batch, scores, engine):
-    """Persist engine scores to Postgres."""
+def update_db_scores(scored_batch, scores, engine, user_id):
+    """Persist engine scores to one user's per-job state."""
     conn = get_conn()
     try:
         with conn.cursor() as cur:
             for (url, *_), score_data in zip(scored_batch, scores):
                 ai_score, ai_reason, score_pct, recommended = normalize_row_score(score_data)
                 cur.execute("""
-                    UPDATE jobs
+                    UPDATE user_job_state
                     SET ai_score = %s, ai_reason = %s,
                         score_pct = %s, recommended = %s,
                         ai_model = %s
-                    WHERE url = %s
-                """, (ai_score, ai_reason, score_pct, recommended, engine, url))
+                    WHERE user_id = %s AND url = %s
+                """, (ai_score, ai_reason, score_pct, recommended, engine, user_id, url))
         conn.commit()
     except Exception:
         conn.rollback()
@@ -545,7 +552,7 @@ def main():
         if blocked_rows:
             try:
                 if backend == "db":
-                    update_db_blocked(blocked_rows, args.engine)
+                    update_db_blocked(blocked_rows, args.engine, args.user_id)
                 else:
                     update_json_blocked(store, blocked_rows, args.engine)
                 for _, company, title, *_ in blocked_rows:
@@ -568,7 +575,7 @@ def main():
 
         try:
             if backend == "db":
-                update_db_scores(scorable_batch, scores, args.engine)
+                update_db_scores(scorable_batch, scores, args.engine, args.user_id)
             else:
                 update_json_scores(store, scorable_batch, scores, args.engine)
             for (_, company, title, *_), score_data in zip(scorable_batch, scores):

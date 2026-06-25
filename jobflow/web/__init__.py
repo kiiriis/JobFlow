@@ -141,7 +141,8 @@ def _ai_state_snapshot() -> dict:
     return snap
 
 
-def _run_ai_score(root: Path, engine: str, hours: float, limit: int, rescore: bool):
+def _run_ai_score(root: Path, engine: str, hours: float, limit: int, rescore: bool,
+                  user_id: int = 1):
     """Run scripts/ai_score_local.py as a subprocess and stream its progress.
 
     The script prints well-known lines we parse for live progress:
@@ -151,7 +152,8 @@ def _run_ai_score(root: Path, engine: str, hours: float, limit: int, rescore: bo
         "Nothing to score!"
     """
     script = root / "scripts" / "ai_score_local.py"
-    cmd = [sys.executable, "-u", str(script), "--engine", engine]
+    cmd = [sys.executable, "-u", str(script), "--engine", engine,
+           "--user-id", str(user_id)]
     if hours:
         cmd += ["--hours", str(hours)]
     if limit:
@@ -792,7 +794,7 @@ def create_app():
 
         thread = threading.Thread(
             target=_run_ai_score,
-            args=(config["_root"], engine, hours, limit, rescore),
+            args=(config["_root"], engine, hours, limit, rescore, g.user_id),
             daemon=True,
         )
         thread.start()

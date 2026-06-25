@@ -230,6 +230,32 @@ def init_db():
     finally:
         put_conn(conn)
 
+    # Seed the operator user and, on first run for an existing single-user DB,
+    # move its per-job state into the multi-tenant tables. Idempotent + guarded
+    # so the migration scan runs at most once.
+    ensure_default_user()
+    _maybe_migrate_multiuser()
+
+
+def _maybe_migrate_multiuser() -> None:
+    """Run migrate_to_multiuser() once, when the operator has no state yet but
+    legacy rows exist on the shared `jobs` table to import.
+    """
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT EXISTS(SELECT 1 FROM user_job_state WHERE user_id = %s)",
+                (DEFAULT_USER_ID,),
+            )
+            has_state = cur.fetchone()[0]
+            cur.execute("SELECT EXISTS(SELECT 1 FROM jobs)")
+            has_jobs = cur.fetchone()[0]
+    finally:
+        put_conn(conn)
+    if has_jobs and not has_state:
+        migrate_to_multiuser()
+
 
 # ---------------------------------------------------------------------------
 # Users & profiles (multi-tenant)
@@ -544,6 +570,27 @@ JOB_COLUMNS = [
     "status", "h1b", "reject_reason", "expires_at", "source",
 ]
 
+# Columns that live on the shared posting (jobs j); everything else in
+# JOB_COLUMNS lives on the per-user state row (user_job_state s).
+_POSTING_COLS = {
+    "url", "company", "title", "location", "description_preview",
+    "search_term", "date_posted", "source",
+}
+
+
+def _col(name: str) -> str:
+    """Qualify a JOB_COLUMNS name with its source table alias (j=posting, s=state)."""
+    return f"j.{name}" if name in _POSTING_COLS else f"s.{name}"
+
+
+def _qualified_select() -> str:
+    """SELECT list pulling each JOB_COLUMNS field from its owning table."""
+    return ", ".join(_col(c) for c in JOB_COLUMNS)
+
+
+# The standard multi-tenant FROM: per-user state joined to the shared posting.
+_USER_JOBS_FROM = "user_job_state s JOIN jobs j ON j.url = s.url"
+
 
 def _expires_at_for_status(status: str):
     """Return expires_at value based on status. None = never expires."""
@@ -556,15 +603,100 @@ def _expires_at_for_status(status: str):
 # Core CRUD
 # ---------------------------------------------------------------------------
 
-def merge_scan_results(scan_results: list[dict]) -> int:
-    """Upsert scan results into the database. Returns count of new jobs inserted.
+def _user_profile_obj(user_id: int):
+    """Load a user's FilterProfile (falls back to DEFAULT_PROFILE)."""
+    from .filter_profile import profile_from_config
+    prof = get_user_profile(user_id)
+    return profile_from_config((prof or {}).get("filter_config") or {})
 
-    Uses INSERT ... ON CONFLICT DO UPDATE (upsert) to avoid race conditions.
-    - New jobs: inserted with expires_at = NOW() + 3 days
-    - Existing jobs: last_seen updated, expires_at refreshed, description updated if longer
-    - User status is always preserved
-    - AI scores carried from scan if not already present
-    - All jobs re-scored with current filter logic
+
+def _upsert_posting(cur, entry: dict, now_iso: str, posted: str) -> bool:
+    """Upsert the shared posting (no per-user scoring). Returns True if inserted."""
+    cur.execute("""
+        INSERT INTO jobs (
+            url, company, title, location, description_preview,
+            search_term, date_posted, first_seen, last_seen, source
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (url) DO UPDATE SET
+            last_seen = EXCLUDED.last_seen,
+            description_preview = CASE
+                WHEN LENGTH(EXCLUDED.description_preview) > LENGTH(jobs.description_preview)
+                THEN EXCLUDED.description_preview ELSE jobs.description_preview END,
+            search_term = EXCLUDED.search_term,
+            source = EXCLUDED.source
+        RETURNING (xmax = 0) AS inserted
+    """, (
+        entry["url"], entry.get("company", ""), entry.get("title", ""),
+        entry.get("location", ""), entry.get("description_preview", ""),
+        entry.get("search_term", ""), entry.get("date_posted", ""),
+        posted, now_iso, entry.get("source", "linkedin"),
+    ))
+    row = cur.fetchone()
+    return bool(row and row[0])
+
+
+# Upsert for one user's per-job state. Preserves the user's status, AI score,
+# and first_seen across re-scores (mirrors the original jobs upsert).
+_USER_STATE_UPSERT_SQL = """
+    INSERT INTO user_job_state (
+        user_id, url, variant, reason, score, score_pct,
+        ai_score, ai_reason, ai_model, recommended, level,
+        min_exp, max_exp, competition, keyword_hits, status,
+        h1b, reject_reason, first_seen, last_seen, expires_at
+    ) VALUES (
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    )
+    ON CONFLICT (user_id, url) DO UPDATE SET
+        last_seen = EXCLUDED.last_seen,
+        score = EXCLUDED.score,
+        score_pct = CASE
+            WHEN user_job_state.ai_score IS NOT NULL THEN user_job_state.score_pct
+            ELSE EXCLUDED.score_pct END,
+        ai_score = COALESCE(user_job_state.ai_score, EXCLUDED.ai_score),
+        ai_reason = CASE
+            WHEN user_job_state.ai_score IS NOT NULL THEN user_job_state.ai_reason
+            ELSE EXCLUDED.ai_reason END,
+        ai_model = CASE
+            WHEN user_job_state.ai_score IS NOT NULL THEN user_job_state.ai_model
+            ELSE EXCLUDED.ai_model END,
+        recommended = CASE
+            WHEN user_job_state.ai_score IS NOT NULL THEN user_job_state.recommended
+            ELSE EXCLUDED.recommended END,
+        level = EXCLUDED.level, min_exp = EXCLUDED.min_exp,
+        max_exp = EXCLUDED.max_exp, competition = EXCLUDED.competition,
+        keyword_hits = EXCLUDED.keyword_hits, reason = EXCLUDED.reason,
+        variant = EXCLUDED.variant, reject_reason = EXCLUDED.reject_reason,
+        expires_at = CASE
+            WHEN user_job_state.status IN ('Tracking', 'Applied') THEN NULL
+            ELSE EXCLUDED.expires_at END
+"""
+
+
+def _user_state_params(user_id: int, scored: dict, now_iso: str, expires) -> tuple:
+    """Build the parameter tuple for _USER_STATE_UPSERT_SQL from a scored entry."""
+    return (
+        user_id, scored["url"], scored.get("variant", "se"), scored.get("reason", ""),
+        scored.get("score", 0), scored.get("score_pct", 0), scored.get("ai_score"),
+        scored.get("ai_reason", ""), scored.get("ai_model"),
+        scored.get("recommended", False), scored.get("level", "Unknown"),
+        scored.get("min_exp"), scored.get("max_exp"), scored.get("competition", 0),
+        scored.get("keyword_hits", 0), "", scored.get("h1b", False),
+        scored.get("reject_reason"), now_iso, now_iso, expires,
+    )
+
+
+def _upsert_user_state(cur, user_id: int, scored: dict, now_iso: str, expires) -> None:
+    cur.execute(_USER_STATE_UPSERT_SQL, _user_state_params(user_id, scored, now_iso, expires))
+
+
+def merge_scan_results(scan_results: list[dict]) -> int:
+    """Upsert scan results: postings into the shared `jobs` pool, then fan out
+    per-user scoring into user_job_state for every active user.
+
+    Returns the count of NEW postings inserted. Each active user's job state is
+    scored with that user's FilterProfile and respects their per-user dismissals;
+    status / AI score / first_seen are preserved across re-scores.
     """
     if not scan_results:
         return 0
@@ -590,114 +722,43 @@ def merge_scan_results(scan_results: list[dict]) -> int:
     new_count = 0
     try:
         with conn.cursor() as cur:
-            # Load dismissed URLs so deleted jobs never reappear.
-            # Normalize both stored and incoming URLs — the migration re-keys
-            # existing rows, but defending here also covers any stragglers.
-            cur.execute("SELECT url FROM dismissed_jobs")
-            dismissed_urls = {normalize_url(row[0]) for row in cur.fetchall()}
+            # Active users + their profiles and per-user dismissals.
+            user_ids = [r[0] for r in
+                        _fetch(cur, "SELECT id FROM users WHERE is_active ORDER BY id")]
+            profiles = {uid: _user_profile_obj(uid) for uid in user_ids}
+            dismissed = {}
+            for uid in user_ids:
+                cur.execute("SELECT url FROM user_dismissed_jobs WHERE user_id = %s", (uid,))
+                dismissed[uid] = {normalize_url(r[0]) for r in cur.fetchall()}
 
             for entry in deduped:
                 url = normalize_url(entry.get("url", ""))
-                if not url or url in dismissed_urls:
+                if not url:
                     continue
                 entry["url"] = url
-
-                # Re-score entry
-                scored = _rescore_entry(dict(entry))
                 posted = entry.get("date_posted", "") or now_iso
-                desc = scored.get("description_preview", "")
 
-                # Upsert: insert new or update existing
-                cur.execute("""
-                    INSERT INTO jobs (
-                        url, company, title, location, description_preview,
-                        search_term, date_posted, variant, reason,
-                        first_seen, last_seen,
-                        score, score_pct, ai_score, ai_reason, ai_model, recommended,
-                        level, min_exp, max_exp, competition, keyword_hits,
-                        status, h1b, reject_reason, expires_at, source
-                    ) VALUES (
-                        %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s,
-                        %s, %s,
-                        %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s
-                    )
-                    ON CONFLICT (url) DO UPDATE SET
-                        last_seen = EXCLUDED.last_seen,
-                        description_preview = CASE
-                            WHEN LENGTH(EXCLUDED.description_preview) > LENGTH(jobs.description_preview)
-                            THEN EXCLUDED.description_preview
-                            ELSE jobs.description_preview
-                        END,
-                        score = EXCLUDED.score,
-                        score_pct = CASE
-                            WHEN jobs.ai_score IS NOT NULL THEN jobs.score_pct
-                            ELSE EXCLUDED.score_pct
-                        END,
-                        ai_score = COALESCE(jobs.ai_score, EXCLUDED.ai_score),
-                        ai_reason = CASE
-                            WHEN jobs.ai_score IS NOT NULL THEN jobs.ai_reason
-                            ELSE EXCLUDED.ai_reason
-                        END,
-                        ai_model = CASE
-                            WHEN jobs.ai_score IS NOT NULL THEN jobs.ai_model
-                            ELSE EXCLUDED.ai_model
-                        END,
-                        recommended = CASE
-                            WHEN jobs.ai_score IS NOT NULL THEN jobs.recommended
-                            ELSE EXCLUDED.recommended
-                        END,
-                        level = EXCLUDED.level,
-                        min_exp = EXCLUDED.min_exp,
-                        max_exp = EXCLUDED.max_exp,
-                        competition = EXCLUDED.competition,
-                        keyword_hits = EXCLUDED.keyword_hits,
-                        reason = EXCLUDED.reason,
-                        variant = EXCLUDED.variant,
-                        reject_reason = EXCLUDED.reject_reason,
-                        source = EXCLUDED.source,
-                        expires_at = CASE
-                            WHEN jobs.status IN ('Tracking', 'Applied') THEN NULL
-                            ELSE EXCLUDED.expires_at
-                        END
-                    RETURNING (xmax = 0) AS inserted
-                """, (
-                    url,
-                    scored.get("company", ""),
-                    scored.get("title", ""),
-                    scored.get("location", ""),
-                    desc,
-                    scored.get("search_term", ""),
-                    scored.get("date_posted", ""),
-                    scored.get("variant", "se"),
-                    scored.get("reason", ""),
-                    posted, now_iso,
-                    scored.get("score", 0),
-                    scored.get("score_pct", 0),
-                    scored.get("ai_score"),
-                    scored.get("ai_reason", ""),
-                    scored.get("ai_model"),
-                    scored.get("recommended", False),
-                    scored.get("level", "Unknown"),
-                    scored.get("min_exp"),
-                    scored.get("max_exp"),
-                    scored.get("competition", 0),
-                    scored.get("keyword_hits", 0),
-                    "",  # status (only for new inserts, ON CONFLICT preserves existing)
-                    False,  # h1b
-                    scored.get("reject_reason"),
-                    expires,
-                    scored.get("source", "linkedin"),
-                ))
-                row = cur.fetchone()
-                if row and row[0]:  # xmax = 0 means it was an INSERT, not UPDATE
+                # 1) Shared posting (no scoring).
+                if _upsert_posting(cur, entry, now_iso, posted):
                     new_count += 1
 
-            # Prune expired jobs
-            cur.execute("DELETE FROM jobs WHERE expires_at IS NOT NULL AND expires_at < NOW()")
+                # 2) Fan out per-user scoring, skipping each user's dismissals.
+                for uid in user_ids:
+                    if url in dismissed[uid]:
+                        continue
+                    scored = _rescore_entry(dict(entry), profiles[uid])
+                    scored["url"] = url
+                    _upsert_user_state(cur, uid, scored, now_iso, expires)
 
+            # Prune expired per-user rows, then postings no user references.
+            cur.execute(
+                "DELETE FROM user_job_state WHERE expires_at IS NOT NULL AND expires_at < NOW()"
+            )
+            cur.execute(
+                "DELETE FROM jobs j WHERE NOT EXISTS "
+                "(SELECT 1 FROM user_job_state s WHERE s.url = j.url) "
+                "AND j.first_seen < NOW() - INTERVAL '7 days'"
+            )
         conn.commit()
     except Exception:
         conn.rollback()
@@ -708,8 +769,62 @@ def merge_scan_results(scan_results: list[dict]) -> int:
     return new_count
 
 
-def update_job_status(url: str, status: str) -> bool:
-    """Update a job's status. Sets expires_at based on new status."""
+def _fetch(cur, sql, params=()):
+    cur.execute(sql, params)
+    return cur.fetchall()
+
+
+def backfill_user(user_id: int) -> int:
+    """Score the entire existing posting pool for a (usually new) user.
+
+    Run on signup so a new user immediately has a populated feed. Uses their
+    FilterProfile, skips their dismissals, and only inserts state rows that don't
+    already exist. Returns the number of rows written.
+    """
+    profile = _user_profile_obj(user_id)
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    expires = now + timedelta(days=TTL_DAYS)
+    conn = get_conn()
+    written = 0
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT url FROM user_dismissed_jobs WHERE user_id = %s", (user_id,))
+            dismissed = {normalize_url(r[0]) for r in cur.fetchall()}
+            cur.execute(
+                "SELECT url, company, title, location, description_preview, "
+                "search_term, date_posted, source, first_seen FROM jobs"
+            )
+            rows = cur.fetchall()
+            batch = []
+            for url, company, title, location, desc, search_term, date_posted, source, first_seen in rows:
+                if url in dismissed:
+                    continue
+                entry = {
+                    "url": url, "company": company, "title": title, "location": location,
+                    "description_preview": desc, "search_term": search_term,
+                    "date_posted": date_posted, "source": source,
+                    "first_seen": first_seen.isoformat() if first_seen else now_iso,
+                }
+                scored = _rescore_entry(entry, profile)
+                scored["url"] = url
+                # Backfilled first_seen = signup time so time-buckets aren't
+                # flooded with old postings (see plan).
+                batch.append(_user_state_params(user_id, scored, now_iso, expires))
+                written += 1
+            # One round-trip per page instead of per row (4500+ postings).
+            psycopg2.extras.execute_batch(cur, _USER_STATE_UPSERT_SQL, batch, page_size=500)
+        conn.commit()
+        return written
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
+def update_job_status(url: str, status: str, user_id: int = DEFAULT_USER_ID) -> bool:
+    """Update a user's status on a job. Sets expires_at based on new status."""
     if status not in LINKEDIN_STATUSES and status != "":
         return False
 
@@ -720,13 +835,15 @@ def update_job_status(url: str, status: str) -> bool:
         with conn.cursor() as cur:
             if status in KEEP_STATUSES:
                 cur.execute(
-                    "UPDATE jobs SET status = %s, expires_at = NULL WHERE url = %s",
-                    (status, url),
+                    "UPDATE user_job_state SET status = %s, expires_at = NULL "
+                    "WHERE user_id = %s AND url = %s",
+                    (status, user_id, url),
                 )
             else:
                 cur.execute(
-                    "UPDATE jobs SET status = %s, expires_at = %s WHERE url = %s",
-                    (status, expires, url),
+                    "UPDATE user_job_state SET status = %s, expires_at = %s "
+                    "WHERE user_id = %s AND url = %s",
+                    (status, expires, user_id, url),
                 )
             found = cur.rowcount > 0
         conn.commit()
@@ -738,17 +855,24 @@ def update_job_status(url: str, status: str) -> bool:
         put_conn(conn)
 
 
-def delete_job(url: str) -> bool:
-    """Permanently delete a job and record it as dismissed so it never reappears."""
+def delete_job(url: str, user_id: int = DEFAULT_USER_ID) -> bool:
+    """Dismiss a job for one user: remove their state row and remember the
+    dismissal so it never re-fans-out to them. The shared posting stays for
+    other users.
+    """
     url = normalize_url(url)
     conn = get_conn()
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO dismissed_jobs (url) VALUES (%s) ON CONFLICT DO NOTHING",
-                (url,),
+                "INSERT INTO user_dismissed_jobs (user_id, url) VALUES (%s, %s) "
+                "ON CONFLICT DO NOTHING",
+                (user_id, url),
             )
-            cur.execute("DELETE FROM jobs WHERE url = %s", (url,))
+            cur.execute(
+                "DELETE FROM user_job_state WHERE user_id = %s AND url = %s",
+                (user_id, url),
+            )
             found = cur.rowcount > 0
         conn.commit()
         return found
@@ -760,12 +884,21 @@ def delete_job(url: str) -> bool:
 
 
 def prune_expired_jobs() -> int:
-    """Delete jobs whose TTL has expired. Returns count deleted."""
+    """Delete expired per-user state rows, then postings no user references.
+    Returns the count of per-user state rows deleted.
+    """
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM jobs WHERE expires_at IS NOT NULL AND expires_at < NOW()")
+            cur.execute(
+                "DELETE FROM user_job_state WHERE expires_at IS NOT NULL AND expires_at < NOW()"
+            )
             count = cur.rowcount
+            cur.execute(
+                "DELETE FROM jobs j WHERE NOT EXISTS "
+                "(SELECT 1 FROM user_job_state s WHERE s.url = j.url) "
+                "AND j.first_seen < NOW() - INTERVAL '7 days'"
+            )
         conn.commit()
         return count
     except Exception:
@@ -780,6 +913,7 @@ def prune_expired_jobs() -> int:
 # ---------------------------------------------------------------------------
 
 def get_filtered_jobs(
+    user_id: int = DEFAULT_USER_ID,
     status: str = "",
     level: str = "",
     query: str = "",
@@ -792,24 +926,24 @@ def get_filtered_jobs(
     source: str = "",
     limit: int | None = 250,
 ) -> list[dict]:
-    """Return filtered, sorted job list. Mirrors linkedin_store.get_filtered_jobs()."""
+    """Return one user's filtered, sorted job list. Mirrors the JSON store."""
     now_utc = datetime.now(tz=timezone.utc)
     user_tz = timezone(timedelta(minutes=-tz_offset))
     now_local = now_utc.astimezone(user_tz)
 
-    conditions = []
-    params = []
+    conditions = ["s.user_id = %s"]
+    params = [user_id]
 
     if time_range == "hour":
-        conditions.append("first_seen >= %s")
+        conditions.append("s.first_seen >= %s")
         params.append(now_utc - timedelta(hours=1))
     elif time_range == "today":
         local_midnight = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
-        conditions.append("first_seen >= %s")
+        conditions.append("s.first_seen >= %s")
         params.append(local_midnight.astimezone(timezone.utc))
     elif time_range == "yesterday":
         local_midnight = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
-        conditions.append("first_seen >= %s AND first_seen < %s")
+        conditions.append("s.first_seen >= %s AND s.first_seen < %s")
         params.append((local_midnight - timedelta(days=1)).astimezone(timezone.utc))
         params.append(local_midnight.astimezone(timezone.utc))
 
@@ -819,37 +953,37 @@ def get_filtered_jobs(
             bm = _bucket_minutes(local_start)
             bucket_start = local_start.astimezone(timezone.utc)
             bucket_end = bucket_start + timedelta(minutes=bm)
-            conditions.append("first_seen >= %s AND first_seen < %s")
+            conditions.append("s.first_seen >= %s AND s.first_seen < %s")
             params.append(bucket_start)
             params.append(bucket_end)
         except (ValueError, TypeError):
             pass
 
     if status == "Recommended":
-        conditions.append("recommended = TRUE")
-        conditions.append("COALESCE(status, '') NOT IN ('Not Interested')")
+        conditions.append("s.recommended = TRUE")
+        conditions.append("COALESCE(s.status, '') NOT IN ('Not Interested')")
     elif status:
-        conditions.append("status = %s")
+        conditions.append("s.status = %s")
         params.append(status)
 
     if level and level != "All":
-        conditions.append("level = %s")
+        conditions.append("s.level = %s")
         params.append(level)
 
     if query:
-        conditions.append("LOWER(company || ' ' || title || ' ' || location) LIKE %s")
+        conditions.append("LOWER(j.company || ' ' || j.title || ' ' || j.location) LIKE %s")
         q_like = f"%{query.lower().strip()}%"
         params.append(q_like)
 
     if search_term:
-        conditions.append("search_term = %s")
+        conditions.append("j.search_term = %s")
         params.append(search_term)
 
     if source:
-        conditions.append("source = %s")
+        conditions.append("j.source = %s")
         params.append(source)
 
-    where = " AND ".join(conditions) if conditions else "TRUE"
+    where = " AND ".join(conditions)
 
     allowed_sorts = {
         "last_seen", "first_seen", "score_pct", "ai_score", "score",
@@ -862,23 +996,23 @@ def get_filtered_jobs(
     # Paired primary/secondary: when sorting by recency, AI score breaks ties;
     # when sorting by AI score, recency breaks ties. score_pct is the final fallback.
     if sort_col == "ai_score":
-        primary_sql = "COALESCE(ai_score, 0)"
-        secondary_sql = "first_seen DESC NULLS LAST"
+        primary_sql = "COALESCE(s.ai_score, 0)"
+        secondary_sql = "s.first_seen DESC NULLS LAST"
     elif sort_col == "first_seen":
-        primary_sql = "first_seen"
-        secondary_sql = "COALESCE(ai_score, 0) DESC"
+        primary_sql = "s.first_seen"
+        secondary_sql = "COALESCE(s.ai_score, 0) DESC"
     else:
-        primary_sql = sort_col
-        secondary_sql = "COALESCE(ai_score, 0) DESC"
+        primary_sql = _col(sort_col)
+        secondary_sql = "COALESCE(s.ai_score, 0) DESC"
 
     order = f"""
-        CASE WHEN status IN ('Applied', 'Not Interested') THEN 1 ELSE 0 END,
+        CASE WHEN s.status IN ('Applied', 'Not Interested') THEN 1 ELSE 0 END,
         {primary_sql} {direction} NULLS LAST,
         {secondary_sql},
-        score_pct DESC
+        s.score_pct DESC
     """
 
-    sql = f"SELECT {', '.join(JOB_COLUMNS)} FROM jobs WHERE {where} ORDER BY {order}"
+    sql = f"SELECT {_qualified_select()} FROM {_USER_JOBS_FROM} WHERE {where} ORDER BY {order}"
     if limit:
         sql += " LIMIT %s"
         params.append(limit)
@@ -903,21 +1037,21 @@ def get_filtered_jobs(
     return result
 
 
-def get_status_counts(source: str = "") -> dict[str, int]:
-    """Return count of jobs per status + recommended count."""
-    where = "WHERE source = %s" if source else ""
-    params = (source,) if source else ()
+def get_status_counts(user_id: int = DEFAULT_USER_ID, source: str = "") -> dict[str, int]:
+    """Return count of one user's jobs per status + recommended count."""
+    where = "WHERE s.user_id = %s" + (" AND j.source = %s" if source else "")
+    params = (user_id, source) if source else (user_id,)
     conn = get_conn()
     try:
         with conn.cursor() as cur:
             cur.execute(f"""
                 SELECT
                     COUNT(*) AS total,
-                    COUNT(*) FILTER (WHERE status = 'Tracking') AS tracking,
-                    COUNT(*) FILTER (WHERE status = 'Applied') AS applied,
-                    COUNT(*) FILTER (WHERE status = 'Not Interested') AS not_interested,
-                    COUNT(*) FILTER (WHERE recommended = TRUE AND COALESCE(status, '') NOT IN ('Not Interested')) AS recommended
-                FROM jobs {where}
+                    COUNT(*) FILTER (WHERE s.status = 'Tracking') AS tracking,
+                    COUNT(*) FILTER (WHERE s.status = 'Applied') AS applied,
+                    COUNT(*) FILTER (WHERE s.status = 'Not Interested') AS not_interested,
+                    COUNT(*) FILTER (WHERE s.recommended = TRUE AND COALESCE(s.status, '') NOT IN ('Not Interested')) AS recommended
+                FROM {_USER_JOBS_FROM} {where}
             """, params)
             row = cur.fetchone()
     except Exception:
@@ -935,14 +1069,17 @@ def get_status_counts(source: str = "") -> dict[str, int]:
     }
 
 
-def get_level_counts(source: str = "") -> dict[str, int]:
-    """Return count of jobs per level tag."""
-    where = "WHERE source = %s" if source else ""
-    params = (source,) if source else ()
+def get_level_counts(user_id: int = DEFAULT_USER_ID, source: str = "") -> dict[str, int]:
+    """Return count of one user's jobs per level tag."""
+    where = "WHERE s.user_id = %s" + (" AND j.source = %s" if source else "")
+    params = (user_id, source) if source else (user_id,)
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute(f"SELECT level, COUNT(*) FROM jobs {where} GROUP BY level", params)
+            cur.execute(
+                f"SELECT s.level, COUNT(*) FROM {_USER_JOBS_FROM} {where} GROUP BY s.level",
+                params,
+            )
             rows = cur.fetchall()
     except Exception:
         conn.rollback()
@@ -961,6 +1098,7 @@ def get_level_counts(source: str = "") -> dict[str, int]:
 
 
 def get_filtered_counts(
+    user_id: int = DEFAULT_USER_ID,
     time_range: str = "",
     bucket_filter: str = "",
     tz_offset: int = 0,
@@ -968,24 +1106,24 @@ def get_filtered_counts(
     search_term: str = "",
     source: str = "",
 ) -> dict:
-    """Compute status + level counts with time/search filters applied."""
+    """Compute one user's status + level counts with time/search filters applied."""
     now_utc = datetime.now(tz=timezone.utc)
     user_tz = timezone(timedelta(minutes=-tz_offset))
     now_local = now_utc.astimezone(user_tz)
 
-    conditions = []
-    params = []
+    conditions = ["s.user_id = %s"]
+    params = [user_id]
 
     if time_range == "hour":
-        conditions.append("first_seen >= %s")
+        conditions.append("s.first_seen >= %s")
         params.append(now_utc - timedelta(hours=1))
     elif time_range == "today":
         local_midnight = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
-        conditions.append("first_seen >= %s")
+        conditions.append("s.first_seen >= %s")
         params.append(local_midnight.astimezone(timezone.utc))
     elif time_range == "yesterday":
         local_midnight = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
-        conditions.append("first_seen >= %s AND first_seen < %s")
+        conditions.append("s.first_seen >= %s AND s.first_seen < %s")
         params.append((local_midnight - timedelta(days=1)).astimezone(timezone.utc))
         params.append(local_midnight.astimezone(timezone.utc))
 
@@ -995,26 +1133,26 @@ def get_filtered_counts(
             bm = _bucket_minutes(local_start)
             bucket_start = local_start.astimezone(timezone.utc)
             bucket_end = bucket_start + timedelta(minutes=bm)
-            conditions.append("first_seen >= %s AND first_seen < %s")
+            conditions.append("s.first_seen >= %s AND s.first_seen < %s")
             params.append(bucket_start)
             params.append(bucket_end)
         except (ValueError, TypeError):
             pass
 
     if query:
-        conditions.append("LOWER(company || ' ' || title || ' ' || location) LIKE %s")
+        conditions.append("LOWER(j.company || ' ' || j.title || ' ' || j.location) LIKE %s")
         q_like = f"%{query.lower().strip()}%"
         params.append(q_like)
 
     if search_term:
-        conditions.append("search_term = %s")
+        conditions.append("j.search_term = %s")
         params.append(search_term)
 
     if source:
-        conditions.append("source = %s")
+        conditions.append("j.source = %s")
         params.append(source)
 
-    where = " AND ".join(conditions) if conditions else "TRUE"
+    where = " AND ".join(conditions)
 
     conn = get_conn()
     try:
@@ -1022,15 +1160,15 @@ def get_filtered_counts(
             cur.execute(f"""
                 SELECT
                     COUNT(*) AS total,
-                    COUNT(*) FILTER (WHERE status = 'Tracking') AS tracking,
-                    COUNT(*) FILTER (WHERE status = 'Applied') AS applied,
-                    COUNT(*) FILTER (WHERE status = 'Not Interested') AS not_interested,
-                    COUNT(*) FILTER (WHERE recommended = TRUE AND COALESCE(status, '') NOT IN ('Not Interested')) AS recommended,
-                    COUNT(*) FILTER (WHERE level = 'New Grad') AS new_grad,
-                    COUNT(*) FILTER (WHERE level = 'Entry') AS entry,
-                    COUNT(*) FILTER (WHERE level = 'Mid') AS mid,
-                    COUNT(*) FILTER (WHERE level = 'Unknown') AS unknown
-                FROM jobs WHERE {where}
+                    COUNT(*) FILTER (WHERE s.status = 'Tracking') AS tracking,
+                    COUNT(*) FILTER (WHERE s.status = 'Applied') AS applied,
+                    COUNT(*) FILTER (WHERE s.status = 'Not Interested') AS not_interested,
+                    COUNT(*) FILTER (WHERE s.recommended = TRUE AND COALESCE(s.status, '') NOT IN ('Not Interested')) AS recommended,
+                    COUNT(*) FILTER (WHERE s.level = 'New Grad') AS new_grad,
+                    COUNT(*) FILTER (WHERE s.level = 'Entry') AS entry,
+                    COUNT(*) FILTER (WHERE s.level = 'Mid') AS mid,
+                    COUNT(*) FILTER (WHERE s.level = 'Unknown') AS unknown
+                FROM {_USER_JOBS_FROM} WHERE {where}
             """, params)
             row = cur.fetchone()
     except Exception:
@@ -1057,8 +1195,9 @@ def get_filtered_counts(
     }
 
 
-def get_time_counts(tz_offset: int = 0, time_range: str = "", source: str = "") -> dict:
-    """Return time tab counts + 30-min bucket breakdown matching the active time range."""
+def get_time_counts(user_id: int = DEFAULT_USER_ID, tz_offset: int = 0,
+                    time_range: str = "", source: str = "") -> dict:
+    """Return one user's time tab counts + 30-min bucket breakdown."""
     now_utc = datetime.now(tz=timezone.utc)
     user_tz = timezone(timedelta(minutes=-tz_offset))
     now_local = now_utc.astimezone(user_tz)
@@ -1068,9 +1207,8 @@ def get_time_counts(tz_offset: int = 0, time_range: str = "", source: str = "") 
     yesterday_start_utc = (local_midnight - timedelta(days=1)).astimezone(timezone.utc)
     one_hour_ago = now_utc - timedelta(hours=1)
 
-    src_filter = "WHERE source = %s" if source else ""
-    src_tail = "AND source = %s" if source else ""
-    src_param = (source,) if source else ()
+    base = "WHERE s.user_id = %s" + (" AND j.source = %s" if source else "")
+    base_param = (user_id, source) if source else (user_id,)
 
     # Determine bucket query window based on active time range
     if time_range == "hour":
@@ -1092,25 +1230,26 @@ def get_time_counts(tz_offset: int = 0, time_range: str = "", source: str = "") 
         with conn.cursor() as cur:
             cur.execute(f"""
                 SELECT
-                    COUNT(*) FILTER (WHERE first_seen >= %s) AS this_hour,
-                    COUNT(*) FILTER (WHERE first_seen >= %s) AS today,
-                    COUNT(*) FILTER (WHERE first_seen >= %s AND first_seen < %s) AS yesterday
-                FROM jobs {src_filter}
-            """, (one_hour_ago, today_start_utc, yesterday_start_utc, today_start_utc) + src_param)
+                    COUNT(*) FILTER (WHERE s.first_seen >= %s) AS this_hour,
+                    COUNT(*) FILTER (WHERE s.first_seen >= %s) AS today,
+                    COUNT(*) FILTER (WHERE s.first_seen >= %s AND s.first_seen < %s) AS yesterday
+                FROM {_USER_JOBS_FROM} {base}
+            """, (one_hour_ago, today_start_utc, yesterday_start_utc, today_start_utc) + base_param)
             tab_row = cur.fetchone()
 
             if bucket_start_utc and bucket_end_utc:
                 cur.execute(
-                    f"SELECT first_seen FROM jobs WHERE first_seen >= %s AND first_seen < %s {src_tail}",
-                    (bucket_start_utc, bucket_end_utc) + src_param,
+                    f"SELECT s.first_seen FROM {_USER_JOBS_FROM} {base} "
+                    "AND s.first_seen >= %s AND s.first_seen < %s",
+                    base_param + (bucket_start_utc, bucket_end_utc),
                 )
             elif bucket_start_utc:
                 cur.execute(
-                    f"SELECT first_seen FROM jobs WHERE first_seen >= %s {src_tail}",
-                    (bucket_start_utc,) + src_param,
+                    f"SELECT s.first_seen FROM {_USER_JOBS_FROM} {base} AND s.first_seen >= %s",
+                    base_param + (bucket_start_utc,),
                 )
             else:
-                cur.execute(f"SELECT first_seen FROM jobs {src_filter}", src_param)
+                cur.execute(f"SELECT s.first_seen FROM {_USER_JOBS_FROM} {base}", base_param)
             fs_rows = cur.fetchall()
     except Exception:
         conn.rollback()
@@ -1148,15 +1287,16 @@ def get_time_counts(tz_offset: int = 0, time_range: str = "", source: str = "") 
     }
 
 
-def get_search_terms(source: str = "") -> list[str]:
-    """Return sorted list of distinct search_term values."""
-    extra = "AND source = %s" if source else ""
-    params = (source,) if source else ()
+def get_search_terms(user_id: int = DEFAULT_USER_ID, source: str = "") -> list[str]:
+    """Return sorted list of distinct search_term values among a user's jobs."""
+    extra = "AND j.source = %s" if source else ""
+    params = (user_id, source) if source else (user_id,)
     conn = get_conn()
     try:
         with conn.cursor() as cur:
             cur.execute(
-                f"SELECT DISTINCT search_term FROM jobs WHERE search_term != '' {extra} ORDER BY search_term",
+                f"SELECT DISTINCT j.search_term FROM {_USER_JOBS_FROM} "
+                f"WHERE s.user_id = %s AND j.search_term != '' {extra} ORDER BY j.search_term",
                 params,
             )
             return [row[0] for row in cur.fetchall()]
@@ -1167,13 +1307,17 @@ def get_search_terms(source: str = "") -> list[str]:
         put_conn(conn)
 
 
-def get_job(url: str) -> dict | None:
-    """Get a single job by URL."""
+def get_job(url: str, user_id: int = DEFAULT_USER_ID) -> dict | None:
+    """Get a single job (with the user's state) by URL."""
     url = normalize_url(url)
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute(f"SELECT {', '.join(JOB_COLUMNS)} FROM jobs WHERE url = %s", (url,))
+            cur.execute(
+                f"SELECT {_qualified_select()} FROM {_USER_JOBS_FROM} "
+                "WHERE s.user_id = %s AND s.url = %s",
+                (user_id, url),
+            )
             row = cur.fetchone()
             if not row:
                 return None
@@ -1187,12 +1331,12 @@ def get_job(url: str) -> dict | None:
         put_conn(conn)
 
 
-def get_last_updated() -> str:
-    """Return the most recent last_seen timestamp across all jobs."""
+def get_last_updated(user_id: int = DEFAULT_USER_ID) -> str:
+    """Return the most recent last_seen timestamp across one user's jobs."""
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT MAX(last_seen) FROM jobs")
+            cur.execute("SELECT MAX(last_seen) FROM user_job_state WHERE user_id = %s", (user_id,))
             row = cur.fetchone()
             if row and row[0]:
                 return row[0].isoformat()

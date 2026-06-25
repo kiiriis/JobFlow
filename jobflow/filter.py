@@ -429,7 +429,7 @@ def synergy_bonus(text: str, combos=None) -> int:
 
 def title_fit_bonus(title: str, profile=None) -> int:
     """Role-family fit from the title alone. Strong > adjacent > none."""
-    profile = profile if profile is not None else DEFAULT_PROFILE
+    profile = profile if profile is not None else _default_profile()
     lower = title.lower()
     if has_match(lower, profile.title_fit_strong):
         return profile.title_fit_strong_points
@@ -440,7 +440,7 @@ def title_fit_bonus(title: str, profile=None) -> int:
 
 def title_keyword_boost(title: str, profile=None) -> int:
     """Extra (capped) points when stack keywords appear in the title itself."""
-    profile = profile if profile is not None else DEFAULT_PROFILE
+    profile = profile if profile is not None else _default_profile()
     score, _ = keyword_score(title, profile.stack_categories)
     return min(score, profile.title_keyword_boost_max)
 
@@ -507,7 +507,7 @@ def text_has_blocked_source(text: str) -> bool:
 
 def algo_recommended(score_pct: int, level: str, profile=None) -> bool:
     """Fallback 'recommended' flag when no AI score exists yet."""
-    profile = profile if profile is not None else DEFAULT_PROFILE
+    profile = profile if profile is not None else _default_profile()
     return score_pct >= profile.recommended_min_pct and level in profile.recommended_levels
 
 
@@ -649,7 +649,7 @@ def competition_estimate(company: str, hours_old: float = 0) -> int:
 
 
 def _level_points(level: str, profile=None) -> int:
-    profile = profile if profile is not None else DEFAULT_PROFILE
+    profile = profile if profile is not None else _default_profile()
     return profile.level_points.get(level, 4)
 
 
@@ -664,7 +664,7 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None,
     band, recommend bar. It defaults to ``DEFAULT_PROFILE``, which reproduces
     the original single-user behaviour exactly.
     """
-    profile = profile if profile is not None else DEFAULT_PROFILE
+    profile = profile if profile is not None else _default_profile()
     title_lower = job.title.lower()
     text = f"{job.title} {job.description}"
     text_lower = text.lower()
@@ -814,8 +814,26 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None,
     )
 
 
-# Imported at the bottom (after all constants/functions are defined) so that
-# filter_profile.py can import this module's constants without a cycle. The
-# helpers above reference DEFAULT_PROFILE by name at *call* time, not def time,
-# so it only needs to exist as a module global by the time they run.
-from .filter_profile import FilterProfile, DEFAULT_PROFILE  # noqa: E402,F401
+# ── Per-user profile bridge (cycle-free) ────────────────────────────────────
+# filter_profile.py imports this module's constants at its top. To avoid an
+# import cycle, filter.py does NOT import filter_profile at module load; instead
+# it resolves DEFAULT_PROFILE lazily (first use) and exposes the FilterProfile /
+# DEFAULT_PROFILE names via module __getattr__ (PEP 562). So `from jobflow.filter
+# import DEFAULT_PROFILE` and `filter.DEFAULT_PROFILE` both work, in any import
+# order, without either module needing the other fully initialized at import.
+_DEFAULT_PROFILE = None
+
+
+def _default_profile():
+    global _DEFAULT_PROFILE
+    if _DEFAULT_PROFILE is None:
+        from .filter_profile import DEFAULT_PROFILE as _dp
+        _DEFAULT_PROFILE = _dp
+    return _DEFAULT_PROFILE
+
+
+def __getattr__(name):
+    if name in ("FilterProfile", "DEFAULT_PROFILE"):
+        from . import filter_profile
+        return getattr(filter_profile, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

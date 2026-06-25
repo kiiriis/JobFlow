@@ -19,6 +19,7 @@ Environment variables:
   JOBFLOW_SECRET_KEY                      — Flask session signing key
 """
 
+import logging
 import os
 import threading
 
@@ -31,6 +32,7 @@ from .db import DEFAULT_USER_ID
 
 oauth = OAuth()
 bp = Blueprint("auth", __name__, url_prefix="/auth")
+log = logging.getLogger("jobflow.auth")
 
 # Endpoints reachable without a session (login flow, health, static assets).
 _PUBLIC_PREFIXES = ("/auth/", "/static/")
@@ -155,39 +157,51 @@ def google_login():
 def callback():
     if not auth_enabled():
         return redirect("/")
+
+    # 1) Exchange the code for tokens and read the OIDC claims. Failures here are
+    #    almost always state/nonce/session issues — log the real reason.
     try:
         token = oauth.google.authorize_access_token()
+        info = token.get("userinfo")
+        if not info:
+            info = oauth.google.userinfo(token=token)
     except Exception:
+        log.exception("OAuth token exchange / userinfo failed")
         return redirect(url_for("auth.login", error="oauth_failed"))
 
-    info = token.get("userinfo") or {}
-    email = (info.get("email") or "").lower()
-    if not email:
-        return redirect(url_for("auth.login", error="no_email"))
-    if info.get("email_verified") is False:
-        return redirect(url_for("auth.login", error="unverified"))
-    if not is_email_allowed(email):
-        return render_template("login.html", error="not_allowed", email=email), 403
+    # 2) Validate identity + allowlist, then resolve the user. Never bare-500:
+    #    log and show a friendly error instead.
+    try:
+        email = (info.get("email") or "").lower()
+        if not email:
+            return redirect(url_for("auth.login", error="no_email"))
+        if info.get("email_verified") is False:
+            return redirect(url_for("auth.login", error="unverified"))
+        if not is_email_allowed(email):
+            return render_template("login.html", error="not_allowed", email=email), 403
 
-    db = _ensure_db()
-    sub = info["sub"]
-    name = info.get("name", "")
-    picture = info.get("picture", "")
+        db = _ensure_db()
+        sub = info.get("sub") or email
+        name = info.get("name", "")
+        picture = info.get("picture", "")
 
-    if operator_email() and email == operator_email():
-        user = db.bind_operator(sub, email, name, picture)
-    else:
-        user = db.get_or_create_user(sub, email, name, picture)
-        if user.get("created"):
-            # New user: backfill their feed from the shared pool off the request.
-            threading.Thread(target=db.backfill_user, args=(user["id"],), daemon=True).start()
+        if operator_email() and email == operator_email():
+            user = db.bind_operator(sub, email, name, picture)
+        else:
+            user = db.get_or_create_user(sub, email, name, picture)
+            if user.get("created"):
+                # New user: backfill their feed from the shared pool off-request.
+                threading.Thread(target=db.backfill_user, args=(user["id"],), daemon=True).start()
 
-    session.permanent = True
-    session["user_id"] = user["id"]
-    session["email"] = email
-    session["name"] = name
-    session["picture"] = picture
-    return redirect("/")
+        session.permanent = True
+        session["user_id"] = user["id"]
+        session["email"] = email
+        session["name"] = name
+        session["picture"] = picture
+        return redirect("/")
+    except Exception:
+        log.exception("OAuth post-login processing failed for %s", (info or {}).get("email"))
+        return redirect(url_for("auth.login", error="server_error"))
 
 
 @bp.route("/logout", methods=["GET", "POST"])

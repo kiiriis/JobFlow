@@ -313,6 +313,16 @@ def create_app():
         static_folder=str(Path(__file__).parent / "static"),
     )
 
+    # Behind Render's TLS proxy: trust X-Forwarded-Proto/Host so Flask builds
+    # https URLs and the OAuth session round-trips correctly.
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    # Session cookie must survive the top-level redirect back from Google.
+    app.config.update(
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_HTTPONLY=True,
+    )
+
     config = load_config()
     app.config["JOBFLOW"] = config
 

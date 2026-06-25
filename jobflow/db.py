@@ -304,39 +304,49 @@ def ensure_default_user(email: str = "") -> int:
 
 
 def get_or_create_user(google_sub: str, email: str, name: str = "", picture: str = "") -> dict:
-    """Look up a user by Google subject id, creating them (and a blank profile)
-    on first sign-in. Always refreshes last_login_at. Returns the user row dict.
+    """Resolve a signing-in user, creating them (and a blank profile) on first
+    sign-in. Lookup-first by google_sub OR email so it never trips the UNIQUE
+    constraints (e.g. Google sometimes returns a new ``sub`` for the same email,
+    or the email already belongs to the seeded operator row). Refreshes
+    last_login_at. Returns the user dict with a ``created`` flag.
     """
     conn = get_conn()
     try:
         with conn.cursor() as cur:
+            # Prefer a google_sub match; fall back to an existing email.
             cur.execute(
-                """
-                INSERT INTO users (google_sub, email, name, picture, last_login_at)
-                VALUES (%s, %s, %s, %s, NOW())
-                ON CONFLICT (google_sub) DO UPDATE SET
-                    email = EXCLUDED.email,
-                    name = EXCLUDED.name,
-                    picture = EXCLUDED.picture,
-                    last_login_at = NOW()
-                RETURNING id, google_sub, email, name, picture, is_active,
-                          (xmax = 0) AS created
-                """,
-                (google_sub, email, name, picture),
+                "SELECT id FROM users WHERE google_sub = %s OR email = %s "
+                "ORDER BY (google_sub = %s) DESC, id ASC LIMIT 1",
+                (google_sub, email, google_sub),
             )
+            found = cur.fetchone()
+            if found:
+                cur.execute(
+                    "UPDATE users SET google_sub = %s, email = %s, name = %s, "
+                    "picture = %s, last_login_at = NOW() WHERE id = %s "
+                    "RETURNING id, google_sub, email, name, picture, is_active",
+                    (google_sub, email, name, picture, found[0]),
+                )
+                created = False
+            else:
+                cur.execute(
+                    "INSERT INTO users (google_sub, email, name, picture, last_login_at) "
+                    "VALUES (%s, %s, %s, %s, NOW()) "
+                    "RETURNING id, google_sub, email, name, picture, is_active",
+                    (google_sub, email, name, picture),
+                )
+                created = True
             row = cur.fetchone()
             user = {
                 "id": row[0], "google_sub": row[1], "email": row[2],
                 "name": row[3], "picture": row[4], "is_active": row[5],
+                "created": created,
             }
-            created = row[6]
-            if created:
-                cur.execute(
-                    "INSERT INTO user_profiles (user_id) VALUES (%s) "
-                    "ON CONFLICT (user_id) DO NOTHING",
-                    (user["id"],),
-                )
-            user["created"] = created
+            cur.execute(
+                "INSERT INTO user_profiles (user_id) VALUES (%s) "
+                "ON CONFLICT (user_id) DO NOTHING",
+                (user["id"],),
+            )
         conn.commit()
         return user
     except Exception:
@@ -355,6 +365,14 @@ def bind_operator(google_sub: str, email: str, name: str = "", picture: str = ""
     conn = get_conn()
     try:
         with conn.cursor() as cur:
+            # Remove any stray non-operator row already holding this email or
+            # google_sub so the UPDATE below can't hit a UNIQUE conflict. (The
+            # operator's email/identity shouldn't legitimately belong to anyone
+            # else.) ON DELETE CASCADE cleans up its profile/state.
+            cur.execute(
+                "DELETE FROM users WHERE id <> %s AND (email = %s OR google_sub = %s)",
+                (DEFAULT_USER_ID, email, google_sub),
+            )
             cur.execute(
                 "UPDATE users SET google_sub = %s, email = %s, name = %s, "
                 "picture = %s, last_login_at = NOW() WHERE id = %s "

@@ -49,9 +49,6 @@ JSON_STORE_PATH = ROOT / "data" / "ci" / "linkedin_jobs.json"
 
 BATCH_SIZE = 15
 ENGINES = ("claude", "codex")
-# Models considered provisional: a job scored by one of these is eligible to be
-# re-scored by a *different* engine (and unscored jobs are always eligible).
-PROVISIONAL_MODELS = frozenset({"groq", "claude", "codex"})
 
 BATCH_PROMPT = """You are a job relevance scorer for a new grad / entry-level software engineer on F1 OPT visa looking for their first full-time role in the US.
 
@@ -124,8 +121,7 @@ def parse_args():
     parser.add_argument(
         "--rescore",
         action="store_true",
-        help="Include jobs already scored by the selected engine. Default only scores "
-        "unscored rows plus rows scored by a different provisional engine.",
+        help="Include jobs that already have any AI score. Default only scores unscored rows.",
     )
     args = parser.parse_args()
     if args.limit < 0:
@@ -156,18 +152,13 @@ def parse_iso(ts: str) -> datetime | None:
     return dt
 
 
-def eligible_ai_model(model: str | None, rescore: bool = False, engine: str = "claude") -> bool:
-    """Return True when a job should be scored or rescored by the given engine.
+def eligible_ai_score(ai_score, rescore: bool = False) -> bool:
+    """Return True when a job should be scored.
 
-    Unscored jobs are always eligible. Jobs scored by a *different* provisional
-    engine are eligible (so switching engines upgrades them); jobs already scored
-    by this engine are skipped unless --rescore is set.
+    Any non-null AI score, including 0, means the job has already been judged by
+    an AI engine and should be skipped unless --rescore is explicit.
     """
-    return (
-        rescore
-        or model is None
-        or (model in PROVISIONAL_MODELS and model != engine)
-    )
+    return rescore or ai_score is None
 
 
 def normalize_row_score(score_data: dict) -> tuple[int, str, int, bool]:
@@ -331,10 +322,7 @@ def fetch_db_rows(args):
     conditions = []
     params = []
     if not args.rescore:
-        other_models = sorted(PROVISIONAL_MODELS - {args.engine})
-        placeholders = ", ".join(["%s"] * len(other_models))
-        conditions.append(f"(ai_score IS NULL OR ai_model IN ({placeholders}))")
-        params.extend(other_models)
+        conditions.append("ai_score IS NULL")
     if args.hours:
         since = datetime.now(timezone.utc) - timedelta(hours=args.hours)
         conditions.append("first_seen >= %s")
@@ -380,8 +368,9 @@ def fetch_json_rows(store: dict, args):
         cutoff = datetime.now(timezone.utc) - timedelta(hours=args.hours)
 
     for key, job in store.get("jobs", {}).items():
+        ai_score = job.get("ai_score")
         ai_model = job.get("ai_model")
-        if not eligible_ai_model(ai_model, args.rescore, args.engine):
+        if not eligible_ai_score(ai_score, args.rescore):
             continue
         if cutoff:
             first_seen = parse_iso(job.get("first_seen", ""))
@@ -486,8 +475,7 @@ def print_summary(rows, args, backend: str):
     """Print scoring summary for either backend."""
     total = len(rows)
     unscored = sum(1 for r in rows if r[5] is None)
-    rescore_models = sorted(PROVISIONAL_MODELS - {args.engine})
-    rescore_counts = {m: sum(1 for r in rows if r[5] == m) for m in rescore_models}
+    rescored = total - unscored
     batches = (total + BATCH_SIZE - 1) // BATCH_SIZE
     print(f"Engine: {args.engine}")
     print(f"Backend: {backend}")
@@ -496,10 +484,10 @@ def print_summary(rows, args, backend: str):
         print(f"  Window: first_seen in past {args.hours:g} hours")
     if args.limit:
         print(f"  Limit: latest {args.limit} eligible jobs")
-    rescore_summary = ", ".join(
-        f"{count} {model}->{args.engine} rescore" for model, count in rescore_counts.items()
-    )
-    print(f"  {unscored} unscored" + (f", {rescore_summary}" if rescore_summary else ""))
+    if args.rescore:
+        print(f"  {unscored} unscored, {rescored} already scored")
+    else:
+        print(f"  {unscored} unscored")
 
 
 def save_json_store(store: dict):

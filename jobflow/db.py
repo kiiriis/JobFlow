@@ -133,6 +133,78 @@ def init_db():
                     url          TEXT PRIMARY KEY,
                     dismissed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 );
+
+                -- ── Multi-user tables ──────────────────────────────────────
+                -- The shared `jobs` table above holds the raw posting; per-user
+                -- scoring and state live in user_job_state so the same pool can
+                -- be ranked differently for each signed-in user.
+                CREATE TABLE IF NOT EXISTS users (
+                    id            BIGSERIAL PRIMARY KEY,
+                    google_sub    TEXT UNIQUE NOT NULL,
+                    email         TEXT UNIQUE NOT NULL,
+                    name          TEXT NOT NULL DEFAULT '',
+                    picture       TEXT NOT NULL DEFAULT '',
+                    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    last_login_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    is_active     BOOLEAN NOT NULL DEFAULT TRUE
+                );
+
+                CREATE TABLE IF NOT EXISTS user_profiles (
+                    user_id         BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                    filter_config   JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    ai_profile_text TEXT  NOT NULL DEFAULT '',
+                    search_terms    JSONB NOT NULL DEFAULT '[]'::jsonb,
+                    ai_provider     TEXT  NOT NULL DEFAULT 'none',
+                    ai_api_key_enc  BYTEA,
+                    ai_model        TEXT  NOT NULL DEFAULT '',
+                    pairing_token   TEXT UNIQUE,
+                    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+
+                CREATE TABLE IF NOT EXISTS user_job_state (
+                    user_id        BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    url            TEXT   NOT NULL REFERENCES jobs(url)  ON DELETE CASCADE,
+                    variant        TEXT   NOT NULL DEFAULT 'se',
+                    reason         TEXT   NOT NULL DEFAULT '',
+                    score          INTEGER NOT NULL DEFAULT 0,
+                    score_pct      INTEGER NOT NULL DEFAULT 0,
+                    ai_score       INTEGER,
+                    ai_reason      TEXT   NOT NULL DEFAULT '',
+                    ai_model       TEXT,
+                    recommended    BOOLEAN NOT NULL DEFAULT FALSE,
+                    level          TEXT   NOT NULL DEFAULT 'Unknown',
+                    min_exp        INTEGER,
+                    max_exp        INTEGER,
+                    competition    INTEGER NOT NULL DEFAULT 0,
+                    keyword_hits   INTEGER NOT NULL DEFAULT 0,
+                    status         TEXT   NOT NULL DEFAULT '',
+                    h1b            BOOLEAN NOT NULL DEFAULT FALSE,
+                    reject_reason  TEXT,
+                    first_seen     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    last_seen      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    expires_at     TIMESTAMPTZ,
+                    PRIMARY KEY (user_id, url)
+                );
+                CREATE INDEX IF NOT EXISTS idx_ujs_user_status
+                    ON user_job_state (user_id, status);
+                CREATE INDEX IF NOT EXISTS idx_ujs_user_level
+                    ON user_job_state (user_id, level);
+                CREATE INDEX IF NOT EXISTS idx_ujs_user_first_seen
+                    ON user_job_state (user_id, first_seen DESC);
+                CREATE INDEX IF NOT EXISTS idx_ujs_user_recommended
+                    ON user_job_state (user_id, recommended) WHERE recommended;
+                CREATE INDEX IF NOT EXISTS idx_ujs_user_aiscore_null
+                    ON user_job_state (user_id) WHERE ai_score IS NULL;
+                CREATE INDEX IF NOT EXISTS idx_ujs_expires
+                    ON user_job_state (expires_at) WHERE expires_at IS NOT NULL;
+                CREATE INDEX IF NOT EXISTS idx_ujs_url ON user_job_state (url);
+
+                CREATE TABLE IF NOT EXISTS user_dismissed_jobs (
+                    user_id      BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    url          TEXT   NOT NULL,
+                    dismissed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    PRIMARY KEY (user_id, url)
+                );
             """)
             # Migration for existing databases
             cur.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS ai_model TEXT")
@@ -152,6 +224,293 @@ def init_db():
                 "WHERE source = 'linkedin' AND url NOT LIKE '%%linkedin.com%%'"
             )
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
+# ---------------------------------------------------------------------------
+# Users & profiles (multi-tenant)
+# ---------------------------------------------------------------------------
+
+# The operator / single-user fallback. Migrating an existing single-user DB
+# seeds this row and moves the per-job state onto it, so the app keeps working
+# exactly as before until real Google sign-ins create additional users.
+DEFAULT_USER_ID = 1
+OPERATOR_SUB = "operator"
+
+
+def ensure_default_user(email: str = "") -> int:
+    """Create the operator user (id=DEFAULT_USER_ID) if absent. Idempotent."""
+    email = email or os.environ.get("JOBFLOW_OPERATOR_EMAIL", "operator@localhost")
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO users (id, google_sub, email, name)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (id) DO NOTHING
+                """,
+                (DEFAULT_USER_ID, OPERATOR_SUB, email, "Operator"),
+            )
+            cur.execute(
+                """
+                INSERT INTO user_profiles (user_id) VALUES (%s)
+                ON CONFLICT (user_id) DO NOTHING
+                """,
+                (DEFAULT_USER_ID,),
+            )
+            # Keep the BIGSERIAL ahead of any explicit id we inserted.
+            cur.execute(
+                "SELECT setval(pg_get_serial_sequence('users', 'id'), "
+                "GREATEST((SELECT MAX(id) FROM users), 1))"
+            )
+        conn.commit()
+        return DEFAULT_USER_ID
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
+def get_or_create_user(google_sub: str, email: str, name: str = "", picture: str = "") -> dict:
+    """Look up a user by Google subject id, creating them (and a blank profile)
+    on first sign-in. Always refreshes last_login_at. Returns the user row dict.
+    """
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO users (google_sub, email, name, picture, last_login_at)
+                VALUES (%s, %s, %s, %s, NOW())
+                ON CONFLICT (google_sub) DO UPDATE SET
+                    email = EXCLUDED.email,
+                    name = EXCLUDED.name,
+                    picture = EXCLUDED.picture,
+                    last_login_at = NOW()
+                RETURNING id, google_sub, email, name, picture, is_active,
+                          (xmax = 0) AS created
+                """,
+                (google_sub, email, name, picture),
+            )
+            row = cur.fetchone()
+            user = {
+                "id": row[0], "google_sub": row[1], "email": row[2],
+                "name": row[3], "picture": row[4], "is_active": row[5],
+            }
+            created = row[6]
+            if created:
+                cur.execute(
+                    "INSERT INTO user_profiles (user_id) VALUES (%s) "
+                    "ON CONFLICT (user_id) DO NOTHING",
+                    (user["id"],),
+                )
+            user["created"] = created
+        conn.commit()
+        return user
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
+def get_user(user_id: int) -> dict | None:
+    """Fetch a user row by id, or None."""
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, google_sub, email, name, picture, is_active "
+                "FROM users WHERE id = %s",
+                (user_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return None
+            return {
+                "id": row[0], "google_sub": row[1], "email": row[2],
+                "name": row[3], "picture": row[4], "is_active": row[5],
+            }
+    finally:
+        put_conn(conn)
+
+
+def list_active_user_ids() -> list[int]:
+    """Return ids of active users — the set scan fan-out scores against."""
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM users WHERE is_active ORDER BY id")
+            return [r[0] for r in cur.fetchall()]
+    finally:
+        put_conn(conn)
+
+
+def get_user_profile(user_id: int) -> dict | None:
+    """Return a user's profile. Never returns the raw API key — only whether one
+    is set (``has_api_key``). Use get_user_api_key_enc() for the encrypted bytes.
+    """
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT filter_config, ai_profile_text, search_terms, ai_provider, "
+                "       ai_model, (ai_api_key_enc IS NOT NULL) AS has_key, pairing_token "
+                "FROM user_profiles WHERE user_id = %s",
+                (user_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return None
+            return {
+                "user_id": user_id,
+                "filter_config": row[0] or {},
+                "ai_profile_text": row[1] or "",
+                "search_terms": row[2] or [],
+                "ai_provider": row[3] or "none",
+                "ai_model": row[4] or "",
+                "has_api_key": bool(row[5]),
+                "pairing_token": row[6],
+            }
+    finally:
+        put_conn(conn)
+
+
+# Whitelist of plain (non-secret) profile columns the app may update directly.
+_PROFILE_UPDATABLE = {
+    "filter_config": psycopg2.extras.Json,
+    "ai_profile_text": str,
+    "search_terms": psycopg2.extras.Json,
+    "ai_provider": str,
+    "ai_model": str,
+    "pairing_token": str,
+}
+
+
+def upsert_user_profile(user_id: int, **fields) -> None:
+    """Update whitelisted profile columns for a user. Unknown keys are ignored.
+
+    The encrypted API key is handled separately by set_user_api_key_enc() so it
+    never flows through generic update paths or logs.
+    """
+    sets, params = [], []
+    for key, adapter in _PROFILE_UPDATABLE.items():
+        if key in fields and fields[key] is not None:
+            value = fields[key]
+            sets.append(f"{key} = %s")
+            params.append(adapter(value) if adapter in (psycopg2.extras.Json,) else value)
+    if not sets:
+        return
+    sets.append("updated_at = NOW()")
+    params.append(user_id)
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO user_profiles (user_id) VALUES (%s) "
+                "ON CONFLICT (user_id) DO NOTHING",
+                (user_id,),
+            )
+            cur.execute(
+                f"UPDATE user_profiles SET {', '.join(sets)} WHERE user_id = %s",
+                params,
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
+def set_user_api_key_enc(user_id: int, key_enc: bytes | None) -> None:
+    """Store (or clear, with None) the encrypted Anthropic API key for a user."""
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO user_profiles (user_id) VALUES (%s) "
+                "ON CONFLICT (user_id) DO NOTHING",
+                (user_id,),
+            )
+            cur.execute(
+                "UPDATE user_profiles SET ai_api_key_enc = %s, updated_at = NOW() "
+                "WHERE user_id = %s",
+                (psycopg2.Binary(key_enc) if key_enc is not None else None, user_id),
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
+def get_user_api_key_enc(user_id: int) -> bytes | None:
+    """Return the encrypted API key bytes for a user, or None."""
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT ai_api_key_enc FROM user_profiles WHERE user_id = %s",
+                (user_id,),
+            )
+            row = cur.fetchone()
+            if not row or row[0] is None:
+                return None
+            return bytes(row[0])
+    finally:
+        put_conn(conn)
+
+
+def migrate_to_multiuser(operator_email: str = "") -> dict:
+    """One-shot: seed the operator user and move existing single-user per-job
+    state onto it. Idempotent — rows already present are left untouched.
+
+    Copies jobs.{status, scores, ai_*, level, ...} -> user_job_state(operator)
+    and dismissed_jobs -> user_dismissed_jobs(operator). The shared `jobs` table
+    keeps the raw posting; its legacy per-user columns are simply left unread.
+    """
+    ensure_default_user(operator_email)
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO user_job_state (
+                    user_id, url, variant, reason, score, score_pct,
+                    ai_score, ai_reason, ai_model, recommended, level,
+                    min_exp, max_exp, competition, keyword_hits, status,
+                    h1b, reject_reason, first_seen, last_seen, expires_at
+                )
+                SELECT
+                    %s, url, variant, reason, score, score_pct,
+                    ai_score, COALESCE(ai_reason, ''), ai_model, recommended, level,
+                    min_exp, max_exp, competition, keyword_hits, status,
+                    h1b, reject_reason, first_seen, last_seen, expires_at
+                FROM jobs
+                ON CONFLICT (user_id, url) DO NOTHING
+                """,
+                (DEFAULT_USER_ID,),
+            )
+            jobs_copied = cur.rowcount
+            cur.execute(
+                """
+                INSERT INTO user_dismissed_jobs (user_id, url, dismissed_at)
+                SELECT %s, url, dismissed_at FROM dismissed_jobs
+                ON CONFLICT (user_id, url) DO NOTHING
+                """,
+                (DEFAULT_USER_ID,),
+            )
+            dismissed_copied = cur.rowcount
+        conn.commit()
+        return {"jobs_copied": jobs_copied, "dismissed_copied": dismissed_copied}
     except Exception:
         conn.rollback()
         raise

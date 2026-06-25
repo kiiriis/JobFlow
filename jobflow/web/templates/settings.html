@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Settings · JobFlow{% endblock %}
+{% block content %}
+<div class="settings-wrap">
+  <h1 class="settings-h1">Your profile</h1>
+  <p class="settings-sub">Tune how jobs are filtered and scored for you. Saving re-scores your feed in the background.</p>
+
+  {% if db_off %}
+    <div class="login-error">Settings need the database backend (set <code>DATABASE_URL</code>). Running on the local JSON store.</div>
+  {% else %}
+    {% if saved %}<div class="settings-ok">Saved — re-scoring your feed now. Refresh the feed in a moment.</div>{% endif %}
+    <form method="post" class="settings-form">
+
+      <fieldset class="settings-card">
+        <legend>Eligibility</legend>
+        <label class="set-row">
+          <input type="checkbox" name="requires_sponsorship" {% if p.requires_sponsorship %}checked{% endif %}>
+          <span><strong>I need visa sponsorship</strong> — hide jobs that say no sponsorship / citizens-only / clearance.</span>
+        </label>
+        <label class="set-row">
+          <input type="checkbox" name="us_only" {% if p.us_only %}checked{% endif %}>
+          <span><strong>US roles only</strong> — uncheck if you're open to remote-international.</span>
+        </label>
+      </fieldset>
+
+      <fieldset class="settings-card">
+        <legend>Seniority</legend>
+        <label class="set-field">
+          <span>Max years of experience before a job is demoted</span>
+          <input type="number" name="max_min_exp" min="0" max="15" value="{{ p.max_min_exp }}">
+        </label>
+        <label class="set-field">
+          <span>“Recommended” score threshold (%)</span>
+          <input type="number" name="recommended_min_pct" min="0" max="100" value="{{ p.recommended_min_pct }}">
+        </label>
+      </fieldset>
+
+      <fieldset class="settings-card">
+        <legend>Search &amp; AI</legend>
+        <label class="set-field">
+          <span>Search terms (comma-separated)</span>
+          <input type="text" name="search_terms" value="{{ search_terms }}" placeholder="software engineer, backend, ml">
+        </label>
+        <label class="set-field">
+          <span>About you — used by AI scoring to judge fit</span>
+          <textarea name="ai_profile_text" rows="6" placeholder="New-grad SWE, strong in Python/backend, targeting...">{{ profile.ai_profile_text }}</textarea>
+        </label>
+        <label class="set-field">
+          <span>AI scoring provider</span>
+          <select name="ai_provider">
+            {% for opt in ['none', 'anthropic', 'local-cli'] %}
+            <option value="{{ opt }}" {% if profile.ai_provider == opt %}selected{% endif %}>{{ opt }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </fieldset>
+
+      <div class="settings-actions">
+        <button type="submit" class="btn btn-primary">Save &amp; re-score</button>
+        <a class="btn btn-ghost" href="/linkedin">Back to feed</a>
+      </div>
+    </form>
+
+    <p class="settings-note">Tip: for a richer profile (full tech stack, synergy bonuses), use the
+      <code>jobflow onboard</code> CLI agent — it interviews you and writes this profile for you.</p>
+  {% endif %}
+</div>
+{% endblock %}

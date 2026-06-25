@@ -346,6 +346,35 @@ def get_or_create_user(google_sub: str, email: str, name: str = "", picture: str
         put_conn(conn)
 
 
+def bind_operator(google_sub: str, email: str, name: str = "", picture: str = "") -> dict:
+    """Attach a Google identity to the operator row (DEFAULT_USER_ID) so the
+    person whose email == JOBFLOW_OPERATOR_EMAIL keeps the migrated single-user
+    data instead of getting a fresh empty account. Returns the operator user dict.
+    """
+    ensure_default_user(email)
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE users SET google_sub = %s, email = %s, name = %s, "
+                "picture = %s, last_login_at = NOW() WHERE id = %s "
+                "RETURNING id, google_sub, email, name, picture, is_active",
+                (google_sub, email, name, picture, DEFAULT_USER_ID),
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return {
+            "id": row[0], "google_sub": row[1], "email": row[2],
+            "name": row[3], "picture": row[4], "is_active": row[5],
+            "created": False,
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
 def get_user(user_id: int) -> dict | None:
     """Fetch a user row by id, or None."""
     conn = get_conn()

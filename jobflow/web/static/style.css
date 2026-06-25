@@ -719,3 +719,63 @@ tr.dismissing { animation: dismiss-out 0.28s ease forwards !important; }
     .stat .v { font-size: 1.2rem; }
     .feed-actions .btn { padding: 6px 10px; font-size: 0.72rem; }
 }
+
+/* ── Auth: user chip (topbar) + login page ───────────────────────────── */
+.user-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 4px 10px; border: 1px solid var(--hairline);
+    border-radius: 999px; background: var(--panel-2);
+    font-family: var(--font-data); font-size: 12px; color: var(--text-2);
+    max-width: 200px;
+}
+.user-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+.user-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.login-wrap { display: flex; justify-content: center; padding: 64px 16px; }
+.login-card {
+    width: 100%; max-width: 420px; padding: 40px 36px;
+    background: var(--panel); border: 1px solid var(--hairline);
+    border-radius: 16px; box-shadow: var(--shadow); text-align: center;
+}
+.login-title { font-family: var(--font-ui); font-size: 34px; margin: 0 0 8px; color: var(--text); }
+.login-sub { color: var(--text-2); font-size: 14px; line-height: 1.5; margin: 0 0 28px; }
+.login-google {
+    display: inline-flex; align-items: center; gap: 10px;
+    width: 100%; justify-content: center; padding: 12px 16px;
+    background: #fff; color: #1f2328; border: 1px solid var(--hairline-strong);
+    font-weight: 600;
+}
+.login-google:hover { filter: brightness(0.97); text-decoration: none; }
+.login-error {
+    background: var(--coral-soft); border: 1px solid var(--coral);
+    color: var(--text); border-radius: 10px; padding: 12px 14px;
+    font-size: 13px; line-height: 1.4; margin-bottom: 20px; text-align: left;
+}
+
+/* ── Settings page ───────────────────────────────────────────────────── */
+.settings-wrap { max-width: 640px; margin: 0 auto; padding: 32px 16px 64px; }
+.settings-h1 { font-family: var(--font-ui); font-size: 26px; margin: 0 0 4px; color: var(--text); }
+.settings-sub { color: var(--text-2); font-size: 14px; margin: 0 0 24px; }
+.settings-ok {
+    background: var(--mint-soft); border: 1px solid var(--mint); color: var(--text);
+    border-radius: 10px; padding: 12px 14px; font-size: 13px; margin-bottom: 20px;
+}
+.settings-card {
+    border: 1px solid var(--hairline); border-radius: 12px;
+    padding: 18px 20px; margin: 0 0 18px; background: var(--panel);
+}
+.settings-card legend {
+    font-family: var(--font-data); font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-3); padding: 0 6px;
+}
+.set-row { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; font-size: 14px; color: var(--text-2); }
+.set-row strong { color: var(--text); }
+.set-field { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; font-size: 13px; color: var(--text-2); }
+.set-field input, .set-field textarea, .set-field select {
+    background: var(--well); border: 1px solid var(--hairline); border-radius: 8px;
+    padding: 9px 11px; color: var(--text); font-family: var(--font-data); font-size: 14px;
+}
+.set-field textarea { resize: vertical; }
+.settings-actions { display: flex; gap: 12px; margin-top: 8px; }
+.settings-note { color: var(--text-3); font-size: 12px; margin-top: 20px; }
+.settings-note code, .login-error code { font-family: var(--font-data); color: var(--text-2); }

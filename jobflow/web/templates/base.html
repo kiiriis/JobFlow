@@ -27,6 +27,14 @@
             <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle dark/light theme">
                 <span class="theme-icon">&#9790;</span>
             </button>
+            {% if auth_enabled and current_user and current_user.id %}
+            <a class="btn btn-ghost" href="/settings" title="Your profile &amp; settings">Settings</a>
+            <span class="user-chip" title="{{ current_user.email }}">
+                {% if current_user.picture %}<img src="{{ current_user.picture }}" alt="" class="user-avatar">{% endif %}
+                <span class="user-name">{{ current_user.name or current_user.email }}</span>
+            </span>
+            <a class="btn btn-ghost" href="/auth/logout">Sign out</a>
+            {% endif %}
         </div>
     </nav>
 

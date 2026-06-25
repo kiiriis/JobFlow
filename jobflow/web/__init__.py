@@ -37,7 +37,7 @@ import threading
 import time
 from pathlib import Path
 
-from flask import Flask, render_template, request, jsonify, redirect, make_response
+from flask import Flask, render_template, request, jsonify, redirect, make_response, g
 
 from ..config import load_config
 from ..filter import algo_recommended
@@ -316,6 +316,19 @@ def create_app():
     config = load_config()
     app.config["JOBFLOW"] = config
 
+    # ── Auth (Google OAuth when configured, else single-user operator) ──
+    from ..auth import bp as auth_bp, init_oauth, resolve_request_user, auth_enabled
+    init_oauth(app)
+    app.register_blueprint(auth_bp)
+
+    @app.before_request
+    def _resolve_user():
+        return resolve_request_user()
+
+    @app.context_processor
+    def _inject_user():
+        return {"current_user": getattr(g, "user", None), "auth_enabled": auth_enabled()}
+
     linkedin_store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
     scan_results_path = config["_root"] / "data" / "ci" / "scan_results.json"
 
@@ -427,6 +440,7 @@ def create_app():
 
     def _feed_counts(args: dict):
         ok, counts = _try_db(lambda db: db.get_filtered_counts(
+            user_id=g.user_id,
             time_range=args["time_range"], bucket_filter=args["bucket_filter"],
             tz_offset=args["tz_offset"], query=args["query"],
             search_term=args["search_term"], source=SOURCE,
@@ -450,6 +464,7 @@ def create_app():
         }
         if args["include_time_meta"]:
             ok, time_counts = _try_db(lambda db: db.get_time_counts(
+                user_id=g.user_id,
                 tz_offset=args["tz_offset"], time_range=args["time_range"], source=SOURCE,
             ))
             if not ok:
@@ -478,11 +493,11 @@ def create_app():
     @app.route("/linkedin")
     def linkedin_page():
         ok, payload = _try_db(lambda db: (
-            db.get_status_counts(source=SOURCE),
-            db.get_level_counts(source=SOURCE),
-            db.get_search_terms(source=SOURCE),
-            db.get_time_counts(source=SOURCE, time_range="today"),
-            db.get_last_updated(),
+            db.get_status_counts(user_id=g.user_id, source=SOURCE),
+            db.get_level_counts(user_id=g.user_id, source=SOURCE),
+            db.get_search_terms(user_id=g.user_id, source=SOURCE),
+            db.get_time_counts(user_id=g.user_id, source=SOURCE, time_range="today"),
+            db.get_last_updated(user_id=g.user_id),
         ))
         if ok:
             counts, level_counts, search_terms, time_counts, last_updated = payload
@@ -505,6 +520,60 @@ def create_app():
             ai_running=ai_state["running"],
         )
 
+    # ── Settings (per-user profile; the web-form onboarding path) ──
+
+    @app.route("/settings", methods=["GET", "POST"])
+    def settings():
+        import dataclasses
+        from ..filter_profile import FilterProfile, profile_from_config, profile_to_config
+
+        db = _get_db()
+        if db is None:
+            # Settings need the multi-user DB backend (profiles aren't stored in
+            # the local JSON store).
+            return render_template("settings.html", db_off=True, p=None,
+                                   profile=None, saved=False)
+
+        prof = db.get_user_profile(g.user_id) or {}
+        fp = profile_from_config(prof.get("filter_config") or {})
+
+        if request.method == "POST":
+            def _int(v, default):
+                try:
+                    return int(v)
+                except (TypeError, ValueError):
+                    return default
+            form = request.form
+            new_fp = dataclasses.replace(
+                fp,
+                requires_sponsorship=("requires_sponsorship" in form),
+                us_only=("us_only" in form),
+                max_min_exp=_int(form.get("max_min_exp"), fp.max_min_exp),
+                recommended_min_pct=_int(form.get("recommended_min_pct"), fp.recommended_min_pct),
+            )
+            search_terms = [t.strip() for t in form.get("search_terms", "").split(",") if t.strip()]
+            db.upsert_user_profile(
+                g.user_id,
+                filter_config=profile_to_config(new_fp),
+                ai_profile_text=form.get("ai_profile_text", ""),
+                search_terms=search_terms,
+                ai_provider=form.get("ai_provider", "none"),
+                ai_model=form.get("ai_model", ""),
+            )
+            # Re-score the user's pool with the new profile, off the request.
+            uid = g.user_id
+            threading.Thread(target=db.backfill_user, args=(uid,), daemon=True).start()
+            return redirect("/settings?saved=1")
+
+        return render_template(
+            "settings.html",
+            db_off=False,
+            p=fp,
+            profile=prof,
+            search_terms=", ".join(prof.get("search_terms") or []),
+            saved=request.args.get("saved") == "1",
+        )
+
     # ── Feed API ─────────────────────────────────────────────────
 
     @app.route("/api/linkedin/jobs")
@@ -512,6 +581,7 @@ def create_app():
         args = _feed_args()
 
         ok, jobs = _try_db(lambda db: db.get_filtered_jobs(
+            user_id=g.user_id,
             status=args["status_filter"], level=args["level_filter"], query=args["query"],
             search_term=args["search_term"], time_range=args["time_range"],
             bucket_filter=args["bucket_filter"], sort_col=args["sort_col"],
@@ -548,7 +618,7 @@ def create_app():
 
     @app.route("/api/linkedin/jobs/<path:key>", methods=["DELETE"])
     def api_linkedin_delete(key):
-        ok, _ = _try_db(lambda db: db.delete_job(key))
+        ok, _ = _try_db(lambda db: db.delete_job(key, user_id=g.user_id))
         if not ok:
             with STORE_LOCK:
                 store = load_store(linkedin_store_path)
@@ -568,7 +638,7 @@ def create_app():
         if db is not None:
             try:
                 for key in keys:
-                    if key and db.delete_job(key):
+                    if key and db.delete_job(key, user_id=g.user_id):
                         deleted += 1
                 return jsonify({"requested": len(keys), "deleted": deleted})
             except Exception as e:

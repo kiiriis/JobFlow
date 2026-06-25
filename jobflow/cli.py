@@ -491,5 +491,29 @@ def normalize_urls():
     ))
 
 
+@app.command("migrate-multiuser")
+def migrate_multiuser(
+    email: str = typer.Option("", "--email", help="Operator email to bind to user_id=1"),
+):
+    """Move an existing single-user DB to the multi-tenant model. Idempotent.
+
+    Creates the multi-tenant tables (via init_db), seeds the operator user, and
+    copies existing per-job state + dismissals onto it. Safe to run repeatedly.
+    """
+    from .linkedin_store import is_db_enabled
+    if not is_db_enabled():
+        console.print("[red]DATABASE_URL not set — nothing to migrate.[/red]")
+        raise typer.Exit(1)
+    from . import db
+    db.init_db()  # creates tables, seeds operator, runs the guarded migration
+    result = db.migrate_to_multiuser(email)  # explicit re-run is harmless (idempotent)
+    console.print(Panel.fit(
+        f"jobs copied to operator state:  {result['jobs_copied']}\n"
+        f"dismissals copied to operator:  {result['dismissed_copied']}",
+        title="Multi-user migration complete",
+        border_style="green",
+    ))
+
+
 if __name__ == "__main__":
     app()

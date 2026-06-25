@@ -64,6 +64,20 @@ scan_state = {
     "skipped": 0,
 }
 
+# Shared state for the GitHub Actions scan workflow trigger. One dispatch is
+# tracked at a time; a background thread polls the run to completion so the
+# "Scan Now" button can stay in a loading state for the whole run.
+workflow_state = {
+    "running": False,
+    "run_id": None,
+    "status": "",        # gh run status: queued / in_progress / completed
+    "conclusion": "",    # success / failure / cancelled (when completed)
+    "url": "",
+    "error": None,
+    "started_at": None,
+    "finished_at": None,
+}
+
 # Shared state for the local AI scoring run (scripts/ai_score_local.py).
 # Same thread-safety story as scan_state — one scoring run at a time.
 ai_state = {
@@ -210,6 +224,86 @@ def _run_ai_score(root: Path, engine: str, hours: float, limit: int, rescore: bo
         ai_state["running"] = False
         ai_state["finished_at"] = time.time()
         ai_state["_process"] = None
+
+
+def _parse_iso(ts: str) -> float | None:
+    """Parse a gh ISO-8601 timestamp (e.g. 2026-06-24T06:23:00Z) to epoch secs."""
+    if not ts:
+        return None
+    try:
+        from datetime import datetime
+        return datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+    except (ValueError, TypeError):
+        return None
+
+
+def _track_workflow_run(root: Path, dispatch_ts: float):
+    """Find the run our dispatch created and poll it until it completes.
+
+    Keeps ``workflow_state`` current so the front-end can show a live loading
+    state. Runs in a daemon thread.
+    """
+    gh = _which_cli("gh")
+    if not gh:
+        workflow_state["error"] = "'gh' CLI not found."
+        workflow_state["running"] = False
+        workflow_state["finished_at"] = time.time()
+        return
+
+    def _gh_json(args):
+        proc = subprocess.run(
+            [gh, *args], cwd=str(root), capture_output=True, text=True,
+            timeout=30, env={**os.environ, "PATH": _augmented_path()},
+        )
+        if proc.returncode != 0:
+            raise RuntimeError((proc.stderr or proc.stdout or "").strip())
+        return json.loads(proc.stdout or "null")
+
+    try:
+        # The dispatched run takes a moment to register — look for a
+        # workflow_dispatch run created at/after our trigger time.
+        run = None
+        find_deadline = time.time() + 60
+        while time.time() < find_deadline and not run:
+            runs = _gh_json([
+                "run", "list", "--workflow", "scan-jobs.yml",
+                "--event", "workflow_dispatch", "--limit", "10",
+                "--json", "databaseId,status,conclusion,createdAt,url",
+            ]) or []
+            for r in runs:
+                created = _parse_iso(r.get("createdAt", ""))
+                if created is not None and created >= dispatch_ts - 15:
+                    run = r
+                    break
+            if run:
+                break
+            time.sleep(3)
+
+        if not run:
+            workflow_state["error"] = "Triggered the workflow, but couldn't locate the run to track it."
+            return
+
+        workflow_state["run_id"] = run["databaseId"]
+        workflow_state["url"] = run.get("url", "")
+        workflow_state["status"] = run.get("status", "queued")
+
+        # Poll until the run completes.
+        while True:
+            data = _gh_json([
+                "run", "view", str(run["databaseId"]),
+                "--json", "status,conclusion,url",
+            ]) or {}
+            workflow_state["status"] = data.get("status", "")
+            workflow_state["url"] = data.get("url", workflow_state["url"])
+            if data.get("status") == "completed":
+                workflow_state["conclusion"] = data.get("conclusion", "")
+                break
+            time.sleep(5)
+    except Exception as e:
+        workflow_state["error"] = str(e)
+    finally:
+        workflow_state["running"] = False
+        workflow_state["finished_at"] = time.time()
 
 
 def create_app():
@@ -407,6 +501,7 @@ def create_app():
             time_counts=time_counts,
             last_updated=last_updated,
             scan_running=scan_state["running"],
+            workflow_running=workflow_state["running"],
             ai_running=ai_state["running"],
         )
 
@@ -526,6 +621,55 @@ def create_app():
         )
         thread.start()
         return jsonify({"running": True})
+
+    @app.route("/api/scan/workflow", methods=["POST"])
+    def api_scan_workflow():
+        """Trigger the GitHub Actions scan workflow (workflow_dispatch).
+
+        Equivalent to running `gh workflow run scan-jobs.yml --ref main` by
+        hand. The scan then runs on GH's runners and commits results back; the
+        feed picks them up on the next Refresh / hourly auto-pull.
+        """
+        if workflow_state["running"]:
+            return jsonify({"ok": False, "error": "A scan is already running."}), 409
+
+        gh = _which_cli("gh")
+        if not gh:
+            return jsonify({
+                "ok": False,
+                "error": "'gh' CLI not found. Install GitHub CLI and run 'gh auth login', then restart the server.",
+            }), 400
+        try:
+            proc = subprocess.run(
+                [gh, "workflow", "run", "scan-jobs.yml", "--ref", "main"],
+                cwd=str(config["_root"]),
+                capture_output=True,
+                text=True,
+                timeout=30,
+                env={**os.environ, "PATH": _augmented_path()},
+            )
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+        if proc.returncode != 0:
+            msg = (proc.stderr or proc.stdout or "").strip() or f"gh exited {proc.returncode}"
+            return jsonify({"ok": False, "error": msg}), 500
+
+        dispatch_ts = time.time()
+        workflow_state.update({
+            "running": True, "run_id": None, "status": "queued",
+            "conclusion": "", "url": "", "error": None,
+            "started_at": dispatch_ts, "finished_at": None,
+        })
+        threading.Thread(
+            target=_track_workflow_run,
+            args=(config["_root"], dispatch_ts),
+            daemon=True,
+        ).start()
+        return jsonify({"ok": True, "running": True})
+
+    @app.route("/api/scan/workflow/status")
+    def api_scan_workflow_status():
+        return jsonify(workflow_state)
 
     @app.route("/api/scan/status")
     def api_scan_status():

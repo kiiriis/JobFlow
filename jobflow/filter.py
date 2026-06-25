@@ -154,10 +154,21 @@ _STAFFING_SOURCE_BLOCKLIST_COMPACT = tuple(
 STAFFING_BLOCK_REASON = "Blocked staffing/spam source."
 
 # ── Senior salary pattern (>= $130K suggests non-entry) ────────────────────
-# A salary floor of $130K+ without any entry-level signals strongly indicates
-# a mid/senior role, even if the title doesn't say "Senior". This catches
-# roles like "Software Engineer" that pay $150K-$200K (clearly not new grad).
+# A salary floor of $130K+ without any entry-level signals SUGGESTS (but does
+# not prove) a mid/senior role. This is a weak proxy — new-grad roles at big
+# tech routinely pay $130K+ — so it DEMOTES rather than hard-rejects (see below).
 SENIOR_SALARY_PATTERN = r"\$1[3-9]\d[,.]?\d{3}|\$[2-9]\d\d[,.]?\d{3}"
+
+# ── Soft demotion penalties (NOT hard rejects) ─────────────────────────────
+# Salary and free-text experience numbers are unreliable seniority proxies:
+# they misfire on well-paid new-grad roles ("Software Engineer III" at FAANG)
+# and on JDs that mention years in passing. A wrong HARD reject deletes a good
+# job before the AI rescorer ever sees it (the costliest error), so these
+# signals instead subtract a large penalty — the job stays in the pool, ranks
+# low, and the AI makes the final call. Only structural certainties (non-SWE
+# title, non-US, explicit no-sponsorship, blocked source) remain hard rejects.
+OVERQUALIFIED_PENALTY = -45   # experience requirement >= 4 yrs / overqualified phrasing
+SENIOR_SALARY_PENALTY = -45   # $130K+ floor with no entry-level signals
 
 # ── Entry-level signals ─────────────────────────────────────────────────────
 # Used as a counterbalance: if a job has senior salary BUT also has these
@@ -453,11 +464,23 @@ def senior_desc_penalty(senior_count: int, entry_count: int) -> int:
 
 
 def is_blocked_source(company: str, url: str = "") -> bool:
-    """True when the job comes from a blocklisted staffing/aggregator source."""
+    """True when the job comes from a blocklisted staffing/aggregator source.
+
+    Matched three ways so real-world name variants don't slip through:
+      1. Exact company-name match against COMPANY_BLOCKLIST.
+      2. Blocked URL fragments (aggregator deep links).
+      3. The AI scorer's fuzzy substring check (text_has_blocked_source), so
+         "BeaconFire Inc." matches the "beacon fire" entry even though the
+         exact-match in (1) would miss it. This keeps the rule engine in sync
+         with the AI scorer, which previously caught staffing reposts the rule
+         engine waved through (and even recommended).
+    """
     if company.lower().strip() in COMPANY_BLOCKLIST:
         return True
     url_lower = (url or "").lower()
-    return any(sign in url_lower for sign in BLOCKED_URL_SIGNS)
+    if any(sign in url_lower for sign in BLOCKED_URL_SIGNS):
+        return True
+    return text_has_blocked_source(f"{company} {url}")
 
 
 def text_has_blocked_source(text: str) -> bool:
@@ -656,19 +679,20 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     if not is_us_location(job.location):
         return _reject(f"Non-US location: {job.location}")
 
-    # ── 5. Overqualified experience (hard reject) ──
+    # ── 5. Overqualified experience (soft demotion, not a hard reject) ──
+    # extract_experience occasionally over-counts ("3–8+ yrs" → false senior),
+    # so instead of deleting the job we flag it for a penalty below and let the
+    # AI rescorer make the call.
     min_exp, max_exp = extract_experience(text_lower)
-    if min_exp is not None and min_exp >= 4:
-        return _reject(f"Requires {min_exp}+ years experience")
-    for pattern in OVERQUALIFIED_PATTERNS:
-        if re.search(pattern, text_lower):
-            return _reject("Overqualified: high experience requirement")
+    overqualified = (
+        (min_exp is not None and min_exp >= 4)
+        or any(re.search(p, text_lower) for p in OVERQUALIFIED_PATTERNS)
+    )
 
-    # ── 6. Senior salary signal (hard reject if no entry signals) ──
+    # ── 6. Senior salary signal (soft demotion if no entry signals) ──
     has_senior_salary = bool(re.search(SENIOR_SALARY_PATTERN, text))
     has_entry_signals = has_match(text_lower, ENTRY_LEVEL_SIGNALS)
-    if has_senior_salary and not has_entry_signals:
-        return _reject("Senior-level salary ($130K+) with no entry-level signals")
+    senior_salary = has_senior_salary and not has_entry_signals
 
     # ══ Passed all hard filters — compute additive score ══
     # Each component adds to a raw score (max ~130), then normalized to 0-100%.
@@ -755,8 +779,19 @@ def evaluate_job(job: JobPosting, first_seen: str | None = None) -> FilterResult
     if senior_penalty < 0:
         reasons.append(f"Senior desc {senior_penalty}")
 
+    # Soft demotions for unreliable seniority proxies (sections 5 & 6). These
+    # were hard rejects; demoting keeps the job visible for AI rescoring while
+    # pushing its score down so it ranks below clean entry-level matches.
+    demotion = 0
+    if overqualified:
+        demotion += OVERQUALIFIED_PENALTY
+        reasons.append(f"Overqualified {OVERQUALIFIED_PENALTY}")
+    if senior_salary:
+        demotion += SENIOR_SALARY_PENALTY
+        reasons.append(f"Senior salary {SENIOR_SALARY_PENALTY}")
+
     # ── Aggregate: sum all components, normalize to 0-100% ──
-    raw = ks + sb + tf + tb + pf + lp + es + rs + loc_score + h1b_bonus + senior_penalty
+    raw = ks + sb + tf + tb + pf + lp + es + rs + loc_score + h1b_bonus + senior_penalty + demotion
     score_pct = min(100, max(0, round(raw / SCORE_MAX_RAW * 100)))
     score = max(0, min(100, raw))
     reason = "; ".join(reasons) if reasons else "Meets basic criteria"

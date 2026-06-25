@@ -21,6 +21,11 @@
             <button class="btn btn-ghost" id="refresh-btn" onclick="refreshFeed(this)">
                 Refresh
             </button>
+            <button class="btn" id="scan-btn" onclick="runScanWorkflow(this)"
+                    title="Trigger the GitHub Actions scan workflow"
+                    {% if workflow_running %}disabled aria-busy="true"{% endif %}>
+                {% if workflow_running %}<span class="spinner"></span> Scanning…{% else %}Scan Now{% endif %}
+            </button>
             <button class="btn btn-primary" id="ai-score-btn" onclick="openAiModal()">
                 ✦ AI Score
             </button>
@@ -326,6 +331,71 @@ function refreshFeed(btn) {
         btn.disabled = false;
     });
 }
+
+/* ── Scan Now (triggers + tracks GitHub Actions workflow) ── */
+var scanPollTimer = null;
+
+function scanBtnLoading(loading, label) {
+    var btn = document.getElementById('scan-btn');
+    if (!btn) return;
+    btn.disabled = loading;
+    if (loading) {
+        btn.setAttribute('aria-busy', 'true');
+        btn.innerHTML = '<span class="spinner"></span> ' + (label || 'Scanning…');
+    } else {
+        btn.removeAttribute('aria-busy');
+        btn.innerHTML = 'Scan Now';
+    }
+}
+
+function runScanWorkflow(btn) {
+    if (btn.disabled) return;            // guard against double-clicks
+    scanBtnLoading(true, 'Triggering…');
+    fetch('/api/scan/workflow', {method: 'POST'}).then(function(r) {
+        return r.json().then(function(data) { return {status: r.status, data: data}; });
+    }).then(function(res) {
+        if (res.data.ok || res.status === 409) {
+            showToast('Scan started on GitHub Actions — this runs for a few minutes.');
+            scanBtnLoading(true, 'Scanning…');
+            pollScanWorkflow();
+        } else {
+            scanBtnLoading(false);
+            showToast(res.data.error || 'Failed to trigger workflow', 'error');
+        }
+    }).catch(function() {
+        scanBtnLoading(false);
+        showToast('Failed to trigger workflow', 'error');
+    });
+}
+
+function pollScanWorkflow() {
+    if (scanPollTimer) return;           // only one poller at a time
+    scanBtnLoading(true, 'Scanning…');
+    scanPollTimer = setInterval(function() {
+        fetch('/api/scan/workflow/status').then(function(r) {
+            return r.json();
+        }).then(function(s) {
+            if (s.running) return;       // still going — keep the spinner
+            clearInterval(scanPollTimer);
+            scanPollTimer = null;
+            scanBtnLoading(false);
+            if (s.error) {
+                showToast('Scan: ' + s.error, 'error');
+            } else if (s.conclusion === 'success') {
+                showToast('Scan complete — pulling in new jobs…');
+                refreshFeed(document.getElementById('refresh-btn'));
+            } else if (s.conclusion) {
+                showToast('Scan finished: ' + s.conclusion, 'error');
+            } else {
+                showToast('Scan finished.');
+            }
+        }).catch(function() {});
+    }, 5000);
+}
+
+{% if workflow_running %}
+document.addEventListener('DOMContentLoaded', pollScanWorkflow);
+{% endif %}
 
 /* ── Bulk selection ─────────────────────── */
 function displayedJobRows() {

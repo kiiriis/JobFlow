@@ -8,6 +8,7 @@ Usage:
     python scripts/ai_score_local.py --hours 12 --limit 100
     python scripts/ai_score_local.py --backend json --hours 24
     python scripts/ai_score_local.py --backend json --hours 24 --rescore
+    python scripts/ai_score_local.py --recommended-only   # re-audit recommendations
 
 Reads DATABASE_URL from .env when available, fetches unscored jobs, scores
 them in batches of 15 with the local Claude or Codex CLI session, and updates
@@ -90,6 +91,12 @@ def parse_args():
         help="Include jobs that already have any AI score. Default only scores unscored rows.",
     )
     parser.add_argument(
+        "--recommended-only",
+        action="store_true",
+        help="Rescore only currently-recommended jobs (implies --rescore). "
+             "Use after tightening the prompt/profile to re-audit past recommendations.",
+    )
+    parser.add_argument(
         "--user-id",
         type=int,
         default=DEFAULT_USER_ID,
@@ -100,6 +107,8 @@ def parse_args():
         parser.error("--limit must be 0 or greater")
     if args.hours < 0:
         parser.error("--hours must be 0 or greater")
+    if args.recommended_only:
+        args.rescore = True
     return args
 
 
@@ -142,7 +151,9 @@ def fetch_db_rows(args):
     """Fetch eligible rows for one user from Postgres (per-user state + posting)."""
     conditions = ["s.user_id = %s"]
     params = [args.user_id]
-    if not args.rescore:
+    if args.recommended_only:
+        conditions.append("s.recommended = true")
+    elif not args.rescore:
         conditions.append("s.ai_score IS NULL")
     if args.hours:
         since = datetime.now(timezone.utc) - timedelta(hours=args.hours)
@@ -193,6 +204,8 @@ def fetch_json_rows(store: dict, args):
         ai_score = job.get("ai_score")
         ai_model = job.get("ai_model")
         if not eligible_ai_score(ai_score, args.rescore):
+            continue
+        if args.recommended_only and not job.get("recommended"):
             continue
         if cutoff:
             first_seen = parse_iso(job.get("first_seen", ""))

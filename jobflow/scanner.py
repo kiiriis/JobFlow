@@ -190,7 +190,7 @@ def scan_lever(company: str, api_url: str, include_kw: list[str], max_age_hours:
             title=title,
             company=company.capitalize(),
             location=loc,
-            description=desc[:3000],
+            description=desc[:6000],
         ))
     return jobs
 
@@ -231,7 +231,7 @@ def scan_greenhouse(company: str, api_url: str, include_kw: list[str], max_age_h
             title=title,
             company=company.capitalize(),
             location=loc_name,
-            description=desc[:3000],
+            description=desc[:6000],
         ))
     return jobs
 
@@ -277,7 +277,7 @@ def scan_ashby(company: str, api_url: str, include_kw: list[str], max_age_hours:
             title=title,
             company=company.capitalize(),
             location=loc if isinstance(loc, str) else "",
-            description=desc[:3000],
+            description=desc[:6000],
         ))
     return jobs
 

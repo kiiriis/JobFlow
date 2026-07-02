@@ -1,11 +1,20 @@
-I am a new grad / entry-level software engineer (graduating YYYY).
+## ELIGIBILITY FACTS (ground truth — the AI scorer uses these for hard-reject decisions)
+- Education: <degree, school, COMPLETED/expected month+year — e.g. "M.S. in Computer Science, completed May 2026; also holds a B.S. in CS">
+- Professional full-time software engineering experience: <N years — "0 years, new grad" if none>
+- Internship / research experience: <what and how much it should count toward "professional experience" requirements — e.g. "~1 year total; counts toward positional requirements of up to 1 year">
+- Degree substitution: <when your degree should satisfy an experience requirement — e.g. "completed Master's satisfies requirements up to 2 years when the JD offers any alternative/equivalence path; a plain 2+ years with no path is NOT met">
+- Skill-years (e.g. "2+ years with C++"): met through academic, internship, and project work — never a disqualifier.
+- Visa: <e.g. "F-1 OPT (STEM-eligible), needs future H-1B sponsorship" or "US citizen, no sponsorship needed">
+- Location: <e.g. "USA — open to relocation and remote">
 
-Skills: Python, Java, JavaScript, React, Node.js, AWS, Docker, PostgreSQL,
-REST APIs — replace with your actual tech stack.
+## Target roles
+<Software Engineer (New Grad), Backend Engineer, ML Engineer, ... — your target titles>
 
-Looking for: Software Engineer, Backend Engineer, ML Engineer, or similar
-entry-level roles.
+## Skills
+<your actual stack: languages, frameworks, infra, AI tooling>
 
-Must have: US-based, visa sponsorship friendly (if applicable).
-Prefer: your preferred domains (e.g., backend, ML, systems).
-Avoid: role types you want to exclude (e.g., frontend-only, QA, management).
+## Positioning (context for fit scoring)
+<2-5 sentences: what kind of engineer you are, your strongest experience/projects, and which kinds of companies/teams fit you best>
+
+## Avoid (lower the score, never 0)
+<role types to demote — e.g. frontend-only, QA-only, embedded-only, management>

@@ -13,7 +13,7 @@ from .filter import STAFFING_BLOCK_REASON, text_has_blocked_source  # noqa: F401
 
 BATCH_SIZE = 15
 
-BATCH_PROMPT = """You are a job relevance scorer for a new grad / entry-level software engineer on F1 OPT visa looking for their first full-time role in the US.
+BATCH_PROMPT = """You are a strict job-eligibility screener and relevance scorer for a new grad / entry-level software engineer on F1 OPT visa looking for their first full-time role in the US. Treat the facts stated in the candidate profile (education, experience, degree-substitution rules, visa) as ground truth.
 
 ## Candidate Profile
 {profile}
@@ -23,7 +23,7 @@ Give a score of 0 ONLY if ANY of these are true. Be strict — only these 6 cond
 
 1. **Explicit no sponsorship**: The posting explicitly says "no sponsorship", "will not sponsor", "cannot sponsor", "must be authorized to work without sponsorship", "US citizen only", "permanent resident only", "green card required". Also score 0 if it requires security clearance (TS/SCI, Secret, DoD). NOTE: "Must be authorized to work in the US" ALONE is NOT a rejection — OPT holders ARE authorized.
 
-2. **3+ years experience required**: The minimum required experience is 3 or more years. "1-2 years" or "2+ years" is fine. "3+ years" is NOT.
+2. **Experience requirement the candidate cannot meet**: Apply the EXPERIENCE RULES below. Reject only via that procedure — never from a gut read of the years number.
 
 3. **Senior/Staff/Lead role**: Clearly senior-level, staff, principal, architect, VP, director, or management. Must be obvious from title or JD — don't assume.
 
@@ -34,6 +34,25 @@ Give a score of 0 ONLY if ANY of these are true. Be strict — only these 6 cond
 6. **Blocked staffing/spam source**: The job is from jobright.ai, Remotehunter, Quik Hire Staffing, Beacon Fire, Helic & Co., Jack and Jill, or Jobs Via Dice.
 
 IMPORTANT: The candidate's "Avoid" preferences (e.g., "Avoid: Frontend-only") should LOWER the score (2-4) but NEVER cause a score of 0. A frontend SWE role is still a software engineering role — it's just a weak fit, not a hard reject.
+
+## EXPERIENCE RULES (for reject #2)
+Job descriptions use "years of experience" in two different senses. Classify every experience line before judging:
+
+**A. Positional experience** — tenure in a professional software engineering JOB: "X+ years of professional/industry software engineering experience", "X years working as a software engineer", "X years of industry experience". Judge it with this procedure:
+- Take the MINIMUM of any range: "2-4+ years" means 2; "1-3 years" means 1.
+- Look for an alternative path the candidate meets: "BS + 2 years OR MS + 0 years", "Master's degree may substitute for experience", "X years or equivalent experience", "new grads with advanced degrees welcome". A completed Master's degree satisfies positional requirements up to 2 years whenever the JD offers ANY such alternative/equivalence wording.
+- Count internships and research experience toward positional requirements exactly as far as the candidate profile says they count — no further.
+- REJECT (score 0) only when the minimum positional requirement still clearly exceeds what the candidate satisfies after substitutions. Concretely, for this candidate: minimum ≤ 1 year → eligible; minimum of 2 years → eligible ONLY via a Master's alternative/equivalence path in the JD, otherwise 0; minimum of 3+ years with no explicit path the candidate meets → 0.
+
+**B. Skill experience** — years attached to a technology, language, or domain: "2+ years of experience with C++", "3 years of Python", "experience with Kubernetes". This is NOT positional tenure — academic work, research, internships, and personal projects all count toward it. NEVER score 0 for skill-years. If the candidate's exposure to that specific skill looks thin, lower the score (3-5) instead.
+
+Traps to avoid:
+- "BS/MS in Computer Science **or equivalent**" — that "or equivalent" modifies the DEGREE, not a separate experience requirement elsewhere in the JD. "B.S., M.S., or PhD ... AND 2+ years of industry experience" still requires the 2 years; reject unless the experience line has its own alternative path.
+- Garbled numbers ("24+ years" on a non-senior title) are usually a mangled range ("2-4+ years") — read the minimum as 2 and apply the procedure; do NOT excuse it as a typo and wave it through.
+- A "preferred"/"nice to have" experience line is not a requirement — only lines in required/minimum qualifications can trigger a reject.
+- If the description is cut off and you cannot see the requirements, judge from the title and visible text; do not invent a requirement, and do not assume eligibility for clearly senior titles.
+
+In your one-sentence reason, when experience decided the outcome, cite it explicitly (e.g. "2+ yrs industry required, no MS path" or "MS+0 alternative stated").
 
 ## SCORING GUIDE (only if no hard reject applies)
 

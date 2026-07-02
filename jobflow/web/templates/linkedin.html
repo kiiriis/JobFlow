@@ -4,7 +4,7 @@
 {% block title %}{{ page_title }} — JobFlow{% endblock %}
 {% block content %}
 
-<div class="cascade">
+<div class="feed">
     <!-- ── Header ── -->
     <div class="feed-head">
         <div>
@@ -43,7 +43,7 @@
             <span class="v" id="stat-today">{{ time_counts.get('today', 0) }}</span>
         </button>
         <button class="stat" data-stat="rec" onclick="setFilter('status', 'Recommended')" title="High-confidence matches">
-            <span class="k">★ Recommended</span>
+            <span class="k">Recommended</span>
             <span class="v" id="stat-rec">{{ counts.get('Recommended', 0) }}</span>
         </button>
         <button class="stat" data-stat="total" onclick="setTime('')" title="All jobs in the store">
@@ -59,7 +59,7 @@
                    oninput="debounceFilter()" aria-label="Search jobs">
         </div>
         <button class="chip active" onclick="setFilter('status', '')" data-status="" aria-pressed="true">All <span class="chip-n">{{ counts.get('All', 0) }}</span></button>
-        <button class="chip chip-rec" onclick="setFilter('status', 'Recommended')" data-status="Recommended" aria-pressed="false">★ Rec <span class="chip-n">{{ counts.get('Recommended', 0) }}</span></button>
+        <button class="chip chip-rec" onclick="setFilter('status', 'Recommended')" data-status="Recommended" aria-pressed="false">Recommended <span class="chip-n">{{ counts.get('Recommended', 0) }}</span></button>
         {% for lvl in ['New Grad', 'Entry', 'Mid'] %}
         <button class="chip" onclick="setFilter('level', '{{ lvl }}')" data-level="{{ lvl }}" aria-pressed="false">{{ lvl }} <span class="chip-n">{{ level_counts.get(lvl, 0) }}</span></button>
         {% endfor %}
@@ -80,8 +80,8 @@
             <button role="tab" aria-selected="false" onclick="setTime('')" data-time="">All Time</button>
         </div>
         <div class="seg sort-seg" role="tablist" aria-label="Sort order">
-            <button role="tab" onclick="quickSort('ai_score')" data-qsort="ai_score">★ Best Match</button>
-            <button class="active" role="tab" onclick="quickSort('first_seen')" data-qsort="first_seen">↓ Recent</button>
+            <button role="tab" onclick="quickSort('ai_score')" data-qsort="ai_score">Best match</button>
+            <button class="active" role="tab" onclick="quickSort('first_seen')" data-qsort="first_seen">Recent</button>
         </div>
     </div>
 

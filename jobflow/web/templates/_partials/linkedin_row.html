@@ -1,6 +1,3 @@
-{% set avatar_colors = ['#e06060','#f5b85a','#52d98a','#5b9bd5','#a78bfa','#34d3c4','#ff7eb3','#ff9f43','#6c5ce7','#00b894'] %}
-{% set co_letter = (job.company[:1] | upper) if job.company else '?' %}
-{% set color_idx = (job.company | length) % 10 if job.company else 0 %}
 {% set ai = job.ai_score|default(none) %}
 {% set match_pct = (ai * 10)|int if ai is not none else job.score_pct|default(0)|int %}
 {% set searchable = (job.company|default('') ~ ' ' ~ job.title|default('') ~ ' ' ~ job.location|default(''))|lower %}
@@ -21,7 +18,6 @@
     <td class="td-n">{{ loop.index if loop is defined else '' }}</td>
     <td>
         <div class="role-cell">
-            <div class="co-avatar" style="background:{{ avatar_colors[color_idx] }}">{{ co_letter }}</div>
             <div class="role-info">
                 <div class="role-title">
                     {% if job.recommended %}<span class="rec-star" {% if job.ai_reason %}title="AI: {{ job.ai_reason }}"{% endif %}>★ </span>{% endif %}
@@ -36,7 +32,7 @@
                     {% if job.h1b is defined and job.h1b %}<span class="tag tag-h1b">H1B ✓</span>{% endif %}
                 </div>
                 <div class="role-sub">
-                    <span>{{ job.company }}</span>
+                    <span class="co">{{ job.company }}</span>
                     <span class="sep">·</span>
                     <span>{{ job.location }}</span>
                     {% if job.min_exp is not none or job.max_exp is not none %}

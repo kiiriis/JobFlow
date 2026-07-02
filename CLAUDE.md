@@ -1,77 +1,97 @@
 # JobFlow
 
-Automated job scanner and resume tailoring system for new grad / entry-level SWE positions.
+Multi-user job-intelligence platform for new grad / entry-level SWE roles. One shared pool of
+scanned postings, scored per-user against each user's profile. Also does CLI resume tailoring.
+See [README.md](README.md) for the overview and [docs/MULTIUSER.md](docs/MULTIUSER.md) for the
+multi-tenant architecture.
 
 ## Project Structure
 
 ```
 JobFlow/
 ├── config/
-│   ├── config.yaml          # Local config (resume paths, output dirs)
+│   ├── config.yaml          # Local config (resume paths, output dirs) — git-ignored
 │   ├── config.ci.yaml       # CI config (outputs to data/ci/)
-│   └── job_boards.json      # 82 company API endpoints
+│   └── job_boards.json      # Company API endpoints
 ├── data/ci/                 # CI output (git-tracked, pushed by GitHub Actions)
 │   ├── scan_results.json    # Raw scan output
-│   ├── linkedin_jobs.json   # Persistent store with user statuses
+│   ├── linkedin_jobs.json   # JSON store (single-user/local fallback)
 │   └── seen_jobs.json       # Dedup tracking
 ├── jobflow/
-│   ├── cli.py               # Typer CLI commands
-│   ├── config.py            # YAML config loader
-│   ├── models.py            # JobPosting, FilterResult dataclasses
-│   ├── filter.py            # Multi-signal scoring engine
-│   ├── scanner.py           # Job scanners (Lever, Greenhouse, Ashby, LinkedIn, GitHub)
-│   ├── linkedin_store.py    # LinkedIn job persistence + filtering + dedup
-│   ├── tracker.py           # CSV-based application tracking
-│   ├── tailor.py            # Resume merging + prompt building
-│   ├── latex.py             # pdflatex compilation
-│   ├── scraper.py           # Job description parser
+│   ├── cli.py               # Typer CLI (web, scan, login, score, apply, migrate-multiuser, …)
+│   ├── config.py            # YAML + .env loader
+│   ├── auth.py              # Google OAuth, sessions, g.user_id (resolve_request_user)
+│   ├── crypto.py            # Fernet encrypt/decrypt for stored API keys
+│   ├── db.py                # PostgreSQL backend: users, user_profiles, user_job_state, fan-out
+│   ├── db_migrate.py        # Single-user → multi-user migration
+│   ├── linkedin_store.py    # JSON backend + dedup + _rescore_entry (single-user/local)
+│   ├── models.py            # JobPosting, FilterResult
+│   ├── filter.py            # Multi-signal scoring engine (evaluate_job)
+│   ├── filter_profile.py    # Per-user FilterProfile + DEFAULT_PROFILE + config (de)serialize
+│   ├── scanner.py           # Scanners (Lever, Greenhouse, Ashby, LinkedIn, GitHub)
+│   ├── ai_prompt.py         # Shared scoring prompt + parse/normalize (used by all scorers)
+│   ├── ai_local.py          # Local Claude/Codex CLI batch scoring
+│   ├── ai_scorer_anthropic.py # Server-side Anthropic API scoring (per-user key)
+│   ├── ai_scorer.py         # Legacy optional Groq scorer
+│   ├── tracker.py           # CSV application tracking (CLI only)
+│   ├── tailor.py · latex.py · scraper.py   # Resume tailoring (CLI only)
 │   └── web/
-│       ├── __init__.py      # Flask app factory + all routes
-│       ├── static/style.css # CSS
-│       └── templates/       # Jinja2 templates
-├── docs/                    # Comprehensive documentation (9 files)
-├── .github/workflows/
-│   └── scan-jobs.yml        # Hourly LinkedIn scan + Render ping
-├── wsgi.py                  # Gunicorn WSGI entry point
-├── Procfile                 # Render process definition
-└── render.yaml              # Render Blueprint
+│       ├── __init__.py      # Flask app factory + all routes + ProxyFix
+│       ├── static/          # style.css, icon.svg
+│       └── templates/       # base, linkedin, login, settings, _partials/
+├── scripts/
+│   ├── ai_score_local.py    # Operator's local AI-scoring runner (--user-id, DB or JSON)
+│   └── backfill_ai_scores.py
+├── docs/                    # Documentation (see README's Documentation table)
+├── .github/workflows/scan-jobs.yml   # Every-30-min LinkedIn scan + merge/fan-out
+├── wsgi.py · Procfile · render.yaml  # Production entry + deploy
+└── pyproject.toml
 ```
 
+Package layout is intentionally flat (standard Flask structure) — keep it that way so the CI
+workflow's inline `from jobflow.db import …`, `wsgi:app`, and `jobflow.cli:app` stay stable.
+
+## Multi-user & auth
+- Two auto-detected switches: **auth** on when `GOOGLE_CLIENT_ID`+`GOOGLE_CLIENT_SECRET` set;
+  **DB** on when `DATABASE_URL` set. Neither set = original single-user + JSON behavior.
+- `auth.resolve_request_user()` sets `g.user_id` per request (operator = `DEFAULT_USER_ID` = 1).
+- Multi-user is DB-only. Every `db.py` query is scoped by `user_id` and JOINs `user_job_state` to
+  `jobs`. The shared `jobs` table holds the posting; per-user scoring/state/status lives in
+  `user_job_state`. Never add a query path that isn't `user_id`-scoped.
+- Env vars: `JOBFLOW_SECRET_KEY` (session + key encryption), `JOBFLOW_OPERATOR_EMAIL`,
+  `ALLOWED_EMAILS`, `OAUTH_REDIRECT_URI`. `db.py` strips `channel_binding` from `DATABASE_URL`.
+
 ## Commands
-- `jobflow scan` — Scan all sources
-- `jobflow scan --hours 1 --new --platform linkedin` — Hourly scan (used by CI)
-- `jobflow apply <url> --paste -t "Title" -c "Company" -l "Location"` — Process a job
-- `jobflow save --dir <path>` — Merge tailored sections + compile PDF
-- `jobflow process <#>` — Process a job from scan results
-- `jobflow list` — View tracked applications
-- `jobflow web` — Launch web dashboard
-- `jobflow init` — First-time setup
+- `jobflow web` — Launch dashboard (single- or multi-user by env)
+- `jobflow scan [--platform linkedin] [--hours N]` — Scan; merge + fan-out to users (used by CI)
+- `jobflow login --token <t>` / `jobflow score` — Local-CLI scoring client (a user's own machine)
+- `jobflow apply <url> --paste -t … -c … -l …` / `jobflow save --dir <path>` — Resume tailoring
+- `jobflow migrate-multiuser` — Seed operator + migrate legacy single-user data
+- `jobflow list` · `jobflow init`
 
 ## Web Routes
-The web app is a single page — the job feed. Everything else lives in the CLI.
-- `/` — Redirects to /linkedin
-- `/linkedin` — The job feed (filtering, sorting, time buckets, bulk actions)
-- `/api/linkedin/*` — Feed data: jobs table fragment, meta counts, delete, refresh
-- `/api/scan/*` — Background scan (powers the feed's "Scan Now" button)
-- `/api/aiscore/*` — Local AI scoring runner: the feed's "AI Score" button runs
-  `scripts/ai_score_local.py` as a subprocess (engine claude/codex, hours/limit/rescore)
-  and streams live progress. Uses the signed-in CLI — no API key.
+- `/` → `/linkedin` — the per-user job feed (filter/sort/time buckets/bulk actions)
+- `/settings` — per-user profile: eligibility, seniority, search terms, AI method (none/anthropic/local-cli), API key, model, pairing token
+- `/auth/login`, `/auth/google`, `/auth/google/callback`, `/auth/logout` — Google OAuth
+- `/api/linkedin/*` — feed data (jobs fragment, meta counts, delete, refresh)
+- `/api/scan/*` — background scan + GitHub Actions "Scan Now" trigger
+- `/api/aiscore/*` — AI Score button: operator local subprocess, or server-side Anthropic run (per-user)
+- `/api/score/pending`, `/api/score/submit` — token-authed endpoints for the local-CLI client (login-gate exempt, scoped to the token's user)
 
-Removed from the web UI in June 2026: application tracking (CSV tracker, status
-dropdowns, /api/stats), the /boards page, the /scan page, and the /tailor page.
-`tracker.py` and `tailor.py` remain for CLI use only.
+Application tracking, /boards, /scan, /tailor pages were removed from the web UI; `tracker.py` /
+`tailor.py` remain CLI-only.
 
 ## Scoring
-Multi-signal scoring (0-100%) for Python/ML/Backend stack. See docs/SCORING.md.
-When a job has no AI score yet, `filter.algo_recommended()` flags high-scoring
-entry-level jobs as Recommended (score_pct >= 65 and level New Grad/Entry).
+Multi-signal scoring (0–100%) via `filter.evaluate_job(job, profile=…)`. Scoring is **per-user**:
+`filter_profile.FilterProfile` holds the tunable knobs (stack + weights, synergy, sponsorship/US
+gates, seniority band, recommend bar); `DEFAULT_PROFILE` reproduces the original behavior. Weak
+seniority proxies (4+ yrs, senior salary) are **soft demotions, not hard rejects**, so the AI
+scorer can rescue misreads. When no AI score exists, `filter.algo_recommended()` flags high-scoring
+entry-level jobs as Recommended. See [docs/SCORING.md](docs/SCORING.md).
 
-## Filter Criteria
-- New grad / entry-level / SDE 1 roles only
-- USA-based positions
-- Must NOT deny visa sponsorship
-- OPT/F1 friendly
-- Software engineering roles only
+## Default filter criteria (operator profile)
+New grad / entry-level / SDE 1 · USA-based · must not deny sponsorship · OPT/F1 friendly · SWE
+roles only. Other users override these in their own `FilterProfile`.
 
 ## Deployment
-Render.com free tier + GitHub Actions hourly cron. See docs/DEPLOYMENT.md.
+Render.com free tier + GitHub Actions every-30-min cron. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).

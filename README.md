@@ -1,173 +1,307 @@
 # JobFlow
 
-Automated job scanner + resume tailoring system for new grad / entry-level software engineering roles. Scans LinkedIn hourly via GitHub Actions, scores jobs against your tech stack, and serves a real-time dashboard.
+**Personalized job intelligence for new-grad / entry-level software engineers.**
 
-**Live at:** [jobflow.onrender.com](https://jobflow.onrender.com) (or your Render URL)
+JobFlow scans fresh SWE job postings around the clock, then gives **each signed-in user their
+own privately-scored, personalized feed** — ranked against *their* tech stack, visa needs, and
+seniority preferences. Sign in with Google, tune your profile, and (optionally) let AI score every
+job for fit.
 
-## How It Works
+**Live:** https://jobflow-ktem.onrender.com
+
+---
+
+## Table of contents
+
+- [What it does](#what-it-does)
+- [How it works](#how-it-works)
+- [Using JobFlow (as a signed-in user)](#using-jobflow-as-a-signed-in-user)
+- [AI scoring: two ways](#ai-scoring-two-ways)
+- [Self-hosting / local development](#self-hosting--local-development)
+- [Configuration & environment variables](#configuration--environment-variables)
+- [The scoring engine](#the-scoring-engine)
+- [Scanning](#scanning)
+- [Resume tailoring (CLI)](#resume-tailoring-cli)
+- [CLI reference](#cli-reference)
+- [Project structure](#project-structure)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+
+---
+
+## What it does
+
+- 🔎 **Scans SWE jobs 24/7** — LinkedIn (via python-jobspy) every 30 min through GitHub Actions,
+  plus Lever / Greenhouse / Ashby / GitHub aggregators on demand.
+- 👤 **Multi-user** — sign in with Google; every user gets their **own** feed, scored and filtered
+  by *their* profile, over one shared pool of postings.
+- 🎯 **Personalized scoring** — a fast rule-based engine ranks each job 0–100% against your stack,
+  target roles, seniority band, and sponsorship needs.
+- ✨ **AI scoring, your choice** — layer Claude on top using **your own API key** (server-side) or
+  **your own local Claude/Codex CLI** (free). Per-user, opt-in.
+- 🧵 **Live dashboard** — spreadsheet-style feed with time buckets, filter chips, search, and
+  per-user status tracking (Tracking / Applied / Not Interested).
+- 📄 **Resume tailoring** (CLI) — Claude rewrites your LaTeX resume per job description and compiles
+  a one-page PDF.
+
+---
+
+## How it works
 
 ```
-GitHub Actions (hourly cron)
-    |
-    v
-Scan LinkedIn (8 search terms x 200 results)
-    |
-    v
-Score & filter (multi-signal engine: keywords, synergy, level, experience)
-    |
-    v
-Commit to GitHub --> Render auto-deploys --> Live dashboard
+  GitHub Actions (every 30 min)
+        │  scan LinkedIn + ATS boards
+        ▼
+  shared `jobs` pool  ──────────────┐  (one row per posting)
+        │                            │
+        │  fan-out: score per user   │  each user's FilterProfile
+        ▼                            ▼
+  user_job_state(A)          user_job_state(B)        …
+  (Alice's scores +          (Bob needs no visa,
+   status + AI scores)        wants Java roles)
+        │                            │
+        ▼                            ▼
+   Alice's feed                 Bob's feed          ← Google-authenticated
 ```
 
-The dashboard shows jobs ranked by relevance to your profile, with filtering by time, level, and status.
+**One shared job pool, per-user scoring.** Postings are scanned once and stored once. Each user's
+preferences produce their *own* scored/ranked view in `user_job_state` — so the same job can be a
+92% match for one person and a hard reject for another. See [docs/MULTIUSER.md](docs/MULTIUSER.md).
 
-## Features
+---
 
-- **Hourly LinkedIn scanning** via GitHub Actions + python-jobspy
-- **Multi-signal scoring** — keyword matching, synergy combos, level detection, experience fit, recency, H1B bonus
-- **Real-time web dashboard** — Atriveo-inspired dark theme with hourly cards, filter chips, sortable table
-- **Resume tailoring** — Claude AI rewrites your LaTeX resume per job description
-- **Application tracking** — CSV-based status management
-- **Auto-deployment** — Render free tier with GitHub Actions keep-alive
+## Using JobFlow (as a signed-in user)
 
-## Quick Start
+1. **Sign in with Google** at the live URL (your email must be on the instance's allow-list).
+2. **Build your profile** in **Settings**:
+   - Do you need visa sponsorship? US-only?
+   - Target seniority / experience band, recommend threshold.
+   - Search terms and a free-text "about me" used for AI scoring.
+3. **Browse your feed** — jobs are ranked by match %, with time buckets and filter chips. Mark jobs
+   Tracking / Applied / Not Interested (per-user, private to you).
+4. **(Optional) Turn on AI scoring** — pick a method in Settings (below), then hit **AI Score**.
+
+Your feed, statuses, scores, and profile are private to your account.
+
+---
+
+## AI scoring: two ways
+
+Every job already gets a **rule-based** score instantly. For sharper, LLM-judged relevance, each
+user can opt into one of two AI methods in **Settings → AI scoring method**:
+
+### A) Your Anthropic API key (server-side) — easiest
+Paste your Anthropic API key (stored **encrypted** at rest) and pick a model (Haiku 4.5 / Sonnet 5 /
+Opus 4.8; Haiku default). Click **AI Score** and the server scores your jobs and writes them to your
+feed. You pay for your own usage; runs are **capped per click** so a single run can't surprise you.
+
+### B) Your local Claude/Codex CLI (free) — bring your own compute
+No API key, no server cost — score with the Claude subscription you already have:
+
+```bash
+pip install "git+https://github.com/kiiriis/JobFlow"
+jobflow login --token <your-pairing-token>   # token shown in Settings
+jobflow score                                 # scores YOUR unscored jobs locally
+```
+
+The client pulls your unscored jobs from the server, scores them with your **signed-in** `claude`
+(or `codex`) CLI, and pushes the results back — all authenticated by a per-user pairing token you
+can regenerate (which revokes the old one) any time.
+
+> The **operator** (the account that runs the server / owns the original data) can also score via a
+> local CLI subprocess directly from the dashboard's **AI Score** button — no token needed.
+
+---
+
+## Self-hosting / local development
 
 ```bash
 git clone https://github.com/kiiriis/JobFlow.git
 cd JobFlow
 pip install -e .
 
-# Set up your personal config (not tracked in git)
+# Personal config (git-ignored)
 cp config/config.example.yaml config/config.yaml
-cp config/profile.example.txt config/profile.txt
-# Edit both to point to your own resume files and describe your profile
+cp config/profile.example.txt config/profile.txt   # your skills/roles/visa for AI scoring
 
-# Run locally
+# Run the dashboard
 jobflow web
-
-# Or scan jobs from CLI
-jobflow scan --platform linkedin --hours 24
 ```
 
-**Requirements:** Python 3.11+ | Optional: pdflatex (for resume PDFs), Claude CLI (for tailoring + AI scoring), Postgres/Neon (for persistent job storage — set `DATABASE_URL` env var)
+**Two run modes**, chosen automatically:
+
+| Mode | When | Behavior |
+|------|------|----------|
+| **Single-user** | No `GOOGLE_CLIENT_ID` set | No login. You are the operator; full access to your feed. |
+| **Multi-user** | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` set | Google login required; per-user feeds. |
+
+And **two storage backends**, chosen automatically:
+
+| Backend | When | Notes |
+|---------|------|-------|
+| **PostgreSQL** (Neon) | `DATABASE_URL` set | Persistent, required for multi-user. |
+| **JSON file** | No `DATABASE_URL` | `data/ci/linkedin_jobs.json`; single-user/local dev. |
+
+**Requirements:** Python 3.11+ · Optional: Postgres/Neon (`DATABASE_URL`), a signed-in Claude/Codex
+CLI (local AI scoring), `pdflatex` (resume PDFs).
+
+---
+
+## Configuration & environment variables
+
+Local dev reads `.env` (git-ignored); production reads the host's env (Render dashboard). Existing
+host vars always win over `.env`.
+
+| Variable | Required for | Purpose |
+|----------|-------------|---------|
+| `DATABASE_URL` | Multi-user / persistence | Neon/Postgres DSN. `channel_binding` is stripped automatically. |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Multi-user login | Google OAuth app credentials. |
+| `OAUTH_REDIRECT_URI` | Deployed behind a proxy | e.g. `https://<host>/auth/google/callback` (avoids scheme mismatch). |
+| `JOBFLOW_SECRET_KEY` | Multi-user | Flask session signing **and** API-key encryption key. |
+| `JOBFLOW_OPERATOR_EMAIL` | Multi-user | The email bound to the operator account (`user_id=1`, inherits existing data). |
+| `ALLOWED_EMAILS` | Multi-user | Comma-separated allow-list of who may sign in. |
+| `JOBFLOW_CONFIG` | Deploy | Path to the YAML config (CI uses `config/config.ci.yaml`). |
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for a step-by-step Render + Google OAuth setup.
+
+---
+
+## The scoring engine
+
+Each job is scored 0–100% against **your** `FilterProfile` (tech stack, target roles, seniority
+band, sponsorship/location gates). Defaults reproduce a Python/ML/backend new-grad profile; every
+knob is per-user configurable.
+
+| Signal | Points | Example |
+|--------|--------|---------|
+| Keyword match | 3–10 each | Python(10), PyTorch(8), AWS(7), FastAPI(7) |
+| Synergy combos | +6 to +10 | Python + FastAPI + AWS = +10 |
+| Title / role fit | +6 to +12 | "Backend Engineer", "ML Engineer" |
+| Level detection | +5 to +20 | New Grad = +20, Entry = +15 |
+| Experience fit | +0 to +10 | 0–2 years = +10 |
+| Recency | −5 to +10 | < 6h = +10, > 48h = −5 |
+| H1B mention | +8 | "will sponsor" (if you need sponsorship) |
+| US location | +10 | US city/state/remote (if US-only) |
+
+**Soft demotions, not deletions.** Weak seniority proxies (a 4+ yr requirement, a senior-range
+salary) *penalize* a job rather than dropping it, so the AI scorer can still rescue misreads.
+Only structural certainties hard-reject (non-SWE title, non-US when US-only, explicit
+no-sponsorship when you need it, blocked staffing source). Full details:
+[docs/SCORING.md](docs/SCORING.md).
+
+---
 
 ## Scanning
 
 ```bash
-# Scan all platforms (Lever + Greenhouse + Ashby + LinkedIn + GitHub)
-jobflow scan
-
-# LinkedIn only, last 24 hours
-jobflow scan --platform linkedin --hours 24
-
-# Specific platform
-jobflow scan --platform greenhouse --hours 24
+jobflow scan                                  # all sources
+jobflow scan --platform linkedin --hours 24   # LinkedIn only, last 24h
+jobflow scan --platform greenhouse --hours 24 # one ATS platform
 ```
 
-**Sources:**
-- **LinkedIn** — 8 search terms via python-jobspy (new grad, junior, associate, entry level, AI/ML, recent-posted phrasing)
-- **Lever API** — 11 companies (Spotify, Palantir, Plaid, etc.)
-- **Greenhouse API** — 40 companies (Stripe, Airbnb, Databricks, etc.)
-- **Ashby API** — 31 companies (OpenAI, Ramp, Figma, etc.)
-- **GitHub repos** — SimplifyJobs + Jobright aggregators
+**Sources:** LinkedIn (python-jobspy, multiple search terms) · Lever · Greenhouse · Ashby ·
+GitHub aggregators (SimplifyJobs / Jobright). Company endpoints live in
+[config/job_boards.json](config/job_boards.json). New postings fan out to every active user's feed
+at merge time. See [docs/SCANNING.md](docs/SCANNING.md).
 
-## Scoring Engine
+---
 
-Jobs are scored 0-100% match against your personal tech stack:
-
-| Signal | Points | Example |
-|--------|--------|---------|
-| Keyword match | 3-10 each | Python(10), PyTorch(8), AWS(7), FastAPI(7) |
-| Synergy combos | +6 to +10 | Python + FastAPI + AWS = +10 bonus |
-| Level detection | +5 to +20 | "New Grad" = +20, "Entry" = +15 |
-| Experience fit | +0 to +10 | 0-2 years = +10 (sweet spot) |
-| Recency | -5 to +10 | < 6h = +10, > 48h = -5 |
-| H1B mention | +8 | "will sponsor" in JD |
-| US location | +10 | US city/state/remote |
-
-**Filter flags (score=0) but never drops:** sponsorship denial, US citizen required, security clearance, non-US location, 4+ years experience required. All jobs flow to the DB so the AI scorer (`scripts/ai_score_local.py`) can correct false positives.
-
-See [docs/SCORING.md](docs/SCORING.md) for full details.
-
-## Web Dashboard
-
-The LinkedIn feed at `/linkedin` features:
-
-- **Time filtering** — This Hour / Today / Yesterday / All Time + scrollable hourly cards
-- **Sortable table** — Sort by match %, score, level, recency
-- **Filter chips** — All / Recommended / New Grad / Entry / Mid / Tracking / Applied
-- **Search** — Real-time text search across company, title, location
-- **Filter chips** — Filter by status, level, and time bucket
-- **Status tracking** — Mark jobs as Tracking / Applied / Not Interested
-- **Timezone-aware** — All times shown in your local timezone
-
-## Resume Tailoring
+## Resume tailoring (CLI)
 
 ```bash
-# CLI-only:
-jobflow apply "https://..." --paste -t "SWE" -c "Stripe" -l "SF"
+jobflow apply "https://job-url" --paste -t "SWE" -c "Stripe" -l "SF"
 jobflow save --dir data/output/Stripe_SWE_2026-04-09
 ```
 
-Claude AI tailors your LaTeX resume:
-1. Auto-selects variant (SE / ML / AppDev) based on JD keywords
-2. Preserves preamble + header + education
-3. Rewrites experience, projects, skills sections
-4. Compiles to a one-page PDF with pdflatex
+Claude auto-selects a resume variant (SE / ML / AppDev), rewrites experience/projects/skills while
+preserving your header + education, and compiles a one-page PDF with `pdflatex`. See
+[docs/TAILORING.md](docs/TAILORING.md).
 
-## Deployment
+---
 
-Deployed on Render free tier with auto-deploy from GitHub.
+## CLI reference
 
-```
-render.yaml     — Render Blueprint (auto-configures service)
-Procfile        — gunicorn -w 1 wsgi:app
-wsgi.py         — WSGI entry point
-```
+| Command | What it does |
+|---------|--------------|
+| `jobflow web` | Launch the dashboard (single- or multi-user by env). |
+| `jobflow scan [--platform …] [--hours N]` | Scan sources; merge + fan-out to users. |
+| `jobflow login --token <t> [--server <url>]` | Pair the local CLI client to your account. |
+| `jobflow score [--engine claude\|codex] [--hours N] [--limit N] [--rescore]` | Score *your* jobs locally, push results back. |
+| `jobflow apply <url> …` / `jobflow save --dir <path>` | Tailor + compile a resume. |
+| `jobflow migrate-multiuser` | Seed the operator user + migrate legacy single-user data. |
+| `jobflow init` | First-time local setup. |
 
-GitHub Actions hourly cron scans LinkedIn, commits data, pushes to GitHub. Push triggers Render redeploy. Same workflow pings the Render URL to prevent free-tier sleep.
+Run `jobflow --help` for the full list.
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for setup instructions.
+---
 
-## Project Structure
+## Project structure
 
 ```
 JobFlow/
-├── config/
-│   ├── config.example.yaml  # Template — copy to config.yaml
-│   ├── config.ci.yaml       # CI config (GitHub Actions)
-│   ├── profile.example.txt  # Template — copy to profile.txt
-│   └── job_boards.json      # 82 company API endpoints
-├── data/ci/                 # CI scan output (git-tracked)
-├── jobflow/
-│   ├── cli.py               # CLI commands
-│   ├── config.py            # Config loader
-│   ├── models.py            # JobPosting, FilterResult
-│   ├── filter.py            # Scoring engine
-│   ├── scanner.py           # Job scanners
-│   ├── linkedin_store.py    # LinkedIn job store + dedup
-│   ├── tracker.py           # CSV tracking
-│   ├── tailor.py            # Resume merging
-│   ├── latex.py             # PDF compilation
-│   └── web/                 # Flask dashboard
-├── docs/                    # Documentation
-├── .github/workflows/       # Hourly scan cron
-├── wsgi.py                  # Production WSGI
-├── Procfile                 # Render process
-└── render.yaml              # Render Blueprint
+├── jobflow/                     # Application package
+│   ├── cli.py                   # Typer CLI (web, scan, login, score, apply, …)
+│   ├── config.py                # YAML + .env loader
+│   ├── auth.py                  # Google OAuth, sessions, per-request user (g.user_id)
+│   ├── crypto.py                # Fernet encrypt/decrypt for stored API keys
+│   ├── db.py                    # PostgreSQL backend (users, profiles, per-user state)
+│   ├── db_migrate.py            # Single-user → multi-user migration helper
+│   ├── linkedin_store.py        # JSON backend + dedup + rescoring (single-user/local)
+│   ├── models.py                # JobPosting, FilterResult dataclasses
+│   ├── filter.py                # Multi-signal scoring engine
+│   ├── filter_profile.py        # Per-user FilterProfile (tunable scoring knobs)
+│   ├── scanner.py               # Source scanners (LinkedIn/Lever/Greenhouse/Ashby/GitHub)
+│   ├── ai_prompt.py             # Shared scoring prompt + parse/normalize helpers
+│   ├── ai_local.py              # Local Claude/Codex CLI batch scoring
+│   ├── ai_scorer_anthropic.py   # Server-side Anthropic API scoring (per-user key)
+│   ├── ai_scorer.py             # Legacy optional Groq scorer
+│   ├── scraper.py · tailor.py · latex.py · tracker.py   # Resume tailoring + tracking
+│   └── web/                     # Flask app (routes, templates, static)
+├── scripts/
+│   ├── ai_score_local.py        # Operator's local AI-scoring runner (DB or JSON)
+│   └── backfill_ai_scores.py    # One-off scoring backfill
+├── config/                      # config.yaml (local), config.ci.yaml (CI), job_boards.json
+├── data/ci/                     # Git-tracked CI scan output + JSON store
+├── docs/                        # Deep-dive docs (see below)
+├── tests/                       # pytest suite
+├── .github/workflows/           # Every-30-min scan cron
+├── wsgi.py · Procfile · render.yaml   # Production entry + deploy config
+└── pyproject.toml               # Package + dependencies
 ```
+
+> The `jobflow/` package is intentionally a **flat module layout** (a standard, well-supported
+> Flask structure) so imports stay simple and the hourly CI + WSGI entry points remain stable.
+> Modules are grouped by concern in the tree above.
+
+---
+
+## Deployment
+
+Render (free tier) with GitHub auto-deploy, plus a GitHub Actions cron:
+
+```
+render.yaml   — Render Blueprint (build: pip install -e . ; start: gunicorn wsgi:app)
+Procfile      — gunicorn -w 1 -b 0.0.0.0:$PORT wsgi:app
+wsgi.py       — from jobflow.web import create_app; app = create_app()
+```
+
+Every 30 minutes GitHub Actions scans LinkedIn, merges into the shared pool (fanning out to all
+users), and commits results — which triggers a Render redeploy and keeps the free instance warm.
+Full setup (Google OAuth, env vars, Neon): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+---
 
 ## Documentation
 
 | Doc | Content |
 |-----|---------|
+| [Multi-user](docs/MULTIUSER.md) | Auth, per-user data model, dual AI scoring, pairing tokens |
 | [Architecture](docs/ARCHITECTURE.md) | System overview, data flow, design decisions |
-| [Scoring](docs/SCORING.md) | Full scoring engine breakdown |
+| [Scoring](docs/SCORING.md) | Full scoring-engine breakdown |
 | [API](docs/API.md) | HTTP endpoints reference |
-| [Data Models](docs/DATA_MODELS.md) | JSON/CSV schemas |
-| [Deployment](docs/DEPLOYMENT.md) | Render setup, GitHub Actions, env vars |
-| [Frontend](docs/FRONTEND.md) | CSS architecture, JS functions, HTMX patterns |
-| [Scanning](docs/SCANNING.md) | Platforms, search terms, dedup, rate limiting |
+| [Data Models](docs/DATA_MODELS.md) | DB / JSON / CSV schemas |
+| [Deployment](docs/DEPLOYMENT.md) | Render + Google OAuth + Neon setup, env vars |
+| [Scanning](docs/SCANNING.md) | Sources, search terms, dedup |
 | [Tailoring](docs/TAILORING.md) | Resume flow, Claude integration |
 | [CLI](docs/CLI.md) | All commands with examples |
 

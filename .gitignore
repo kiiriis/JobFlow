@@ -31,6 +31,9 @@ data/applications.csv
 !data/ci/
 !data/ci/**
 
+# Local eval/benchmark artifacts
+data/eval/
+
 # Resumes (private — contain PII)
 resumes/
 

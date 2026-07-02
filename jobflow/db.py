@@ -27,13 +27,34 @@ TTL_DAYS = 3
 _pool = None
 
 
+def _sanitize_dsn(dsn: str) -> str:
+    """Clean a Postgres DSN before connecting.
+
+    - Strips surrounding whitespace/newlines (a stray newline in a pasted
+      env var otherwise ends up inside a connection option value).
+    - Drops ``channel_binding`` — some bundled libpq builds (e.g. Render's
+      image) reject ``channel_binding=require`` with "invalid channel_binding
+      value", and it's optional for Neon since ``sslmode=require`` already
+      secures the connection.
+    """
+    from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+
+    dsn = (dsn or "").strip()
+    parts = urlsplit(dsn)
+    if parts.scheme not in ("postgres", "postgresql") or not parts.query:
+        return dsn
+    q = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True)
+         if k != "channel_binding"]
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(q), parts.fragment))
+
+
 def _get_pool():
     """Get or create the connection pool (thread-safe)."""
     global _pool
     if _pool is None or _pool.closed:
         _pool = psycopg2.pool.ThreadedConnectionPool(
             1, 5,
-            dsn=os.environ["DATABASE_URL"],
+            dsn=_sanitize_dsn(os.environ["DATABASE_URL"]),
             sslmode="require",
             keepalives=1,
             keepalives_idle=30,

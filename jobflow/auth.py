@@ -35,7 +35,10 @@ bp = Blueprint("auth", __name__, url_prefix="/auth")
 log = logging.getLogger("jobflow.auth")
 
 # Endpoints reachable without a session (login flow, health, static assets).
-_PUBLIC_PREFIXES = ("/auth/", "/static/")
+# /api/score/ is the local-CLI client surface: authenticated by a per-user
+# pairing token in the request body, not the session cookie, so it's exempt
+# from the login gate (the routes resolve + scope the user from the token).
+_PUBLIC_PREFIXES = ("/auth/", "/static/", "/api/score/")
 _PUBLIC_PATHS = {"/health"}
 
 

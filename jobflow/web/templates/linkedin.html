@@ -142,16 +142,30 @@
 <!-- ════════ AI Score Runner modal ════════ -->
 <div class="modal-backdrop" id="ai-modal" onclick="if(event.target===this) closeAiModal()">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
+        {% set provider = ai_provider|default('none') %}
         <div class="modal-head">
             <div>
                 <h3 id="ai-modal-title">AI Score</h3>
-                <div class="hint">Local CLI · no API key</div>
+                <div class="hint">
+                    {% if provider == 'anthropic' %}Your Anthropic API key · scored on the server
+                    {% elif provider == 'local-cli' %}Your local CLI · runs on your machine
+                    {% else %}Local CLI · no API key{% endif %}
+                </div>
             </div>
             <button class="modal-x" onclick="closeAiModal()" aria-label="Close">✕</button>
         </div>
         <div class="modal-body">
+            {% if provider == 'local-cli' %}
+            <div id="ai-form">
+                <p class="hint" style="line-height:1.6">This account scores on your own machine with your signed-in Claude/Codex CLI. In a terminal, run:</p>
+                <pre class="cli-cmds">jobflow login --token &lt;token from Settings&gt;
+jobflow score</pre>
+                <p class="hint">Scores sync back to this feed automatically. Get or rotate your token in <a href="/settings">Settings</a>.</p>
+            </div>
+            {% else %}
             <div id="ai-form">
                 <div class="opt-grid">
+                    {% if provider != 'anthropic' %}
                     <div>
                         <label>Engine</label>
                         <div class="engine-seg" id="ai-engine-seg">
@@ -159,6 +173,7 @@
                             <button type="button" data-engine="codex" onclick="setAiEngine('codex')">Codex<span class="eng-sub">codex exec</span></button>
                         </div>
                     </div>
+                    {% endif %}
                     <div>
                         <label for="ai-hours">Jobs from</label>
                         <select id="ai-hours">
@@ -172,7 +187,7 @@
                 </div>
                 <div class="opt-grid">
                     <div>
-                        <label for="ai-limit">Max jobs <span style="font-weight:400;color:var(--text-3)">(0 = no limit)</span></label>
+                        <label for="ai-limit">Max jobs <span style="font-weight:400;color:var(--text-3)">(0 = {% if provider == 'anthropic' %}capped default{% else %}no limit{% endif %})</span></label>
                         <input type="number" id="ai-limit" min="0" step="5" value="0">
                     </div>
                     <div class="check-row" style="align-self:end; margin-bottom:6px;">
@@ -180,7 +195,9 @@
                         <label for="ai-rescore">Re-score <span class="why">include already-scored jobs</span></label>
                     </div>
                 </div>
+                {% if provider == 'anthropic' %}<p class="hint">Scored with your Anthropic API key and chosen model. You pay for usage; runs are capped.</p>{% endif %}
             </div>
+            {% endif %}
 
             <div class="run-panel" id="ai-run-panel" style="display:none;">
                 <div class="run-status" id="ai-run-status"></div>
@@ -192,7 +209,7 @@
             <div class="run-actions">
                 <button class="btn btn-danger" id="ai-cancel-btn" style="display:none;" onclick="cancelAiRun()">Cancel run</button>
                 <button class="btn btn-ghost" onclick="closeAiModal()">Close</button>
-                <button class="btn btn-primary" id="ai-run-btn" onclick="startAiRun()">▶ Run scoring</button>
+                {% if provider != 'local-cli' %}<button class="btn btn-primary" id="ai-run-btn" onclick="startAiRun()">▶ Run scoring</button>{% endif %}
             </div>
         </div>
     </div>

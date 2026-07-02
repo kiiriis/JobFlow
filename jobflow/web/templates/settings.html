@@ -46,13 +46,45 @@
           <textarea name="ai_profile_text" rows="6" placeholder="New-grad SWE, strong in Python/backend, targeting...">{{ profile.ai_profile_text }}</textarea>
         </label>
         <label class="set-field">
-          <span>AI scoring provider</span>
-          <select name="ai_provider">
-            {% for opt in ['none', 'anthropic', 'local-cli'] %}
-            <option value="{{ opt }}" {% if profile.ai_provider == opt %}selected{% endif %}>{{ opt }}</option>
-            {% endfor %}
+          <span>AI scoring method</span>
+          <select name="ai_provider" id="ai-provider" onchange="updateAiProvider()">
+            <option value="none" {% if profile.ai_provider == 'none' %}selected{% endif %}>Off — algorithmic score only</option>
+            <option value="anthropic" {% if profile.ai_provider == 'anthropic' %}selected{% endif %}>My Anthropic API key — scored on the server</option>
+            <option value="local-cli" {% if profile.ai_provider == 'local-cli' %}selected{% endif %}>My local Claude/Codex CLI — free, runs on my machine</option>
           </select>
         </label>
+
+        <div id="ai-anthropic" class="ai-sub" style="display:none">
+          <label class="set-field">
+            <span>Anthropic API key {% if profile.has_api_key %}<em class="set-ok">(key set ✓ — leave blank to keep)</em>{% endif %}</span>
+            <input type="password" name="api_key" autocomplete="off" placeholder="sk-ant-...">
+          </label>
+          {% if profile.has_api_key %}
+          <label class="set-row">
+            <input type="checkbox" name="remove_api_key"><span>Remove my stored API key</span>
+          </label>
+          {% endif %}
+          <label class="set-field">
+            <span>Model</span>
+            <select name="ai_model">
+              <option value="claude-haiku-4-5" {% if not profile.ai_model or profile.ai_model == 'claude-haiku-4-5' %}selected{% endif %}>Haiku 4.5 — cheapest</option>
+              <option value="claude-sonnet-5" {% if profile.ai_model == 'claude-sonnet-5' %}selected{% endif %}>Sonnet 5 — balanced</option>
+              <option value="claude-opus-4-8" {% if profile.ai_model == 'claude-opus-4-8' %}selected{% endif %}>Opus 4.8 — most capable</option>
+            </select>
+          </label>
+          <p class="settings-note">You pay for your own usage. Each “AI Score” run is capped so a click can’t run up a large bill.</p>
+        </div>
+
+        <div id="ai-localcli" class="ai-sub" style="display:none">
+          <p class="settings-note">Score on your own machine with your signed-in Claude/Codex CLI — free, no API key. Run:</p>
+          <pre class="cli-cmds">pip install git+https://github.com/kiiriis/JobFlow
+jobflow login --token {{ profile.pairing_token or '&lt;generate a token below, then Save&gt;' }}
+jobflow score</pre>
+          <label class="set-row" style="margin-top:8px">
+            <input type="checkbox" name="regenerate_token">
+            <span>{% if profile.pairing_token %}Regenerate my pairing token (revokes the current one){% else %}Generate my pairing token{% endif %}</span>
+          </label>
+        </div>
       </fieldset>
 
       <div class="settings-actions">
@@ -60,9 +92,15 @@
         <a class="btn btn-ghost" href="/linkedin">Back to feed</a>
       </div>
     </form>
-
-    <p class="settings-note">Tip: for a richer profile (full tech stack, synergy bonuses), use the
-      <code>jobflow onboard</code> CLI agent — it interviews you and writes this profile for you.</p>
   {% endif %}
 </div>
+<script>
+function updateAiProvider() {
+    var sel = document.getElementById('ai-provider');
+    if (!sel) return;
+    document.getElementById('ai-anthropic').style.display = (sel.value === 'anthropic') ? '' : 'none';
+    document.getElementById('ai-localcli').style.display = (sel.value === 'local-cli') ? '' : 'none';
+}
+document.addEventListener('DOMContentLoaded', updateAiProvider);
+</script>
 {% endblock %}

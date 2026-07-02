@@ -563,6 +563,112 @@ def get_user_api_key_enc(user_id: int) -> bytes | None:
         put_conn(conn)
 
 
+def set_pairing_token(user_id: int, token: str) -> None:
+    """Store a user's CLI pairing token (regenerating revokes the old one)."""
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO user_profiles (user_id) VALUES (%s) "
+                "ON CONFLICT (user_id) DO NOTHING",
+                (user_id,),
+            )
+            cur.execute(
+                "UPDATE user_profiles SET pairing_token = %s, updated_at = NOW() "
+                "WHERE user_id = %s",
+                (token, user_id),
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
+def get_user_by_pairing_token(token: str) -> dict | None:
+    """Resolve an active user from a CLI pairing token, or None."""
+    if not token:
+        return None
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT u.id, u.email, u.is_active FROM user_profiles p "
+                "JOIN users u ON u.id = p.user_id WHERE p.pairing_token = %s",
+                (token,),
+            )
+            row = cur.fetchone()
+            if not row or not row[2]:
+                return None
+            return {"id": row[0], "email": row[1], "is_active": row[2]}
+    finally:
+        put_conn(conn)
+
+
+def get_unscored_user_jobs(user_id: int, hours: float = 0, limit: int = 0,
+                           rescore: bool = False) -> list[tuple]:
+    """Return a user's jobs eligible for AI scoring as
+    (url, company, title, location, description_preview) tuples — the row shape
+    the shared scorer (build_jobs_block / is_blocked_staffing_source) expects.
+    Newest first; capped by ``limit`` when > 0.
+    """
+    conditions = ["s.user_id = %s"]
+    params: list = [user_id]
+    if not rescore:
+        conditions.append("s.ai_score IS NULL")
+    if hours:
+        conditions.append("s.first_seen >= %s")
+        params.append(datetime.now(timezone.utc) - timedelta(hours=hours))
+    where = " AND ".join(conditions)
+    sql = (
+        f"SELECT j.url, j.company, j.title, j.location, j.description_preview "
+        f"FROM {_USER_JOBS_FROM} WHERE {where} ORDER BY s.first_seen DESC"
+    )
+    if limit:
+        sql += " LIMIT %s"
+        params.append(limit)
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+            return cur.fetchall()
+    finally:
+        put_conn(conn)
+
+
+def apply_user_ai_scores(user_id: int, scored_pairs, model: str) -> int:
+    """Write AI scores to one user's per-job state.
+
+    ``scored_pairs`` is an iterable of (url, score_data) where score_data is a
+    dict like {"score": 0-10, "reason": str} (also used for blocked-source 0s).
+    Reuses normalize_row_score so the ai_score->score_pct/recommended mapping is
+    identical across every scorer. Returns the number of rows updated.
+    """
+    from .ai_prompt import normalize_row_score
+
+    conn = get_conn()
+    updated = 0
+    try:
+        with conn.cursor() as cur:
+            for url, data in scored_pairs:
+                ai_score, ai_reason, score_pct, recommended = normalize_row_score(data)
+                cur.execute(
+                    "UPDATE user_job_state SET ai_score = %s, ai_reason = %s, "
+                    "score_pct = %s, recommended = %s, ai_model = %s "
+                    "WHERE user_id = %s AND url = %s",
+                    (ai_score, ai_reason, score_pct, recommended, model, user_id, url),
+                )
+                updated += cur.rowcount
+        conn.commit()
+        return updated
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+
 def migrate_to_multiuser(operator_email: str = "") -> dict:
     """One-shot: seed the operator user and move existing single-user per-job
     state onto it. Idempotent — rows already present are left untouched.

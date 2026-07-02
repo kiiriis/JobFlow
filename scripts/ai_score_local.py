@@ -18,11 +18,7 @@ app/CLI account instead of an API key.
 import argparse
 import json
 import os
-import re
-import shutil
-import subprocess
 import sys
-import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -41,52 +37,22 @@ if env_path.exists():
 
 from jobflow.db import get_conn, put_conn, init_db, DEFAULT_USER_ID
 from jobflow.linkedin_store import save_store
-from jobflow.filter import STAFFING_BLOCK_REASON, text_has_blocked_source
+from jobflow.filter import STAFFING_BLOCK_REASON
+# Shared scoring core (single source of truth across all scorers). Re-exported
+# so existing imports of these names from this module keep working.
+from jobflow.ai_prompt import (
+    BATCH_SIZE, BATCH_PROMPT, build_jobs_block, normalize_row_score,
+    eligible_ai_score, is_blocked_staffing_source, parse_scores,
+)
+from jobflow.ai_local import (
+    score_batch_with_claude, score_batch_with_codex, score_batch,
+)
 
 PROFILE_PATH = ROOT / "config" / "profile.txt"
 PROFILE_EXAMPLE_PATH = ROOT / "config" / "profile.example.txt"
 JSON_STORE_PATH = ROOT / "data" / "ci" / "linkedin_jobs.json"
 
-BATCH_SIZE = 15
 ENGINES = ("claude", "codex")
-
-BATCH_PROMPT = """You are a job relevance scorer for a new grad / entry-level software engineer on F1 OPT visa looking for their first full-time role in the US.
-
-## Candidate Profile
-{profile}
-
-## HARD REJECT — score MUST be 0
-Give a score of 0 ONLY if ANY of these are true. Be strict — only these 6 conditions warrant a 0:
-
-1. **Explicit no sponsorship**: The posting explicitly says "no sponsorship", "will not sponsor", "cannot sponsor", "must be authorized to work without sponsorship", "US citizen only", "permanent resident only", "green card required". Also score 0 if it requires security clearance (TS/SCI, Secret, DoD). NOTE: "Must be authorized to work in the US" ALONE is NOT a rejection — OPT holders ARE authorized.
-
-2. **3+ years experience required**: The minimum required experience is 3 or more years. "1-2 years" or "2+ years" is fine. "3+ years" is NOT.
-
-3. **Senior/Staff/Lead role**: Clearly senior-level, staff, principal, architect, VP, director, or management. Must be obvious from title or JD — don't assume.
-
-4. **Not a software engineering role at all**: QA-only, technical writing, product management, sales engineering, IT support. NOTE: Frontend, Full-Stack, iOS, Android, Data Science WITH coding, DevOps WITH development — these ARE software engineering. Score them low (2-4) if poor fit, but NOT 0.
-
-5. **Not US-based**: Located outside the US with no remote-US option.
-
-6. **Blocked staffing/spam source**: The job is from jobright.ai, Remotehunter, Quik Hire Staffing, Beacon Fire, Helic & Co., Jack and Jill, or Jobs Via Dice.
-
-IMPORTANT: The candidate's "Avoid" preferences (e.g., "Avoid: Frontend-only") should LOWER the score (2-4) but NEVER cause a score of 0. A frontend SWE role is still a software engineering role — it's just a weak fit, not a hard reject.
-
-## SCORING GUIDE (only if no hard reject applies)
-
-**9-10 — Perfect fit:** Entry-level/new grad SWE, ML, Backend, Data Engineer. Python/ML/backend stack. Sponsors visas. Reputable company.
-**7-8 — Strong fit:** SWE at right level, good stack overlap, US-based, no sponsorship denial.
-**5-6 — Decent fit:** Relevant SWE but weaker stack match (Java, .NET, frontend). Level ambiguous.
-**3-4 — Weak fit:** SWE but poor overlap (iOS, Salesforce, embedded, frontend-only). Borderline exp.
-**1-2 — Very poor fit:** Barely related to skills. Multiple weak signals.
-
-## Jobs to Score
-
-{jobs_block}
-
-## Instructions
-Return ONLY a valid JSON array with one object per job, in the same order. Nothing else:
-[{{"id": 1, "score": <0-10>, "reason": "<one sentence>"}}, ...]"""
 
 
 def parse_args():
@@ -137,14 +103,6 @@ def parse_args():
     return args
 
 
-def build_jobs_block(batch):
-    """Format a batch of jobs for the prompt."""
-    parts = []
-    for i, (url, company, title, location, desc, *_) in enumerate(batch, 1):
-        parts.append(f"### Job {i}\nTitle: {title}\nCompany: {company}\nLocation: {location}\nDescription: {desc or ''}\n")
-    return "\n".join(parts)
-
-
 def parse_iso(ts: str) -> datetime | None:
     """Parse an ISO timestamp into an aware datetime."""
     if not ts:
@@ -158,31 +116,6 @@ def parse_iso(ts: str) -> datetime | None:
     return dt
 
 
-def eligible_ai_score(ai_score, rescore: bool = False) -> bool:
-    """Return True when a job should be scored.
-
-    Any non-null AI score, including 0, means the job has already been judged by
-    an AI engine and should be skipped unless --rescore is explicit.
-    """
-    return rescore or ai_score is None
-
-
-def normalize_row_score(score_data: dict) -> tuple[int, str, int, bool]:
-    """Convert model output into stored scoring fields."""
-    ai_score = max(0, min(10, int(score_data.get("score", 5))))
-    ai_reason = str(score_data.get("reason", ""))[:200]
-    score_pct = ai_score * 10
-    recommended = ai_score >= 7
-    return ai_score, ai_reason, score_pct, recommended
-
-
-def is_blocked_staffing_source(row):
-    """Return True if a DB job row came from a blocked staffing/spam source."""
-    url, company, title, location, desc, *_ = row
-    haystack = " ".join(str(value or "") for value in (url, company, title, location, desc))
-    return text_has_blocked_source(haystack)
-
-
 def load_profile() -> str:
     """Load the local candidate profile used for AI scoring."""
     if PROFILE_PATH.exists():
@@ -191,124 +124,6 @@ def load_profile() -> str:
     print(f"Create it with: cp {PROFILE_EXAMPLE_PATH} {PROFILE_PATH}")
     print("Then edit it with your real skills, target roles, visa needs, and preferences.")
     sys.exit(1)
-
-
-def parse_scores(text: str):
-    """Parse a model's text response into a list of score objects.
-
-    Tolerates markdown fences, stray backticks, and surrounding prose by
-    extracting the first JSON array. Returns None on empty/unparseable input.
-    """
-    text = (text or "").strip()
-    if not text:
-        return None
-    if text.startswith("```"):
-        text = text.split("```")[1]
-        if text.startswith("json"):
-            text = text[4:]
-        text = text.strip()
-    text = text.strip("`")
-    m = re.search(r'\[.*\]', text, re.DOTALL)
-    if m:
-        text = m.group()
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError as e:
-        print(f"  Batch error: could not parse model output as JSON: {e}")
-        return None
-
-
-def score_batch_with_codex(batch, profile: str):
-    """Score a batch of jobs using one signed-in `codex exec` call."""
-    jobs_block = build_jobs_block(batch)
-    prompt = BATCH_PROMPT.format(profile=profile, jobs_block=jobs_block)
-
-    if not shutil.which("codex"):
-        print("  Batch error: codex CLI not found on PATH")
-        return None
-
-    output_path = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            prefix="jobflow_codex_score_",
-            suffix=".txt",
-            delete=False,
-        ) as tmp:
-            output_path = Path(tmp.name)
-
-        result = subprocess.run(
-            [
-                "codex", "exec",
-                "--cd", str(ROOT),
-                "--sandbox", "read-only",
-                "--ignore-rules",
-                "--output-last-message", str(output_path),
-                "-",
-            ],
-            input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=300,
-        )
-        if result.returncode != 0:
-            err = (result.stderr or result.stdout or "").strip()
-            print(f"  Batch error: codex exited with code {result.returncode}: {err[:500]}")
-            return None
-
-        text = ""
-        if output_path and output_path.exists():
-            text = output_path.read_text(errors="replace").strip()
-        if not text:
-            text = result.stdout
-        return parse_scores(text)
-    except Exception as e:
-        print(f"  Batch error: {e}")
-        return None
-    finally:
-        if output_path:
-            try:
-                output_path.unlink(missing_ok=True)
-            except OSError:
-                pass
-
-
-def score_batch_with_claude(batch, profile: str):
-    """Score a batch of jobs using one signed-in `claude -p` (headless) call."""
-    jobs_block = build_jobs_block(batch)
-    prompt = BATCH_PROMPT.format(profile=profile, jobs_block=jobs_block)
-
-    if not shutil.which("claude"):
-        print("  Batch error: claude CLI not found on PATH")
-        return None
-
-    try:
-        result = subprocess.run(
-            [
-                "claude",
-                "-p",
-                "--output-format", "text",
-                "--allowedTools", "",
-            ],
-            input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=300,
-        )
-        if result.returncode != 0:
-            err = (result.stderr or result.stdout or "").strip()
-            print(f"  Batch error: claude exited with code {result.returncode}: {err[:500]}")
-            return None
-        return parse_scores(result.stdout)
-    except Exception as e:
-        print(f"  Batch error: {e}")
-        return None
-
-
-def score_batch(batch, profile: str, engine: str):
-    """Dispatch a batch to the selected scoring engine."""
-    if engine == "codex":
-        return score_batch_with_codex(batch, profile)
-    return score_batch_with_claude(batch, profile)
 
 
 def connect_db():

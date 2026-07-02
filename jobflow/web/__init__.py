@@ -228,6 +228,77 @@ def _run_ai_score(root: Path, engine: str, hours: float, limit: int, rescore: bo
         ai_state["_process"] = None
 
 
+# Per-run cap for API-key (server-side) scoring so one click can't run a huge
+# bill on a friend's key. Effective limit = min(requested or default, hard cap).
+API_DEFAULT_LIMIT = 200
+API_MAX_PER_RUN = 250
+
+
+def _run_ai_score_api(user_id: int, hours: float, limit: int, rescore: bool):
+    """Score a user's eligible jobs server-side via their stored Anthropic key.
+
+    In-process analog of _run_ai_score (which shells out to a signed-in CLI).
+    Updates ``ai_state`` so the existing modal/progress UI works unchanged.
+    """
+    from .. import db
+    from ..ai_prompt import BATCH_SIZE, is_blocked_staffing_source, STAFFING_BLOCK_REASON
+    from ..ai_scorer_anthropic import score_batch, normalize_model
+    from ..crypto import decrypt_secret
+
+    try:
+        prof = db.get_user_profile(user_id) or {}
+        api_key = decrypt_secret(db.get_user_api_key_enc(user_id))
+        model = normalize_model(prof.get("ai_model"))
+        profile_text = prof.get("ai_profile_text") or ""
+        if not api_key:
+            ai_state["error"] = "No Anthropic API key set — add one in Settings."
+            ai_state["ok"] = False
+            return
+
+        eff_limit = min(limit or API_DEFAULT_LIMIT, API_MAX_PER_RUN)
+        rows = db.get_unscored_user_jobs(user_id, hours=hours, limit=eff_limit, rescore=rescore)
+        total = len(rows)
+        ai_state["total"] = total
+        ai_state["batches"] = (total + BATCH_SIZE - 1) // BATCH_SIZE
+        if not rows:
+            ai_state["ok"] = True
+            return
+
+        scored_n = failed_n = 0
+        for i in range(0, total, BATCH_SIZE):
+            if ai_state.get("cancelled"):
+                break
+            batch = rows[i:i + BATCH_SIZE]
+            ai_state["batch"] = i // BATCH_SIZE + 1
+            blocked = [r for r in batch if is_blocked_staffing_source(r)]
+            scorable = [r for r in batch if not is_blocked_staffing_source(r)]
+            if blocked:
+                db.apply_user_ai_scores(
+                    user_id,
+                    [(r[0], {"score": 0, "reason": STAFFING_BLOCK_REASON}) for r in blocked],
+                    model,
+                )
+                scored_n += len(blocked)
+            if scorable:
+                scores = score_batch(scorable, profile_text, api_key, model)
+                if scores and len(scores) == len(scorable):
+                    db.apply_user_ai_scores(
+                        user_id, [(r[0], s) for r, s in zip(scorable, scores)], model
+                    )
+                    scored_n += len(scorable)
+                else:
+                    failed_n += len(scorable)
+            ai_state["scored"] = scored_n
+            ai_state["failed"] = failed_n
+        ai_state["ok"] = failed_n == 0
+    except Exception as e:
+        ai_state["ok"] = False
+        ai_state["error"] = str(e)
+    finally:
+        ai_state["running"] = False
+        ai_state["finished_at"] = time.time()
+
+
 def _parse_iso(ts: str) -> float | None:
     """Parse a gh ISO-8601 timestamp (e.g. 2026-06-24T06:23:00Z) to epoch secs."""
     if not ts:
@@ -530,6 +601,7 @@ def create_app():
             scan_running=scan_state["running"],
             workflow_running=workflow_state["running"],
             ai_running=ai_state["running"],
+            ai_provider=(_try_db(lambda db: db.get_user_profile(g.user_id))[1] or {}).get("ai_provider", "none"),
         )
 
     # ── Settings (per-user profile; the web-form onboarding path) ──
@@ -564,14 +636,26 @@ def create_app():
                 recommended_min_pct=_int(form.get("recommended_min_pct"), fp.recommended_min_pct),
             )
             search_terms = [t.strip() for t in form.get("search_terms", "").split(",") if t.strip()]
+            from ..ai_scorer_anthropic import normalize_model
             db.upsert_user_profile(
                 g.user_id,
                 filter_config=profile_to_config(new_fp),
                 ai_profile_text=form.get("ai_profile_text", ""),
                 search_terms=search_terms,
                 ai_provider=form.get("ai_provider", "none"),
-                ai_model=form.get("ai_model", ""),
+                ai_model=normalize_model(form.get("ai_model", "")),
             )
+            # API key: blank input leaves it unchanged; "remove_api_key" clears it;
+            # otherwise encrypt + store. The plaintext never round-trips to the client.
+            if "remove_api_key" in form:
+                db.set_user_api_key_enc(g.user_id, None)
+            elif form.get("api_key", "").strip():
+                from ..crypto import encrypt_secret
+                db.set_user_api_key_enc(g.user_id, encrypt_secret(form["api_key"].strip()))
+            # Generate/rotate the local-CLI pairing token on request (rotating revokes the old).
+            if "regenerate_token" in form:
+                import secrets as _secrets
+                db.set_pairing_token(g.user_id, _secrets.token_urlsafe(32))
             # Re-score the user's pool with the new profile, off the request.
             uid = g.user_id
             threading.Thread(target=db.backfill_user, args=(uid,), daemon=True).start()
@@ -771,11 +855,6 @@ def create_app():
             return jsonify({"error": "Scoring already running"}), 409
 
         data = request.form or request.get_json(silent=True) or {}
-        engine = (data.get("engine") or "claude").strip().lower()
-        if engine not in AI_ENGINES:
-            return jsonify({"error": f"Unknown engine '{engine}'"}), 400
-        if not _which_cli(engine):
-            return jsonify({"error": f"'{engine}' CLI not found. Install it and sign in, then restart the server."}), 400
         try:
             hours = float(data.get("hours", 0) or 0)
             limit = int(data.get("limit", 0) or 0)
@@ -784,6 +863,43 @@ def create_app():
         if hours < 0 or limit < 0:
             return jsonify({"error": "hours and limit must be >= 0"}), 400
         rescore = str(data.get("rescore", "")).lower() in ("true", "on", "1")
+
+        # Which scoring path? Depends on the signed-in user's chosen provider.
+        provider = "none"
+        ok_db, prof = _try_db(lambda db: db.get_user_profile(g.user_id))
+        if ok_db and prof:
+            provider = prof.get("ai_provider", "none")
+
+        # API-key path: score server-side with the user's stored Anthropic key.
+        if provider == "anthropic":
+            ai_state.update({
+                "running": True, "engine": "anthropic", "hours": hours, "limit": limit,
+                "rescore": rescore, "total": 0, "batch": 0, "batches": 0,
+                "scored": 0, "failed": 0, "log": [], "error": None, "ok": None,
+                "cancelled": False, "started_at": time.time(), "finished_at": None,
+            })
+            threading.Thread(
+                target=_run_ai_score_api,
+                args=(g.user_id, hours, limit, rescore),
+                daemon=True,
+            ).start()
+            return jsonify(_ai_state_snapshot())
+
+        # Local-CLI path for a friend: the server can't reach their machine.
+        if provider == "local-cli":
+            return jsonify({
+                "error": "Your account scores with your own local CLI. "
+                         "Run `jobflow score` on your machine.",
+                "mode": "local-cli",
+            }), 400
+
+        # Operator / default: shell out to the signed-in CLI on this server.
+        engine = (data.get("engine") or "claude").strip().lower()
+        if engine not in AI_ENGINES:
+            return jsonify({"error": f"Unknown engine '{engine}'"}), 400
+        if not _which_cli(engine):
+            return jsonify({"error": f"'{engine}' CLI not found. Configure AI scoring in Settings, "
+                                     "or install the CLI and sign in, then restart the server."}), 400
 
         ai_state.update({
             "running": True, "engine": engine, "hours": hours, "limit": limit,
@@ -815,6 +931,62 @@ def create_app():
                 except OSError:
                     pass
         return jsonify(_ai_state_snapshot())
+
+    # ── Local-CLI scoring client API (token-authed, no session) ──────────
+    # The `jobflow score` client (a friend's machine, using their signed-in
+    # Claude/Codex CLI) pulls unscored jobs here and posts scores back. Auth is
+    # the per-user pairing token from Settings; every row is scoped to that user.
+
+    def _score_client_user():
+        """Resolve the pairing-token user for the score client, or (None, error_response)."""
+        db = _get_db()
+        if db is None:
+            return None, None, (jsonify({"error": "scoring API unavailable (no database)"}), 503)
+        data = request.get_json(silent=True) or {}
+        user = db.get_user_by_pairing_token((data.get("token") or "").strip())
+        if not user:
+            return None, None, (jsonify({"error": "invalid or missing pairing token"}), 401)
+        return db, user, None
+
+    @app.route("/api/score/pending", methods=["POST"])
+    def api_score_pending():
+        db, user, err = _score_client_user()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        try:
+            hours = float(data.get("hours", 0) or 0)
+            limit = int(data.get("limit", 0) or 0)
+        except (TypeError, ValueError):
+            return jsonify({"error": "hours and limit must be numbers"}), 400
+        rescore = bool(data.get("rescore"))
+        eff_limit = min(limit or 250, 500)
+        rows = db.get_unscored_user_jobs(user["id"], hours=hours, limit=eff_limit, rescore=rescore)
+        prof = db.get_user_profile(user["id"]) or {}
+        jobs = [
+            {"url": r[0], "company": r[1], "title": r[2], "location": r[3], "description": r[4]}
+            for r in rows
+        ]
+        return jsonify({
+            "profile": prof.get("ai_profile_text", ""),
+            "model": prof.get("ai_model", ""),
+            "jobs": jobs,
+        })
+
+    @app.route("/api/score/submit", methods=["POST"])
+    def api_score_submit():
+        db, user, err = _score_client_user()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        model = data.get("model") or "local-cli"
+        pairs = []
+        for s in (data.get("scores") or []):
+            url = s.get("url")
+            if url:
+                pairs.append((url, {"score": s.get("score", 0), "reason": s.get("reason", "")}))
+        updated = db.apply_user_ai_scores(user["id"], pairs, model) if pairs else 0
+        return jsonify({"updated": updated})
 
     return app
 

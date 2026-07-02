@@ -515,5 +515,118 @@ def migrate_multiuser(
     ))
 
 
+# ── Local-CLI scoring client (pairs with the web app) ───────────────────────
+
+DEFAULT_SERVER = os.environ.get("JOBFLOW_SERVER", "https://jobflow-ktem.onrender.com")
+CREDENTIALS_PATH = Path.home() / ".jobflow" / "credentials.json"
+
+
+def _load_credentials() -> dict:
+    import json
+    try:
+        return json.loads(CREDENTIALS_PATH.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+@app.command()
+def login(
+    token: str = typer.Option(..., "--token", help="Pairing token from the web app's Settings page."),
+    server: str = typer.Option(DEFAULT_SERVER, "--server", help="JobFlow server URL."),
+):
+    """Pair this machine with your JobFlow account so `jobflow score` can sync."""
+    import json
+    CREDENTIALS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    CREDENTIALS_PATH.write_text(json.dumps({"server": server.rstrip("/"), "token": token}))
+    try:
+        CREDENTIALS_PATH.chmod(0o600)
+    except OSError:
+        pass
+    console.print(f"[green]Paired with {server.rstrip('/')}.[/green] "
+                  "Run [bold]jobflow score[/bold] to AI-score your feed.")
+
+
+@app.command()
+def score(
+    engine: str = typer.Option("claude", "--engine", help="Signed-in CLI to score with: claude or codex."),
+    hours: float = typer.Option(0, "--hours", help="Only score jobs first seen in the past H hours."),
+    limit: int = typer.Option(0, "--limit", "-n", help="Score at most N jobs (0 = server default)."),
+    rescore: bool = typer.Option(False, "--rescore", help="Include jobs that already have an AI score."),
+):
+    """AI-score your JobFlow feed locally with your signed-in Claude/Codex CLI.
+
+    Pulls your unscored jobs from the server, scores them on this machine (no API
+    key, uses your Claude/Codex subscription), and pushes results back. Run
+    `jobflow login --token <token>` first (get the token from the web Settings page).
+    """
+    import requests
+    from .ai_prompt import BATCH_SIZE, is_blocked_staffing_source, STAFFING_BLOCK_REASON
+    from .ai_local import score_batch
+
+    creds = _load_credentials()
+    if not creds.get("token"):
+        console.print("[red]Not paired.[/red] Run: [bold]jobflow login --token <token-from-Settings>[/bold]")
+        raise typer.Exit(1)
+    if engine not in ("claude", "codex"):
+        console.print("[red]--engine must be 'claude' or 'codex'[/red]")
+        raise typer.Exit(1)
+    server, token = creds["server"].rstrip("/"), creds["token"]
+
+    def _post(path, body, timeout):
+        try:
+            return requests.post(f"{server}{path}", json=body, timeout=timeout)
+        except requests.RequestException as e:
+            console.print(f"[red]Could not reach {server}: {e}[/red]")
+            raise typer.Exit(1)
+
+    resp = _post("/api/score/pending",
+                 {"token": token, "hours": hours, "limit": limit, "rescore": rescore}, 30)
+    if resp.status_code == 401:
+        console.print("[red]Invalid pairing token.[/red] Re-pair: jobflow login --token <token>")
+        raise typer.Exit(1)
+    if resp.status_code != 200:
+        console.print(f"[red]Server error {resp.status_code}: {resp.text[:200]}[/red]")
+        raise typer.Exit(1)
+
+    payload = resp.json()
+    jobs = payload.get("jobs", [])
+    profile = payload.get("profile") or "A software engineer seeking relevant roles."
+    if not jobs:
+        console.print("[green]Nothing to score — your feed is up to date.[/green]")
+        return
+
+    console.print(f"Scoring [bold]{len(jobs)}[/bold] jobs with the signed-in {engine} CLI…")
+    rows = [(j["url"], j.get("company", ""), j.get("title", ""), j.get("location", ""),
+             j.get("description", "")) for j in jobs]
+    results = []
+    total = len(rows)
+    total_batches = (total + BATCH_SIZE - 1) // BATCH_SIZE
+    for i in range(0, total, BATCH_SIZE):
+        batch = rows[i:i + BATCH_SIZE]
+        bn = i // BATCH_SIZE + 1
+        console.print(f"  Batch {bn}/{total_batches} ({len(batch)} jobs)…")
+        blocked = [r for r in batch if is_blocked_staffing_source(r)]
+        scorable = [r for r in batch if not is_blocked_staffing_source(r)]
+        for r in blocked:
+            results.append({"url": r[0], "score": 0, "reason": STAFFING_BLOCK_REASON})
+        if scorable:
+            scores = score_batch(scorable, profile, engine)
+            if scores and len(scores) == len(scorable):
+                for r, s in zip(scorable, scores):
+                    results.append({"url": r[0], "score": s.get("score", 0),
+                                    "reason": s.get("reason", "")})
+            else:
+                console.print(f"    [yellow]Batch {bn} failed — skipping[/yellow]")
+
+    if not results:
+        console.print("[yellow]No scores produced.[/yellow]")
+        raise typer.Exit(1)
+    sub = _post("/api/score/submit", {"token": token, "model": engine, "scores": results}, 60)
+    if sub.status_code != 200:
+        console.print(f"[red]Submit failed {sub.status_code}: {sub.text[:200]}[/red]")
+        raise typer.Exit(1)
+    console.print(f"[green]Done — {sub.json().get('updated', 0)} jobs scored and synced to your feed.[/green]")
+
+
 if __name__ == "__main__":
     app()

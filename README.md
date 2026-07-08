@@ -31,7 +31,7 @@ job for fit.
 
 ## What it does
 
-- 🔎 **Scans SWE jobs 24/7** — LinkedIn (via python-jobspy) every 30 min through GitHub Actions,
+- 🔎 **Scans SWE jobs 24/7** — LinkedIn (guest-API scraper) every 30 min through GitHub Actions,
   plus Lever / Greenhouse / Ashby / GitHub aggregators on demand.
 - 👤 **Multi-user** — sign in with Google; every user gets their **own** feed, scored and filtered
   by *their* profile, over one shared pool of postings.
@@ -199,7 +199,7 @@ jobflow scan --platform linkedin --hours 24   # LinkedIn only, last 24h
 jobflow scan --platform greenhouse --hours 24 # one ATS platform
 ```
 
-**Sources:** LinkedIn (python-jobspy, multiple search terms) · Lever · Greenhouse · Ashby ·
+**Sources:** LinkedIn (guest-API scraper, multiple search terms) · Lever · Greenhouse · Ashby ·
 GitHub aggregators (SimplifyJobs / Jobright). Company endpoints live in
 [config/job_boards.json](config/job_boards.json). New postings fan out to every active user's feed
 at merge time. See [docs/SCANNING.md](docs/SCANNING.md).

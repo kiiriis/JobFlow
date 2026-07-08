@@ -19,9 +19,9 @@ class JobPosting:
     title: str
     company: str
     location: str
-    description: str                # Full JD text, truncated to 3-5K chars by scanners
+    description: str                # Full JD text, truncated to 6K chars by scanners
     date_posted: str = ""           # ISO timestamp from the source (may be date-only from LinkedIn)
-    source: str = "linkedin"        # 'linkedin' (jobspy) or 'github' (SimplifyJobs/Jobright repos)
+    source: str = "linkedin"        # 'linkedin' (guest API) or 'github' (SimplifyJobs/Jobright repos)
 
 
 @dataclass

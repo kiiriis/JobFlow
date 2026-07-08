@@ -64,7 +64,7 @@ JobFlow/
 ### Scanning Pipeline
 1. GitHub Actions cron triggers every hour
 2. `jobflow scan --platform linkedin --new --hours 1` runs
-3. python-jobspy scrapes LinkedIn with 8 search terms (200 results each)
+3. jobflow.linkedin_scraper scrapes LinkedIn guest API with 8 search terms (up to 200 results each; descriptions fetched only for new jobs)
 4. Each job passes through `evaluate_job()` — multi-signal scoring
 5. Jobs scoring >= 30% saved to `data/ci/scan_results.json`
 6. Deduplication against `data/ci/seen_jobs.json`

@@ -29,6 +29,7 @@ JobFlow/
 │   ├── filter.py            # Multi-signal scoring engine (evaluate_job)
 │   ├── filter_profile.py    # Per-user FilterProfile + DEFAULT_PROFILE + config (de)serialize
 │   ├── scanner.py           # Scanners (Lever, Greenhouse, Ashby, LinkedIn, GitHub)
+│   ├── linkedin_scraper.py  # LinkedIn guest-API transport/parsing (429 backoff, pagination)
 │   ├── ai_prompt.py         # Shared scoring prompt + parse/normalize (used by all scorers)
 │   ├── ai_local.py          # Local Claude/Codex CLI batch scoring
 │   ├── ai_scorer_anthropic.py # Server-side Anthropic API scoring (per-user key)

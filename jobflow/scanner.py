@@ -3,7 +3,7 @@ Greenhouse, Ashby, and GitHub new-grad repos.
 
 Data flow:
     1. scan_all_api_boards() orchestrates all platform scanners
-    2. Each scanner (scan_lever, scan_linkedin_jobspy, etc.) returns [JobPosting]
+    2. Each scanner (scan_lever, scan_linkedin, etc.) returns [JobPosting]
     3. Every JobPosting is scored by evaluate_job() → (JobPosting, FilterResult)
     4. deduplicate_results() removes already-seen jobs via seen_jobs.json
     5. Results saved to scan_results.json, then merged into linkedin_jobs.json
@@ -12,7 +12,7 @@ Platform differences:
     - Lever:       REST API, JSON, epoch ms timestamps, no auth needed
     - Greenhouse:  REST API, JSON, ISO timestamps, no auth needed
     - Ashby:       REST API, JSON, ISO timestamps, no auth needed
-    - LinkedIn:    python-jobspy library (scrapes LinkedIn), returns DataFrame
+    - LinkedIn:    guest API scraper (jobflow.linkedin_scraper), two-phase
     - GitHub:      Raw README markdown parsing (SimplifyJobs, Jobright repos)
 
 Deduplication (seen_jobs.json):
@@ -23,6 +23,7 @@ Deduplication (seen_jobs.json):
 """
 
 import json
+import os
 import random
 import re
 import ssl
@@ -309,9 +310,10 @@ def scan_all_api_boards(
     Args:
         config: Loaded config dict with job_boards path
         platforms: Filter to specific platforms (e.g., ["linkedin"]), or None for all
-        max_age_hours: Only include jobs posted within this window (0 = all time).
-                       Passed directly to jobspy's hours_old parameter for LinkedIn,
-                       and used for timestamp filtering on ATS platforms.
+        max_age_hours: Only include jobs posted within this window (0 = default;
+                       LinkedIn then uses a 4h window). Passed to LinkedIn's
+                       f_TPR time filter and used for timestamp filtering on
+                       ATS platforms.
 
     Returns:
         List of (JobPosting, FilterResult) tuples — includes both passing and
@@ -325,11 +327,14 @@ def scan_all_api_boards(
 
     all_results = []
 
-    # Scan LinkedIn via python-jobspy
+    # Scan LinkedIn via the guest API (jobflow.linkedin_scraper)
     if not platforms or "linkedin" in platforms:
         console.print(f"\n[bold cyan]Scanning LinkedIn ({len(LINKEDIN_SEARCH_TERMS)} search terms)...[/bold cyan]")
-        jobs = scan_linkedin_jobspy(max_age_hours)
-        console.print(f"  [green]{len(jobs)} total matches[/green]")
+        known = _known_job_urls(config)
+        if known:
+            console.print(f"  [dim]{len(known)} stored jobs will be skipped if re-listed[/dim]")
+        jobs = scan_linkedin(max_age_hours, known_urls=known)
+        console.print(f"  [green]{len(jobs)} new jobs[/green]")
         for job in jobs:
             result = evaluate_job(job)
             all_results.append((job, result))
@@ -350,12 +355,13 @@ def scan_all_api_boards(
 
 
 # ---------------------------------------------------------------------------
-# LinkedIn scanner (python-jobspy)
+# LinkedIn scanner (guest API via jobflow.linkedin_scraper)
 # ---------------------------------------------------------------------------
-# Uses the python-jobspy library to scrape LinkedIn job listings. Each search
-# term is run as a separate query, results are deduped by URL across terms.
-# linkedin_fetch_description=True fetches the full JD for each job (slow but
-# needed for accurate scoring). Descriptions are truncated to 5K chars.
+# Two-phase scan: (1) cheap listing pages for every search term, deduped by
+# job id across terms; (2) full descriptions fetched ONLY for jobs the store
+# doesn't already have. Descriptions are ~10x the request volume of listings,
+# and re-fetching JDs for already-stored jobs is what used to trip LinkedIn's
+# rate limiter and silently truncate every scan to a small sample.
 
 LINKEDIN_SEARCH_TERMS = [
     "New Grad Software Engineer",
@@ -368,87 +374,164 @@ LINKEDIN_SEARCH_TERMS = [
     "Software engineer new grad posted in the past 24 hours",
 ]
 
+RESULTS_PER_TERM = 200
+# Cap on description fetches per scan so a cold store can't blow past the CI
+# job's 15-minute timeout. Anything past the cap is reported, kept with a
+# title-only description, and re-fetched by the next scan.
+MAX_DESC_FETCHES = 300
+DESC_DELAY_S = (0.7, 1.5)
+# Hard wall-clock budget for one LinkedIn scan. CI kills the whole job at 15
+# minutes and scan results are only written at the end — running past this
+# would lose everything, so wind down early and save what we have.
+SCAN_TIME_BUDGET_S = 720
+# A stored description this short is a placeholder (title fallback / failed
+# fetch), not a real JD — treat the job as unknown so its JD is re-fetched.
+MIN_STORED_DESC_LEN = 200
 
-def scan_linkedin_jobspy(max_age_hours: int = 0) -> list[JobPosting]:
-    """Scan LinkedIn using python-jobspy. Returns deduplicated JobPosting list."""
+
+def _known_job_urls(config: dict) -> set[str]:
+    """Normalized URLs of stored jobs that already have a real description.
+
+    Prefers the DB, falls back to the JSON store; returns an empty set on any
+    failure (the scan then degrades to fetching every description — the old
+    behavior, minus jobspy's bugs).
+    """
+    from .linkedin_store import normalize_url
+
+    if os.environ.get("DATABASE_URL"):
+        try:
+            from . import db
+            db.init_db()
+            conn = db.get_conn()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT url FROM jobs WHERE LENGTH(description_preview) >= %s",
+                        (MIN_STORED_DESC_LEN,),
+                    )
+                    return {normalize_url(r[0]) for r in cur.fetchall()}
+            finally:
+                db.put_conn(conn)
+        except Exception as e:
+            console.print(
+                f"  [yellow]Could not load known jobs from DB ({e}); "
+                f"trying JSON store[/yellow]"
+            )
+
     try:
-        from jobspy import scrape_jobs
-    except ImportError:
-        console.print("  [red]python-jobspy not installed. Run: pip install python-jobspy[/red]")
-        return []
+        from .linkedin_store import load_store
+        store_path = config["_root"] / "data" / "ci" / "linkedin_jobs.json"
+        jobs = load_store(store_path).get("jobs", {})
+        return {
+            normalize_url(job.get("url", "") or key)
+            for key, job in jobs.items()
+            if len(job.get("description_preview") or "") >= MIN_STORED_DESC_LEN
+        }
+    except Exception:
+        return set()
 
-    all_jobs = []
-    seen_urls = set()
-    # Default to 72h window if no limit specified — LinkedIn's timestamps are
-    # imprecise (often just a date), so a wider window catches more jobs.
-    hours = max_age_hours if max_age_hours > 0 else 72
 
+def scan_linkedin(max_age_hours: int = 0, known_urls: set[str] | None = None) -> list[JobPosting]:
+    """Scan LinkedIn's guest API. Returns NEW jobs only (not in known_urls).
+
+    Known jobs are skipped entirely rather than re-emitted: merging a job
+    without its description would let the merge's per-user re-score overwrite
+    a good algo score with one computed from an empty JD, and new users get
+    the existing posting pool via db.backfill_user at signup anyway.
+    """
+    from . import linkedin_scraper as li
+    from .linkedin_store import normalize_url
+
+    known_urls = known_urls or set()
+    # Default to a 4h window when no limit is specified — matches the CI cron
+    # (every 30 min with --hours 4); anything older is already in the store,
+    # and a wider window just burns request budget re-listing known jobs.
+    hours = max_age_hours if max_age_hours > 0 else 4
+
+    session = li.new_session()
+    seen_ids: set[str] = set()
+    listings: list[dict] = []
+    blocked = False
+    deadline = time.monotonic() + SCAN_TIME_BUDGET_S
+
+    # Phase 1 — listings (cheap: ~10 jobs per request).
     for i, term in enumerate(LINKEDIN_SEARCH_TERMS):
+        if time.monotonic() > deadline:
+            console.print("  [yellow]Scan time budget reached — skipping remaining search terms.[/yellow]")
+            break
         console.print(f"  [dim]Search: \"{term}\"...[/dim]", end=" ")
         try:
-            df = scrape_jobs(
-                site_name=["linkedin"],
-                search_term=term,
-                location="United States",
-                hours_old=hours,
-                results_wanted=200,
-                linkedin_fetch_description=True,
-            )
+            found = li.search_listings(session, term, hours, RESULTS_PER_TERM, seen_ids)
+        except li.LinkedInBlocked as e:
+            console.print(f"[red]blocked: {e}[/red]")
+            blocked = True
+            break
         except Exception as e:
             console.print(f"[red]error: {e}[/red]")
             continue
-
-        if df is None or df.empty:
-            console.print("[yellow]0 results[/yellow]")
-        else:
-            count = 0
-            for _, row in df.iterrows():
-                url = str(row.get("job_url", "") or "")
-                title = str(row.get("title", "") or "")
-                company = str(row.get("company", "") or "")
-                location = str(row.get("location", "") or "")
-                description = str(row.get("description", "") or "")
-
-                if not title or not company:
-                    continue
-                if not _is_swe_role(title):
-                    continue
-
-                # Dedup by URL across search terms
-                dedup_key = url if url else f"{company}_{title}".lower()
-                if dedup_key in seen_urls:
-                    continue
-                seen_urls.add(dedup_key)
-
-                date_posted = str(row.get("date_posted", "") or "")
-                # Normalize date_posted to ISO string
-                if date_posted and date_posted != "NaT":
-                    try:
-                        import pandas as pd
-                        dp = pd.to_datetime(date_posted, utc=True)
-                        date_posted = dp.isoformat() if not pd.isna(dp) else ""
-                    except Exception:
-                        pass
-                else:
-                    date_posted = ""
-
-                all_jobs.append(JobPosting(
-                    url=url,
-                    title=title,
-                    company=company,
-                    location=location,
-                    description=description if description else title,
-                    date_posted=date_posted,
-                    source="linkedin",
-                ))
-                count += 1
-            console.print(f"[green]{count} new[/green]")
-
-        # Random delay (2-4s) between search terms to avoid LinkedIn rate limiting
+        kept = [
+            j for j in found
+            if j["title"] and j["company"] and _is_swe_role(j["title"])
+        ]
+        console.print(f"[green]{len(kept)} kept[/green] [dim]({len(found)} listed)[/dim]")
+        listings.extend(kept)
         if i < len(LINKEDIN_SEARCH_TERMS) - 1:
             time.sleep(random.uniform(2, 4))
 
-    return all_jobs
+    if blocked:
+        console.print("  [yellow]Rate-limited — continuing with listings collected so far.[/yellow]")
+
+    new_listings = [j for j in listings if normalize_url(j["url"]) not in known_urls]
+    skipped_known = len(listings) - len(new_listings)
+    to_fetch = new_listings[:MAX_DESC_FETCHES]
+    deferred = len(new_listings) - len(to_fetch)
+    console.print(
+        f"  [dim]{len(listings)} listings: {skipped_known} already stored, "
+        f"{len(new_listings)} new; fetching {len(to_fetch)} descriptions"
+        + (f", {deferred} deferred to next scan" if deferred else "")
+        + "[/dim]"
+    )
+
+    # Phase 2 — descriptions, only for jobs the store doesn't have.
+    jobs: list[JobPosting] = []
+    budget_reported = False
+    for i, listing in enumerate(to_fetch):
+        if not blocked and not budget_reported and time.monotonic() > deadline:
+            budget_reported = True
+            blocked = True  # stop fetching; keep title-only fallbacks below
+            console.print(
+                f"  [yellow]Scan time budget reached ({i}/{len(to_fetch)} "
+                f"descriptions fetched) — remaining jobs kept with title-only "
+                f"descriptions, re-fetched next scan.[/yellow]"
+            )
+        description = ""
+        if not blocked:
+            try:
+                description = li.fetch_description(session, listing["job_id"])
+            except li.LinkedInBlocked:
+                blocked = True
+                console.print(
+                    f"  [yellow]Rate-limited during description fetch "
+                    f"({i}/{len(to_fetch)} done) — remaining jobs kept with "
+                    f"title-only descriptions, re-fetched next scan.[/yellow]"
+                )
+            if not blocked and i < len(to_fetch) - 1:
+                time.sleep(random.uniform(*DESC_DELAY_S))
+
+        date_posted = listing["date_posted"]
+        if date_posted and re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_posted):
+            date_posted += "T00:00:00+00:00"
+
+        jobs.append(JobPosting(
+            url=listing["url"],
+            title=listing["title"],
+            company=listing["company"],
+            location=listing["location"],
+            description=description[:6000] if description else listing["title"],
+            date_posted=date_posted,
+            source="linkedin",
+        ))
+    return jobs
 
 
 def _fetch_text(url: str, retries: int = 3) -> str | None:

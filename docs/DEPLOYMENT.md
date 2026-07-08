@@ -5,7 +5,7 @@
 ```
 GitHub Actions (hourly)
     |
-    ├── Scans LinkedIn via python-jobspy
+    ├── Scans LinkedIn via the built-in guest-API scraper
     ├── Commits data/ci/scan_results.json
     ├── Pushes to GitHub
     └── Pings Render URL (keep-alive)

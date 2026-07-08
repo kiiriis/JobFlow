@@ -10,8 +10,8 @@ Commands:
     jobflow init      — First-time setup (create config, directories, CSV)
     jobflow web       — Launch the Flask dashboard
 
-The scan command is the most-used: it's called by GitHub Actions hourly
-(`jobflow scan --platform linkedin --new --save --hours 4`) and by the
+The scan command is the most-used: it's called by GitHub Actions every 30
+minutes (`jobflow scan --platform linkedin --save --hours 4`) and by the
 web dashboard's "Scan Now" button.
 
 The apply → save workflow is for manual job processing:

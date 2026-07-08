@@ -2,17 +2,21 @@
 
 ## Overview
 
-JobFlow scans multiple job board platforms and aggregates results into a unified feed. The scanner runs both locally (via CLI) and in CI (via GitHub Actions hourly cron).
+JobFlow scans multiple job board platforms and aggregates results into a unified feed. The scanner runs both locally (via CLI) and in CI (GitHub Actions, every 30 minutes).
 
 ## Platforms
 
-### LinkedIn (via python-jobspy)
+### LinkedIn (guest API)
 
-**File**: `jobflow/scanner.py` — `scan_linkedin_jobspy()`
+**Files**: `jobflow/linkedin_scraper.py` (transport + parsing) and
+`jobflow/scanner.py` — `scan_linkedin()` (orchestration)
 
-Uses the [python-jobspy](https://github.com/Bunsly/JobSpy) library to scrape LinkedIn.
+Self-contained scraper for LinkedIn's public guest API (no auth). It replaced
+python-jobspy, which silently truncated scans on the first 429, skipped result
+ranges due to a pagination bug, and burned ~10x the request budget re-fetching
+descriptions for jobs already in the store.
 
-**Search Terms** (8 queries, 200 results each):
+**Search Terms** (8 queries, up to 200 results each):
 1. "New Grad Software Engineer"
 2. "Junior Software Engineer"
 3. "Associate Software Engineer"
@@ -22,13 +26,29 @@ Uses the [python-jobspy](https://github.com/Bunsly/JobSpy) library to scrape Lin
 7. "Entry Level AI Engineer"
 8. "Software engineer new grad posted in the past 24 hours"
 
+**Two-phase scan:**
+1. **Listings** — cheap search pages (~10 jobs/request) for every term,
+   deduped by job id across terms, filtered to SWE titles.
+2. **Descriptions** — full JDs fetched **only for jobs not already stored
+   with a real description** (known URLs come from the DB, falling back to
+   the JSON store). Known jobs are skipped from the scan output entirely;
+   new users get the existing pool via `db.backfill_user` at signup.
+
+**Rate-limit handling:** 429/999 responses are retried with
+Retry-After/exponential backoff (up to 4 retries, capped at 180s). If
+LinkedIn still blocks, the scan keeps what it has: remaining new jobs are
+saved with title-only descriptions and their JDs are re-fetched next scan
+(any stored description under 200 chars marks the job as still unknown).
+
 **Configuration:**
 - Location: "United States"
-- `linkedin_fetch_description`: True (fetches full JD)
-- Deduplication by URL across search terms
-- Random 2-4s delay between terms (rate limiting)
+- Time window: `--hours N` → LinkedIn's `f_TPR` filter; default 4h when unset
+- Descriptions capped at 6,000 chars; max 300 description fetches per scan
+  (excess deferred to the next scan and reported)
+- Random 2-4s delay between terms, 0.7-1.5s between description fetches
 
-**Known Limitation:** LinkedIn doesn't expose `date_posted` — jobspy returns `None`. Jobs are timestamped with the scan time (when discovered).
+**Known Limitation:** LinkedIn's `date_posted` is date-only (posting day, no
+time). Jobs missing it are timestamped with the scan time (when discovered).
 
 ### Lever API
 
@@ -106,19 +126,21 @@ Capped at 500 entries, sorted by score descending. Merges with existing results 
 **File**: `.github/workflows/scan-jobs.yml`
 
 ```
-Schedule: Every hour at :00 (cron: '0 * * * *')
-Also: Manual trigger from Actions tab
+Schedule: Every 30 minutes (cron: '*/30 * * * *')
+Also: Manual trigger from Actions tab or the feed's "Scan Now" button
 
 Steps:
-1. Checkout repo
+1. Checkout repo + git pull (latest JSON store)
 2. Setup Python 3.12
 3. pip install -e .
-4. JOBFLOW_CONFIG=config/config.ci.yaml jobflow scan --platform linkedin --new --save --hours 1
-5. git add data/ci/ && git commit && git push
-6. curl Render URL (keep-alive)
+4. JOBFLOW_CONFIG=config/config.ci.yaml jobflow scan --platform linkedin --save --hours 4
+5. Merge scan_results.json into Postgres (fan-out per user) and linkedin_jobs.json
+6. git add data/ci/ && git commit && git push
 ```
 
-The `--hours 1` flag means only jobs from the last hour. The `--new` flag deduplicates against `seen_jobs.json`. This ensures each hourly scan only captures genuinely new postings.
+The `--hours 4` window gives each 30-minute run padding to catch jobs missed
+by earlier runs; already-stored jobs are skipped by the two-phase scan, so the
+overlap costs only cheap listing requests.
 
 ## Deduplication
 

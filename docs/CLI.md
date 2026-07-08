@@ -32,7 +32,7 @@ jobflow scan --no-save
 - **Lever**: 11 companies via JSON API
 - **Greenhouse**: 40 companies via JSON API
 - **Ashby**: 31 companies via JSON API
-- **LinkedIn**: 8 search terms via python-jobspy (200 results each)
+- **LinkedIn**: 8 search terms via the built-in guest-API scraper (up to 200 results each)
 - **GitHub**: SimplifyJobs + Jobright markdown repos
 
 ### jobflow apply

@@ -16,15 +16,18 @@ python-jobspy, which silently truncated scans on the first 429, skipped result
 ranges due to a pagination bug, and burned ~10x the request budget re-fetching
 descriptions for jobs already in the store.
 
-**Search Terms** (8 queries, up to 200 results each):
+**Search Terms** (5 queries, up to 200 results each):
 1. "New Grad Software Engineer"
 2. "Junior Software Engineer"
 3. "Associate Software Engineer"
-4. "Entry Level Software Engineer"
-5. "Entry Level Jobs 2026"
-6. "New Grad Machine Learning Engineer"
-7. "Entry Level AI Engineer"
-8. "Software engineer new grad posted in the past 24 hours"
+4. "Entry Level Jobs 2026"
+5. "New Grad Machine Learning Engineer"
+
+Trimmed from 8 to 5: dropped "Software engineer new grad posted in the past 24
+hours" (a natural-language string LinkedIn's title search never matched — 0
+results every run), plus "Entry Level Software Engineer" and "Entry Level AI
+Engineer" (0-4 jobs/run, almost entirely overlapping what the Junior/Associate
+terms already catch).
 
 **Two-phase scan:**
 1. **Listings** — cheap search pages (~10 jobs/request) for every term,

@@ -151,7 +151,7 @@ def fetch_db_rows(args):
     """Fetch eligible rows for one user from Postgres (per-user state + posting)."""
     conditions = ["s.user_id = %s"]
     params = [args.user_id]
-    if args.recommended_only:
+    if getattr(args, "recommended_only", False):
         conditions.append("s.recommended = true")
     elif not args.rescore:
         conditions.append("s.ai_score IS NULL")
@@ -205,7 +205,7 @@ def fetch_json_rows(store: dict, args):
         ai_model = job.get("ai_model")
         if not eligible_ai_score(ai_score, args.rescore):
             continue
-        if args.recommended_only and not job.get("recommended"):
+        if getattr(args, "recommended_only", False) and not job.get("recommended"):
             continue
         if cutoff:
             first_seen = parse_iso(job.get("first_seen", ""))

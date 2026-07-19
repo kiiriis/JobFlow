@@ -1,45 +1,5 @@
 [
   {
-    "company": "Compass",
-    "title": "Software Engineer II",
-    "location": "Aventura, FL",
-    "url": "https://www.linkedin.com/jobs/view/4442537719",
-    "score": 27,
-    "score_pct": 19,
-    "level": "Mid",
-    "min_exp": null,
-    "max_exp": null,
-    "competition": 0,
-    "variant": "se",
-    "reason": "Title fit +12; Mid +5; US +10",
-    "reject_reason": "",
-    "recommended": false,
-    "description_preview": "Software Engineer II",
-    "date_posted": "2026-07-19T00:00:00+00:00",
-    "source": "linkedin",
-    "index": 1
-  },
-  {
-    "company": "Los Alamos National Laboratory",
-    "title": "Software Engineer (R&D Engineer 1/2)",
-    "location": "Los Alamos, NM",
-    "url": "https://www.linkedin.com/jobs/view/4425193327",
-    "score": 26,
-    "score_pct": 19,
-    "level": "Unknown",
-    "min_exp": null,
-    "max_exp": null,
-    "competition": 0,
-    "variant": "se",
-    "reason": "Title fit +12; US +10",
-    "reject_reason": "",
-    "recommended": false,
-    "description_preview": "Software Engineer (R&D Engineer 1/2)",
-    "date_posted": "2026-07-19T00:00:00+00:00",
-    "source": "linkedin",
-    "index": 2
-  },
-  {
     "company": "Corgi",
     "title": "Full Stack Software Engineer",
     "location": "Salt Lake City, UT",
@@ -57,7 +17,7 @@
     "description_preview": "Full Stack Software Engineer",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 3
+    "index": 1
   },
   {
     "company": "Corgi",
@@ -77,7 +37,7 @@
     "description_preview": "Full Stack Software Engineer",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 4
+    "index": 2
   },
   {
     "company": "Gromelski & Associates, Inc.",
@@ -97,27 +57,7 @@
     "description_preview": "Software Developer",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 5
-  },
-  {
-    "company": "Cogent Communications",
-    "title": "Software Developer\u2013 Herndon VA",
-    "location": "Herndon, VA",
-    "url": "https://www.linkedin.com/jobs/view/4442540554",
-    "score": 26,
-    "score_pct": 19,
-    "level": "Unknown",
-    "min_exp": null,
-    "max_exp": null,
-    "competition": 0,
-    "variant": "se",
-    "reason": "Title fit +12; US +10",
-    "reject_reason": "",
-    "recommended": false,
-    "description_preview": "Software Developer\u2013 Herndon VA",
-    "date_posted": "2026-07-19T00:00:00+00:00",
-    "source": "linkedin",
-    "index": 6
+    "index": 3
   },
   {
     "company": "NXT,  Security & Solutions",
@@ -135,6 +75,66 @@
     "reject_reason": "",
     "recommended": false,
     "description_preview": "Back End Developer",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 4
+  },
+  {
+    "company": "Coverwatch",
+    "title": "Software Engineer",
+    "location": "San Francisco, CA",
+    "url": "https://www.linkedin.com/jobs/view/4441786698",
+    "score": 26,
+    "score_pct": 19,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Software Engineer",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 5
+  },
+  {
+    "company": "Corgi",
+    "title": "Full Stack Software Engineer",
+    "location": "Atlanta, GA",
+    "url": "https://www.linkedin.com/jobs/view/4442538989",
+    "score": 26,
+    "score_pct": 19,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Full Stack Software Engineer",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 6
+  },
+  {
+    "company": "PrimX Technologies",
+    "title": "Junior WordPress Developer",
+    "location": "San Antonio, TX",
+    "url": "https://www.linkedin.com/jobs/view/4441778901",
+    "score": 25,
+    "score_pct": 18,
+    "level": "Entry",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +6; Poor fit -6; Entry +15; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Junior WordPress Developer",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
     "index": 7
@@ -220,6 +220,26 @@
     "index": 11
   },
   {
+    "company": "RemoteHunter",
+    "title": "Software Engineer",
+    "location": "United States",
+    "url": "https://www.linkedin.com/jobs/view/4441793369",
+    "score": 0,
+    "score_pct": 0,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Blocked company: RemoteHunter",
+    "reject_reason": "Blocked company: RemoteHunter",
+    "recommended": false,
+    "description_preview": "Software Engineer",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 12
+  },
+  {
     "company": "Jack & Jill",
     "title": "Software Engineer at Den",
     "location": "New York, United States",
@@ -237,7 +257,7 @@
     "description_preview": "Software Engineer at Den",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 12
+    "index": 13
   },
   {
     "company": "Jack & Jill",
@@ -257,13 +277,13 @@
     "description_preview": "Full-Stack Engineer ($120k\u2013$140k + Equity) at Emporium AI",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 13
+    "index": 14
   },
   {
     "company": "Jack & Jill",
-    "title": "Software Engineer ($130k-$180k + Equity) at well-funded legal tech AI startup",
+    "title": "Full-Stack Software Engineer at Fast-growing voice AI startup",
     "location": "New York, NY",
-    "url": "https://www.linkedin.com/jobs/view/4441781794",
+    "url": "https://www.linkedin.com/jobs/view/4441791422",
     "score": 0,
     "score_pct": 0,
     "level": "Unknown",
@@ -274,16 +294,36 @@
     "reason": "Blocked company: Jack & Jill",
     "reject_reason": "Blocked company: Jack & Jill",
     "recommended": false,
-    "description_preview": "Software Engineer ($130k-$180k + Equity) at well-funded legal tech AI startup",
+    "description_preview": "Full-Stack Software Engineer at Fast-growing voice AI startup",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 14
+    "index": 15
+  },
+  {
+    "company": "Jack & Jill",
+    "title": "Full Stack Engineer ($175k-$250k + Equity) at Alta Daily",
+    "location": "New York, NY",
+    "url": "https://www.linkedin.com/jobs/view/4441791423",
+    "score": 0,
+    "score_pct": 0,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Blocked company: Jack & Jill",
+    "reject_reason": "Blocked company: Jack & Jill",
+    "recommended": false,
+    "description_preview": "Full Stack Engineer ($175k-$250k + Equity) at Alta Daily",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 16
   },
   {
     "company": "RemoteHunter",
-    "title": "Software Engineer",
+    "title": "Software Engineer I, Fullstack",
     "location": "United States",
-    "url": "https://www.linkedin.com/jobs/view/4441793369",
+    "url": "https://www.linkedin.com/jobs/view/4441793297",
     "score": 0,
     "score_pct": 0,
     "level": "Unknown",
@@ -294,9 +334,9 @@
     "reason": "Blocked company: RemoteHunter",
     "reject_reason": "Blocked company: RemoteHunter",
     "recommended": false,
-    "description_preview": "Software Engineer",
+    "description_preview": "Software Engineer I, Fullstack",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 15
+    "index": 17
   }
 ]

@@ -20,6 +20,26 @@
     "index": 1
   },
   {
+    "company": "CGI",
+    "title": "Junior Software Developer",
+    "location": "Lafayette, LA",
+    "url": "https://www.linkedin.com/jobs/view/4424963243",
+    "score": 37,
+    "score_pct": 26,
+    "level": "Entry",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; Entry +15; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Junior Software Developer",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 2
+  },
+  {
     "company": "Guidehouse",
     "title": "Junior Software Engineer",
     "location": "Orleans, IN",
@@ -37,7 +57,7 @@
     "description_preview": "Junior Software Engineer",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 2
+    "index": 3
   },
   {
     "company": "DV Trading LLC",
@@ -57,7 +77,7 @@
     "description_preview": "Software Developer (Chicago)",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 3
+    "index": 4
   },
   {
     "company": "Raytheon",
@@ -77,27 +97,27 @@
     "description_preview": "Software Engineer II - Fort Wayne",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 4
+    "index": 5
   },
   {
-    "company": "Rippling",
-    "title": "Software Engineer II, Backend Full Stack - Financial Product",
-    "location": "San Francisco, CA",
-    "url": "https://www.linkedin.com/jobs/view/4366718843",
-    "score": 27,
+    "company": "Cadence",
+    "title": "Software Engineer I",
+    "location": "Austin, TX",
+    "url": "https://www.linkedin.com/jobs/view/4414708053",
+    "score": 26,
     "score_pct": 19,
-    "level": "Mid",
+    "level": "Unknown",
     "min_exp": null,
     "max_exp": null,
     "competition": 0,
     "variant": "se",
-    "reason": "Title fit +12; Mid +5; US +10",
+    "reason": "Title fit +12; US +10",
     "reject_reason": "",
     "recommended": false,
-    "description_preview": "Software Engineer II, Backend Full Stack - Financial Product",
+    "description_preview": "Software Engineer I",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 5
+    "index": 6
   },
   {
     "company": "DV Trading LLC",
@@ -117,7 +137,7 @@
     "description_preview": "Software Developer (New York)",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 6
+    "index": 7
   },
   {
     "company": "Qualcomm",
@@ -135,26 +155,6 @@
     "reject_reason": "",
     "recommended": false,
     "description_preview": "#Software Engineer - Power and Limits Management",
-    "date_posted": "2026-07-19T00:00:00+00:00",
-    "source": "linkedin",
-    "index": 7
-  },
-  {
-    "company": "MoldShield",
-    "title": "Software Engineer, Full Stack",
-    "location": "Albany, New York Metropolitan Area",
-    "url": "https://www.linkedin.com/jobs/view/4441783127",
-    "score": 26,
-    "score_pct": 19,
-    "level": "Unknown",
-    "min_exp": null,
-    "max_exp": null,
-    "competition": 0,
-    "variant": "se",
-    "reason": "Title fit +12; US +10",
-    "reject_reason": "",
-    "recommended": false,
-    "description_preview": "Software Engineer, Full Stack",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
     "index": 8
@@ -180,6 +180,126 @@
     "index": 9
   },
   {
+    "company": "SpaceX",
+    "title": "Full Stack Software Engineer, Data",
+    "location": "Texas, United States",
+    "url": "https://www.linkedin.com/jobs/view/4415811259",
+    "score": 26,
+    "score_pct": 19,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Full Stack Software Engineer, Data",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 10
+  },
+  {
+    "company": "Watchfire",
+    "title": "Software Engineer (Embedded Systems)",
+    "location": "Danville, IL",
+    "url": "https://www.linkedin.com/jobs/view/4415090105",
+    "score": 26,
+    "score_pct": 19,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Software Engineer (Embedded Systems)",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 11
+  },
+  {
+    "company": "Zip",
+    "title": "Software Engineer, Backend (All Levels)",
+    "location": "San Francisco, CA",
+    "url": "https://www.linkedin.com/jobs/view/4406142194",
+    "score": 26,
+    "score_pct": 19,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Software Engineer, Backend (All Levels)",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 12
+  },
+  {
+    "company": "Central Insurance",
+    "title": "Software Engineer",
+    "location": "Van Wert, OH",
+    "url": "https://www.linkedin.com/jobs/view/4424610722",
+    "score": 26,
+    "score_pct": 19,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Software Engineer",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 13
+  },
+  {
+    "company": "Spatial Front, Inc",
+    "title": "Full Stack Developer",
+    "location": "Arlington, VA",
+    "url": "https://www.linkedin.com/jobs/view/4383247166",
+    "score": 26,
+    "score_pct": 19,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Full Stack Developer",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 14
+  },
+  {
+    "company": "Goldman Sachs",
+    "title": "Software Engineer, Global Banking & Markets, Front Office Technology",
+    "location": "Dallas, TX",
+    "url": "https://www.linkedin.com/jobs/view/4373082505",
+    "score": 26,
+    "score_pct": 19,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Software Engineer, Global Banking & Markets, Front Office Technology",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 15
+  },
+  {
     "company": "Anduril Industries",
     "title": "Software Engineer, Intelligence Systems",
     "location": "Reston, VA",
@@ -197,27 +317,7 @@
     "description_preview": "Software Engineer, Intelligence Systems",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 10
-  },
-  {
-    "company": "Smithfield Foods",
-    "title": "Software Engineer",
-    "location": "Suffolk, VA",
-    "url": "https://www.linkedin.com/jobs/view/4414482940",
-    "score": 26,
-    "score_pct": 19,
-    "level": "Unknown",
-    "min_exp": null,
-    "max_exp": null,
-    "competition": 0,
-    "variant": "se",
-    "reason": "Title fit +12; US +10",
-    "reject_reason": "",
-    "recommended": false,
-    "description_preview": "Software Engineer",
-    "date_posted": "2026-07-19T00:00:00+00:00",
-    "source": "linkedin",
-    "index": 11
+    "index": 16
   },
   {
     "company": "Jack & Jill",
@@ -237,7 +337,7 @@
     "description_preview": "Forward Deployed Software Engineer ($120K - $150K + Equity) at Arzana",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 12
+    "index": 17
   },
   {
     "company": "Jack & Jill",
@@ -257,7 +357,7 @@
     "description_preview": "Generalist Engineer at Greptile",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 13
+    "index": 18
   },
   {
     "company": "Onto Innovation",
@@ -277,27 +377,7 @@
     "description_preview": "Senior Software Engineer",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 14
-  },
-  {
-    "company": "Harper",
-    "title": "Member of Technical Staff",
-    "location": "San Francisco, CA",
-    "url": "https://www.linkedin.com/jobs/view/4358288064",
-    "score": 0,
-    "score_pct": 0,
-    "level": "Unknown",
-    "min_exp": null,
-    "max_exp": null,
-    "competition": 0,
-    "variant": "se",
-    "reason": "Title disqualified: Member of Technical Staff",
-    "reject_reason": "Title disqualified: Member of Technical Staff",
-    "recommended": false,
-    "description_preview": "Member of Technical Staff",
-    "date_posted": "2026-07-19T00:00:00+00:00",
-    "source": "linkedin",
-    "index": 15
+    "index": 19
   },
   {
     "company": "Jack & Jill",
@@ -317,7 +397,7 @@
     "description_preview": "Software Engineer at Den",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 16
+    "index": 20
   },
   {
     "company": "Jack & Jill",
@@ -337,6 +417,26 @@
     "description_preview": "Full-Stack Engineer ($120k\u2013$140k + Equity) at Emporium AI",
     "date_posted": "2026-07-19T00:00:00+00:00",
     "source": "linkedin",
-    "index": 17
+    "index": 21
+  },
+  {
+    "company": "BNY",
+    "title": "Senior Associate, Back-End Engineer",
+    "location": "Pittsburgh, PA",
+    "url": "https://www.linkedin.com/jobs/view/4414977909",
+    "score": 0,
+    "score_pct": 0,
+    "level": "Entry",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title disqualified: Senior Associate, Back-End Engineer",
+    "reject_reason": "Title disqualified: Senior Associate, Back-End Engineer",
+    "recommended": false,
+    "description_preview": "Senior Associate, Back-End Engineer",
+    "date_posted": "2026-07-19T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 22
   }
 ]

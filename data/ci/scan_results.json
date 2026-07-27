@@ -1,5 +1,65 @@
 [
   {
+    "company": "Symbotic",
+    "title": "New Grad- Software Engineer",
+    "location": "Wilmington, MA",
+    "url": "https://www.linkedin.com/jobs/view/4446140930",
+    "score": 42,
+    "score_pct": 30,
+    "level": "New Grad",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; New Grad +20; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "New Grad- Software Engineer",
+    "date_posted": "2026-07-27T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 1
+  },
+  {
+    "company": "Corissa Nunn Consulting",
+    "title": "Software Engineer, Early Career",
+    "location": "San Francisco, CA",
+    "url": "https://www.linkedin.com/jobs/view/4442889322",
+    "score": 37,
+    "score_pct": 26,
+    "level": "Entry",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; Entry +15; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Software Engineer, Early Career",
+    "date_posted": "2026-07-27T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 2
+  },
+  {
+    "company": "Metropolitan Transportation Authority",
+    "title": "Junior Software Engineer",
+    "location": "Jamaica, NY",
+    "url": "https://www.linkedin.com/jobs/view/4445408111",
+    "score": 37,
+    "score_pct": 26,
+    "level": "Entry",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; Entry +15; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Junior Software Engineer",
+    "date_posted": "2026-07-27T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 3
+  },
+  {
     "company": "GIT America, Inc.",
     "title": "Junior Software Developer",
     "location": "Irvine, CA",
@@ -17,27 +77,7 @@
     "description_preview": "Junior Software Developer",
     "date_posted": "2026-07-27T00:00:00+00:00",
     "source": "linkedin",
-    "index": 1
-  },
-  {
-    "company": "Lockheed Martin",
-    "title": "Software Engineer Associate",
-    "location": "Huntsville, AL",
-    "url": "https://www.linkedin.com/jobs/view/4446128315",
-    "score": 37,
-    "score_pct": 26,
-    "level": "Entry",
-    "min_exp": null,
-    "max_exp": null,
-    "competition": 0,
-    "variant": "se",
-    "reason": "Title fit +12; Entry +15; US +10",
-    "reject_reason": "",
-    "recommended": false,
-    "description_preview": "Software Engineer Associate",
-    "date_posted": "2026-07-27T00:00:00+00:00",
-    "source": "linkedin",
-    "index": 2
+    "index": 4
   },
   {
     "company": "GIT America, Inc.",
@@ -57,7 +97,27 @@
     "description_preview": "Junior Software Developer",
     "date_posted": "2026-07-27T00:00:00+00:00",
     "source": "linkedin",
-    "index": 3
+    "index": 5
+  },
+  {
+    "company": "Lockheed Martin",
+    "title": "Software Engineer Associate",
+    "location": "Huntsville, AL",
+    "url": "https://www.linkedin.com/jobs/view/4446128315",
+    "score": 37,
+    "score_pct": 26,
+    "level": "Entry",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; Entry +15; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Software Engineer Associate",
+    "date_posted": "2026-07-27T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 6
   },
   {
     "company": "Cisco",
@@ -77,7 +137,7 @@
     "description_preview": "Software Engineer (Full Time) - United States",
     "date_posted": "2026-07-27T00:00:00+00:00",
     "source": "linkedin",
-    "index": 4
+    "index": 7
   },
   {
     "company": "Ammortal",
@@ -97,7 +157,7 @@
     "description_preview": "Software Engineer (Full-Stack)",
     "date_posted": "2026-07-27T00:00:00+00:00",
     "source": "linkedin",
-    "index": 5
+    "index": 8
   },
   {
     "company": "Ammortal",
@@ -117,7 +177,7 @@
     "description_preview": "Software Engineer (Full-Stack)",
     "date_posted": "2026-07-27T00:00:00+00:00",
     "source": "linkedin",
-    "index": 6
+    "index": 9
   },
   {
     "company": "Jack",
@@ -137,7 +197,7 @@
     "description_preview": "Full Stack Engineer",
     "date_posted": "2026-07-27T00:00:00+00:00",
     "source": "linkedin",
-    "index": 7
+    "index": 10
   },
   {
     "company": "Cisco",
@@ -157,27 +217,7 @@
     "description_preview": "Software Engineer (Full Time) - United States",
     "date_posted": "2026-07-27T00:00:00+00:00",
     "source": "linkedin",
-    "index": 8
-  },
-  {
-    "company": "Intel",
-    "title": "System Software Engineer",
-    "location": "Hillsboro, OR",
-    "url": "https://www.linkedin.com/jobs/view/4445188192",
-    "score": 26,
-    "score_pct": 19,
-    "level": "Unknown",
-    "min_exp": null,
-    "max_exp": null,
-    "competition": 0,
-    "variant": "se",
-    "reason": "Title fit +12; US +10",
-    "reject_reason": "",
-    "recommended": false,
-    "description_preview": "System Software Engineer",
-    "date_posted": "2026-07-27T00:00:00+00:00",
-    "source": "linkedin",
-    "index": 9
+    "index": 11
   },
   {
     "company": "Jack",
@@ -197,7 +237,47 @@
     "description_preview": "Software Engineer",
     "date_posted": "2026-07-27T00:00:00+00:00",
     "source": "linkedin",
-    "index": 10
+    "index": 12
+  },
+  {
+    "company": "IPT Global",
+    "title": "Software Engineer",
+    "location": "Houston, TX",
+    "url": "https://www.linkedin.com/jobs/view/4446145549",
+    "score": 26,
+    "score_pct": 19,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Software Engineer",
+    "date_posted": "2026-07-27T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 13
+  },
+  {
+    "company": "Rocket",
+    "title": "Software Engineer I",
+    "location": "Texas, United States",
+    "url": "https://www.linkedin.com/jobs/view/4442893738",
+    "score": 26,
+    "score_pct": 19,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Software Engineer I",
+    "date_posted": "2026-07-27T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 14
   },
   {
     "company": "Atos",
@@ -217,7 +297,27 @@
     "description_preview": "Software Engineer",
     "date_posted": "2026-07-27T00:00:00+00:00",
     "source": "linkedin",
-    "index": 11
+    "index": 15
+  },
+  {
+    "company": "Instron",
+    "title": "Software Engineer - Service",
+    "location": "Norwood, MA",
+    "url": "https://www.linkedin.com/jobs/view/4446166227",
+    "score": 26,
+    "score_pct": 19,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +12; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Software Engineer - Service",
+    "date_posted": "2026-07-27T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 16
   },
   {
     "company": "Goldbelt Nighthawk, LLC",
@@ -237,6 +337,66 @@
     "description_preview": "Developer Programmer",
     "date_posted": "2026-07-27T00:00:00+00:00",
     "source": "linkedin",
-    "index": 12
+    "index": 17
+  },
+  {
+    "company": "Salt Lake City Corporation",
+    "title": "Web Developer",
+    "location": "Salt Lake City Metropolitan Area",
+    "url": "https://www.linkedin.com/jobs/view/4445407162",
+    "score": 20,
+    "score_pct": 14,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +6; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Web Developer",
+    "date_posted": "2026-07-27T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 18
+  },
+  {
+    "company": "WEMASY.com",
+    "title": "Web Developer",
+    "location": "Indiana, United States",
+    "url": "https://www.linkedin.com/jobs/view/4442896676",
+    "score": 20,
+    "score_pct": 14,
+    "level": "Unknown",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title fit +6; US +10",
+    "reject_reason": "",
+    "recommended": false,
+    "description_preview": "Web Developer",
+    "date_posted": "2026-07-27T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 19
+  },
+  {
+    "company": "New York Life",
+    "title": "Senior Associate - Associate Full Stack Engineer",
+    "location": "New York, NY",
+    "url": "https://www.linkedin.com/jobs/view/4446149452",
+    "score": 0,
+    "score_pct": 0,
+    "level": "Entry",
+    "min_exp": null,
+    "max_exp": null,
+    "competition": 0,
+    "variant": "se",
+    "reason": "Title disqualified: Senior Associate - Associate Full Stack Engineer",
+    "reject_reason": "Title disqualified: Senior Associate - Associate Full Stack Engineer",
+    "recommended": false,
+    "description_preview": "Senior Associate - Associate Full Stack Engineer",
+    "date_posted": "2026-07-27T00:00:00+00:00",
+    "source": "linkedin",
+    "index": 20
   }
 ]
